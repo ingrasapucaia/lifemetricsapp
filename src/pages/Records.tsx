@@ -6,28 +6,32 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { calculateDailyAdherence, isHabitCompleted } from "@/lib/metrics";
+import { calculateDailyAdherence } from "@/lib/metrics";
+import { MOOD_OPTIONS } from "@/types";
+import DayEditor from "@/components/DayEditor";
 import { toast } from "sonner";
 import { Plus, Trash2, Search, X, CalendarDays, List } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Records() {
   const { records, habits, upsertRecord, deleteRecord } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selected, setSelected] = useState<Date | undefined>(new Date());
+  const [selected, setSelected] = useState<Date | undefined>(undefined);
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [delTarget, setDelTarget] = useState<string | null>(null);
   const [newDate, setNewDate] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -40,7 +44,6 @@ export default function Records() {
   const dateset = useMemo(() => new Set(records.map((r) => r.date)), [records]);
   const dateStr = selected ? format(selected, "yyyy-MM-dd") : "";
   const selRecord = records.find((r) => r.date === dateStr);
-  const active = habits.filter((h) => h.active);
 
   const filtered = useMemo(() => {
     let list = [...records].sort((a, b) => b.date.localeCompare(a.date));
@@ -57,27 +60,39 @@ export default function Records() {
     return list;
   }, [records, search]);
 
+  const handleDayClick = (day: Date | undefined) => {
+    setSelected(day);
+    if (day) setDrawerOpen(true);
+  };
+
   const handleCreate = () => {
     if (!newDate) return;
     if (dateset.has(newDate)) {
       toast.error("Já existe registro para esta data");
       setSelected(parseISO(newDate));
+      setDrawerOpen(true);
       setShowNew(false);
       return;
     }
     upsertRecord({ date: newDate });
     setSelected(parseISO(newDate));
+    setDrawerOpen(true);
     setShowNew(false);
     setNewDate("");
     toast("Registro criado");
   };
 
+  const handleListClick = (r: DailyRecord) => {
+    setSelected(parseISO(r.date));
+    setDrawerOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Meus Registros</h1>
-        <Button onClick={() => { setShowNew(true); setNewDate(format(new Date(), "yyyy-MM-dd")); }}>
-          <Plus size={16} /> Novo registro
+        <h1 className="text-2xl font-semibold tracking-tight">Meus Registros</h1>
+        <Button variant="outline" size="sm" onClick={() => { setShowNew(true); setNewDate(format(new Date(), "yyyy-MM-dd")); }}>
+          <Plus size={14} className="mr-1" /> Novo registro
         </Button>
       </div>
 
@@ -103,36 +118,31 @@ export default function Records() {
           <TabsTrigger value="list" className="gap-2"><List size={14} /> Lista</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calendar">
-          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 mt-4">
-            <Card className="w-fit h-fit">
-              <CardContent className="p-2">
-                <Calendar
-                  mode="single"
-                  selected={selected}
-                  onSelect={setSelected}
-                  locale={ptBR}
-                  modifiers={{ hasRecord: (d: Date) => dateset.has(format(d, "yyyy-MM-dd")) }}
-                  modifiersStyles={{
-                    hasRecord: { fontWeight: 700, textDecoration: "underline", textDecorationColor: "hsl(168,64%,38%)", textUnderlineOffset: "3px" },
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            <DayPanel
-              record={selRecord}
-              date={dateStr}
-              habits={active}
-              onUpdate={(u) => { upsertRecord({ date: dateStr, ...u }); toast("Salvo"); }}
-              onDelete={() => selRecord && setDelTarget(selRecord.id)}
-            />
-          </div>
+        <TabsContent value="calendar" className="mt-4">
+          <Card className="w-fit">
+            <CardContent className="p-3">
+              <Calendar
+                mode="single"
+                selected={selected}
+                onSelect={handleDayClick}
+                locale={ptBR}
+                modifiers={{ hasRecord: (d: Date) => dateset.has(format(d, "yyyy-MM-dd")) }}
+                modifiersStyles={{
+                  hasRecord: {
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                    textDecorationColor: "hsl(0, 0%, 40%)",
+                    textUnderlineOffset: "3px",
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="list">
+        <TabsContent value="list" className="mt-4">
           {filtered.length === 0 ? (
-            <Card className="text-center py-8 mt-4">
+            <Card className="text-center py-8">
               <CardContent>
                 <p className="text-muted-foreground">
                   {search ? "Nenhum registro encontrado." : "Nenhum registro ainda."}
@@ -141,33 +151,72 @@ export default function Records() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2 mt-4">
+            <div className="space-y-1">
               {filtered.map((r) => {
                 const adh = calculateDailyAdherence(r, habits);
+                const moodOpt = MOOD_OPTIONS.find((m) => m.label === r.moodLabel);
                 return (
-                  <Card
+                  <button
                     key={r.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => setSelected(parseISO(r.date))}
+                    className="w-full flex items-center justify-between p-3 rounded hover:bg-muted/50 transition-colors text-left"
+                    onClick={() => handleListClick(r)}
                   >
-                    <CardContent className="p-4 flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-sm font-medium">{format(parseISO(r.date), "dd/MM/yyyy")}</span>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {r.mood > 0 && <Badge variant="secondary">{["😞","😕","😐","🙂","😄"][r.mood-1]}</Badge>}
-                          {r.sleepHours > 0 && <Badge variant="secondary">{r.sleepHours}h</Badge>}
-                          <Badge variant="secondary">{adh}%</Badge>
-                        </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-sm font-medium">{format(parseISO(r.date), "dd/MM/yyyy")}</span>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {moodOpt && (
+                          <Badge className={cn("font-normal capitalize border-0 text-xs", moodOpt.bg, moodOpt.text)}>
+                            {moodOpt.label}
+                          </Badge>
+                        )}
+                        {r.sleepHours > 0 && <Badge variant="secondary" className="text-xs">{r.sleepHours}h</Badge>}
+                        <Badge variant="secondary" className="text-xs">{adh}%</Badge>
                       </div>
-                      <Button variant="ghost" size="sm">Ver</Button>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </button>
                 );
               })}
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Day Editor Drawer */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader className="mb-4">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-base">
+                {dateStr ? format(parseISO(dateStr), "dd 'de' MMMM, yyyy", { locale: ptBR }) : ""}
+              </SheetTitle>
+              {selRecord && (
+                <Button variant="ghost" size="icon" onClick={() => { setDelTarget(selRecord.id); }}>
+                  <Trash2 size={16} className="text-destructive" />
+                </Button>
+              )}
+            </div>
+          </SheetHeader>
+
+          {dateStr && (
+            <DayEditor
+              date={dateStr}
+              record={selRecord}
+              habits={habits}
+              onUpdate={(u) => { upsertRecord({ date: dateStr, ...u }); }}
+              showHeader={false}
+            />
+          )}
+
+          {!selRecord && dateStr && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-3 text-sm">Sem registro para este dia.</p>
+              <Button variant="outline" size="sm" onClick={() => upsertRecord({ date: dateStr })}>
+                Criar registro
+              </Button>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* New record */}
       <Dialog open={showNew} onOpenChange={setShowNew}>
@@ -195,92 +244,17 @@ export default function Records() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { deleteRecord(delTarget!); setDelTarget(null); toast("Registro deletado"); }}>
+            <AlertDialogAction onClick={() => {
+              deleteRecord(delTarget!);
+              setDelTarget(null);
+              setDrawerOpen(false);
+              toast("Registro deletado");
+            }}>
               Deletar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-function DayPanel({ record, date, habits, onUpdate, onDelete }: {
-  record: DailyRecord | undefined;
-  date: string;
-  habits: ReturnType<typeof Array.prototype.filter>;
-  onUpdate: (u: Partial<DailyRecord>) => void;
-  onDelete: () => void;
-}) {
-  if (!date) return null;
-
-  if (!record) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground mb-3">
-            Sem registro para {date ? format(parseISO(date), "dd/MM/yyyy") : ""}.
-          </p>
-          <Button onClick={() => onUpdate({})}>Criar registro</Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const adh = calculateDailyAdherence(record, habits as any);
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">
-            {format(parseISO(date), "dd 'de' MMMM, yyyy", { locale: ptBR })}
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onDelete}>
-            <Trash2 size={16} className="text-destructive" />
-          </Button>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {record.mood > 0 && <Badge variant="outline">{["😞","😕","😐","🙂","😄"][record.mood-1]} Humor {record.mood}</Badge>}
-          {record.sleepHours > 0 && <Badge variant="outline">🌙 {record.sleepHours}h</Badge>}
-          {record.exerciseMinutes > 0 && <Badge variant="outline">💪 {record.exerciseMinutes} min</Badge>}
-          <Badge variant="outline">📊 {adh}%</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium mb-2">Hábitos</p>
-          <div className="space-y-2">
-            {(habits as any[]).map((h: any) => (
-              <div key={h.id} className="flex items-center gap-3">
-                {h.targetType === "check" ? (
-                  <Checkbox
-                    checked={record.habitChecks[h.id] === true}
-                    onCheckedChange={(c) => onUpdate({ habitChecks: { ...record.habitChecks, [h.id]: !!c } })}
-                  />
-                ) : (
-                  <Input
-                    type="number"
-                    className="w-20 h-8 text-sm"
-                    value={typeof record.habitChecks[h.id] === "number" ? (record.habitChecks[h.id] as number) : ""}
-                    onChange={(e) => onUpdate({ habitChecks: { ...record.habitChecks, [h.id]: Number(e.target.value) } })}
-                  />
-                )}
-                <span className="text-sm">{h.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {(record.noteFeeling || record.noteProcrastination || record.noteGratitude) && (
-          <div className="space-y-2 border-t pt-3">
-            <p className="text-sm font-medium">Diário</p>
-            {record.noteFeeling && <p className="text-sm text-muted-foreground">💭 {record.noteFeeling}</p>}
-            {record.noteProcrastination && <p className="text-sm text-muted-foreground">⏰ {record.noteProcrastination}</p>}
-            {record.noteGratitude && <p className="text-sm text-muted-foreground">🙏 {record.noteGratitude}</p>}
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
