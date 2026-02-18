@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Clock, Droplet, icons,
+  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Clock, Droplet, icons,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ function HabitIcon({ name, size = 14 }: { name?: string; size?: number }) {
 function WaterDrops({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const max = 8;
   return (
-    <div className="flex gap-1.5">
+    <div className="flex flex-wrap gap-1.5">
       {Array.from({ length: max }, (_, i) => (
         <button
           key={i}
@@ -42,9 +42,9 @@ function WaterDrops({ value, onChange }: { value: number; onChange: (v: number) 
           title={`${i + 1} copo(s)`}
         >
           <Droplet
-            size={22}
+            size={18}
             className={cn(
-              "transition-colors",
+              "transition-colors sm:w-[22px] sm:h-[22px]",
               i < value
                 ? "fill-primary/70 text-primary"
                 : "text-muted-foreground/30 group-hover:text-muted-foreground/50"
@@ -98,6 +98,10 @@ export default function CheckIn({ today, record, habits }: Props) {
 
   const moodTag = getMoodTag(mood);
 
+  // Sleep hours/minutes decomposition
+  const sleepH = Math.floor(sleep);
+  const sleepM = Math.round((sleep - sleepH) * 60);
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
@@ -110,7 +114,7 @@ export default function CheckIn({ today, record, habits }: Props) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Moon size={16} /> Humor
+              <Smile size={16} /> Humor
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -182,20 +186,39 @@ export default function CheckIn({ today, record, habits }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-3">
-              <Input
-                type="number"
-                step={0.5}
-                min={0}
-                max={12}
-                value={sleep || ""}
-                onChange={(e) =>
-                  up({ sleepHours: Math.min(12, Math.max(0, Number(e.target.value))) })
-                }
-                placeholder="7.5"
-                className="w-24"
-              />
-              <span className="text-sm text-muted-foreground">horas</span>
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(sleepH)}
+                onValueChange={(v) => {
+                  const h = Number(v);
+                  up({ sleepHours: h + sleepM / 60 });
+                }}
+              >
+                <SelectTrigger className="w-[72px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 13 }, (_, i) => (
+                    <SelectItem key={i} value={String(i)}>{i}h</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={String(sleepM)}
+                onValueChange={(v) => {
+                  const m = Number(v);
+                  up({ sleepHours: sleepH + m / 60 });
+                }}
+              >
+                <SelectTrigger className="w-[80px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 15, 30, 45].map((m) => (
+                    <SelectItem key={m} value={String(m)}>{m}min</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -272,11 +295,11 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* Exercise minutes */}
+        {/* Fitness */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Dumbbell size={16} /> Exercício geral
+              <Dumbbell size={16} /> Fitness
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -348,6 +371,8 @@ function HabitRow({
   onUpdate: (newChecks: Record<string, boolean | number>) => void;
 }) {
   const h = habit;
+  const unitLabel = h.targetType === "km" ? "km" : h.targetType === "miles" ? "mi" : h.targetType === "minutes" ? "min" : "x";
+
   return (
     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
       <HabitIcon name={h.icon} />
@@ -356,58 +381,55 @@ function HabitRow({
           checked={checks[h.id] === true}
           onCheckedChange={(c) => onUpdate({ ...checks, [h.id]: !!c })}
         />
+      ) : h.targetType === "hours_minutes" ? (
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={0}
+            max={23}
+            value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
+            onChange={(e) => {
+              const hrs = Number(e.target.value);
+              const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
+              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+            }}
+            className="w-14 h-8 text-sm"
+            placeholder="0"
+          />
+          <span className="text-xs text-muted-foreground">h</span>
+          <Input
+            type="number"
+            min={0}
+            max={59}
+            value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
+            onChange={(e) => {
+              const mins = Number(e.target.value);
+              const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
+              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+            }}
+            className="w-14 h-8 text-sm"
+            placeholder="0"
+          />
+          <span className="text-xs text-muted-foreground">min</span>
+        </div>
       ) : (
-        <>
-          {h.targetType === "hours_minutes" ? (
-            <div className="flex items-center gap-1">
-              <Input
-                type="number"
-                min={0}
-                max={23}
-                value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
-                onChange={(e) => {
-                  const hrs = Number(e.target.value);
-                  const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
-                  onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-                }}
-                className="w-14 h-8 text-sm"
-                placeholder="0"
-              />
-              <span className="text-xs text-muted-foreground">h</span>
-              <Input
-                type="number"
-                min={0}
-                max={59}
-                value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
-                onChange={(e) => {
-                  const mins = Number(e.target.value);
-                  const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
-                  onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-                }}
-                className="w-14 h-8 text-sm"
-                placeholder="0"
-              />
-              <span className="text-xs text-muted-foreground">min</span>
-            </div>
-          ) : (
-            <Input
-              type="number"
-              min={0}
-              max={999}
-              value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
-              onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
-              className="w-20 h-8 text-sm"
-              placeholder="0"
-            />
-          )}
-        </>
+        <Input
+          type="number"
+          min={0}
+          max={999}
+          step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
+          value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
+          onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
+          className="w-20 h-8 text-sm"
+          placeholder="0"
+        />
       )}
       <span className="text-sm flex-1">{h.name}</span>
       {h.targetType !== "check" && h.targetValue && (
         <span className="text-xs text-muted-foreground">
           {h.targetType === "hours_minutes"
             ? `${Math.floor((typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) / 60)}h${(typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) % 60}m / ${Math.floor(h.targetValue / 60)}h${h.targetValue % 60}m`
-            : `${typeof checks[h.id] === "number" ? checks[h.id] : 0}/${h.targetValue} ${h.targetType === "minutes" ? "min" : "x"}`}
+            : `${typeof checks[h.id] === "number" ? checks[h.id] : 0}/${h.targetValue} ${unitLabel}`}
         </span>
       )}
     </div>

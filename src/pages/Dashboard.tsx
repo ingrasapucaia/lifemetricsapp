@@ -6,13 +6,6 @@ import { format } from "date-fns";
 import CheckIn from "@/components/dashboard/CheckIn";
 import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
-import { cn } from "@/lib/utils";
-
-const periods: { value: Period; label: string }[] = [
-  { value: "7d", label: "7 dias" },
-  { value: "30d", label: "30 dias" },
-  { value: "total", label: "Total" },
-];
 
 export default function Dashboard() {
   const { records, habits, profile } = useStore();
@@ -26,34 +19,16 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
+        {profile.displayName && (
+          <p className="text-xl text-muted-foreground mt-1">
+            Seja bem vinda, {profile.displayName}.
+          </p>
+        )}
       </div>
 
       <CheckIn today={today} record={todayRecord} habits={habits} />
 
-      {/* Period filter - between check-in and metrics */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {period === "7d" ? "Últimos 7 dias" : period === "30d" ? "Últimos 30 dias" : "Todos os registros"}
-        </p>
-        <div className="flex bg-muted rounded-lg p-1">
-          {periods.map((p) => (
-            <button
-              key={p.value}
-              onClick={() => setPeriod(p.value)}
-              className={cn(
-                "px-3 py-1.5 text-sm rounded-md transition-colors",
-                period === p.value
-                  ? "bg-background text-foreground shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Metrics records={periodRecords} habits={habits} />
+      <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
       <Insights records={periodRecords} habits={habits} profile={profile} todayRecord={todayRecord} />
     </div>
   );

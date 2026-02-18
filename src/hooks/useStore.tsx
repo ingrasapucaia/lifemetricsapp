@@ -43,8 +43,10 @@ interface StoreType {
   addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
+  reorderHabit: (id: string, direction: "up" | "down") => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
   addAchievement: (a: Omit<Achievement, "id" | "createdAt">) => void;
+  updateAchievement: (id: string, updates: Partial<Achievement>) => void;
   deleteAchievement: (id: string) => void;
   resetToSeed: () => void;
   clearAll: () => void;
@@ -112,12 +114,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const reorderHabit = useCallback((id: string, direction: "up" | "down") => {
+    setHabits((prev) => {
+      const idx = prev.findIndex((h) => h.id === id);
+      if (idx === -1) return prev;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const arr = [...prev];
+      [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+      return arr;
+    });
+  }, []);
+
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const addAchievement = useCallback((a: Omit<Achievement, "id" | "createdAt">) => {
     setAchievements((prev) => [...prev, { ...a, id: `a-${Date.now()}`, createdAt: new Date().toISOString() }]);
+  }, []);
+
+  const updateAchievement = useCallback((id: string, updates: Partial<Achievement>) => {
+    setAchievements((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
   }, []);
 
   const deleteAchievement = useCallback((id: string) => {
@@ -157,8 +175,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       value={{
         habits, records, profile, achievements,
         upsertRecord, deleteRecord,
-        addHabit, updateHabit, deleteHabit,
-        updateProfile, addAchievement, deleteAchievement,
+        addHabit, updateHabit, deleteHabit, reorderHabit,
+        updateProfile, addAchievement, updateAchievement, deleteAchievement,
         resetToSeed, clearAll, importData,
       }}
     >

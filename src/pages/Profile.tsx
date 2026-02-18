@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Download, Upload, RotateCcw, Eraser, icons } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Upload, RotateCcw, Eraser, ChevronUp, ChevronDown, Eye, EyeOff, icons } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function IconPreview({ name, size = 16 }: { name?: string; size?: number }) {
@@ -28,7 +28,7 @@ function IconPreview({ name, size = 16 }: { name?: string; size?: number }) {
 
 export default function Profile() {
   const store = useStore();
-  const { profile, updateProfile, habits, addHabit, updateHabit, deleteHabit, records, resetToSeed, clearAll, importData } = store;
+  const { profile, updateProfile, habits, addHabit, updateHabit, deleteHabit, reorderHabit, records, resetToSeed, clearAll, importData } = store;
 
   const [habitModal, setHabitModal] = useState<{ open: boolean; editing?: Habit }>({ open: false });
   const [delTarget, setDelTarget] = useState<string | null>(null);
@@ -39,13 +39,14 @@ export default function Profile() {
   const [importText, setImportText] = useState("");
 
   const [hName, setHName] = useState("");
-  const [hType, setHType] = useState<"check" | "minutes" | "count" | "hours_minutes">("check");
+  const [hType, setHType] = useState<Habit["targetType"]>("check");
   const [hTarget, setHTarget] = useState(0);
   const [hTargetHours, setHTargetHours] = useState(0);
   const [hTargetMins, setHTargetMins] = useState(0);
   const [hActive, setHActive] = useState(true);
   const [hIcon, setHIcon] = useState<string>("");
   const [hCategory, setHCategory] = useState<"geral" | "exercicio">("geral");
+  const [hShowOnDashboard, setHShowOnDashboard] = useState(true);
 
   const openModal = (h?: Habit) => {
     setHName(h?.name || "");
@@ -56,6 +57,7 @@ export default function Profile() {
     setHActive(h?.active ?? true);
     setHIcon(h?.icon || "");
     setHCategory(h?.category || "geral");
+    setHShowOnDashboard(h?.showOnDashboard !== false);
     setHabitModal({ open: true, editing: h });
   };
 
@@ -64,7 +66,7 @@ export default function Profile() {
     const dup = habits.find((h) => h.name.toLowerCase() === hName.trim().toLowerCase() && h.id !== habitModal.editing?.id);
     if (dup) { toast.error("Já existe um hábito com este nome"); return; }
 
-    const targetValue = hType === "hours_minutes" ? hTargetHours * 60 + hTargetMins : hType !== "check" ? hTarget : undefined;
+    const targetValue = hType === "hours_minutes" ? hTargetHours * 60 + hTargetMins : (hType !== "check" ? hTarget : undefined);
     const data = {
       name: hName.trim(),
       targetType: hType,
@@ -72,6 +74,7 @@ export default function Profile() {
       active: hActive,
       icon: hIcon || undefined,
       category: hCategory,
+      showOnDashboard: hShowOnDashboard,
     };
     if (habitModal.editing) { updateHabit(habitModal.editing.id, data); toast("Hábito atualizado"); }
     else { addHabit(data); toast("Hábito criado"); }
@@ -99,6 +102,8 @@ export default function Profile() {
       case "minutes": return "Minutos";
       case "count": return "Contagem";
       case "hours_minutes": return "Horas/Min";
+      case "km": return "Km";
+      case "miles": return "Milhas";
       default: return t;
     }
   };
@@ -175,16 +180,40 @@ export default function Profile() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">Ordem</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Meta</TableHead>
+                  <TableHead>Dashboard</TableHead>
                   <TableHead>Ativo</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {habits.map((h) => (
+                {habits.map((h, idx) => (
                   <TableRow key={h.id}>
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          disabled={idx === 0}
+                          onClick={() => reorderHabit(h.id, "up")}
+                        >
+                          <ChevronUp size={12} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          disabled={idx === habits.length - 1}
+                          onClick={() => reorderHabit(h.id, "down")}
+                        >
+                          <ChevronDown size={12} />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-2">
                         <IconPreview name={h.icon} />
@@ -196,6 +225,16 @@ export default function Profile() {
                       {h.targetType === "hours_minutes" && h.targetValue
                         ? `${Math.floor(h.targetValue / 60)}h ${h.targetValue % 60}min`
                         : h.targetValue || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateHabit(h.id, { showOnDashboard: h.showOnDashboard === false ? true : false })}
+                      >
+                        {h.showOnDashboard !== false ? <Eye size={14} /> : <EyeOff size={14} className="text-muted-foreground" />}
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Switch checked={h.active} onCheckedChange={(c) => updateHabit(h.id, { active: c })} />
@@ -277,13 +316,15 @@ export default function Profile() {
 
             <div className="space-y-1.5">
               <Label>Tipo</Label>
-              <Select value={hType} onValueChange={(v) => setHType(v as any)}>
+              <Select value={hType} onValueChange={(v) => setHType(v as Habit["targetType"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="check">Check (sim/não)</SelectItem>
                   <SelectItem value="minutes">Minutos</SelectItem>
                   <SelectItem value="count">Contagem</SelectItem>
                   <SelectItem value="hours_minutes">Horas e minutos</SelectItem>
+                  <SelectItem value="km">Quilômetros (km)</SelectItem>
+                  <SelectItem value="miles">Milhas (miles)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -298,13 +339,28 @@ export default function Profile() {
                 </div>
               </div>
             )}
-            {(hType === "minutes" || hType === "count") && (
+            {(hType === "minutes" || hType === "count" || hType === "km" || hType === "miles") && (
               <div className="space-y-1.5">
                 <Label>Meta</Label>
-                <Input type="number" min={0} value={hTarget || ""} onChange={(e) => setHTarget(Number(e.target.value))} placeholder="Ex: 30" />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={hType === "km" || hType === "miles" ? 0.1 : 1}
+                    value={hTarget || ""}
+                    onChange={(e) => setHTarget(Number(e.target.value))}
+                    placeholder="Ex: 30"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {hType === "minutes" ? "min" : hType === "km" ? "km" : hType === "miles" ? "mi" : "x"}
+                  </span>
+                </div>
               </div>
             )}
-            <div className="flex items-center gap-2"><Switch checked={hActive} onCheckedChange={setHActive} /><Label>Ativo</Label></div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2"><Switch checked={hActive} onCheckedChange={setHActive} /><Label>Ativo</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={hShowOnDashboard} onCheckedChange={setHShowOnDashboard} /><Label>Mostrar no dashboard</Label></div>
+            </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setHabitModal({ open: false })}>Cancelar</Button>
               <Button onClick={saveHabit}>Salvar</Button>

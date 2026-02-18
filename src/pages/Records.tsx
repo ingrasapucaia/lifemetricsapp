@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
-import { DailyRecord, MOOD_TAGS, getMoodTag, moodToNumber } from "@/types";
+import { DailyRecord, MOOD_TAGS, getMoodTag, moodToNumber, formatSleepHours } from "@/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -165,7 +165,7 @@ export default function Records() {
                               {tag.label}
                             </span>
                           )}
-                          {r.sleepHours > 0 && <Badge variant="secondary">{r.sleepHours}h</Badge>}
+                          {r.sleepHours > 0 && <Badge variant="secondary">{formatSleepHours(r.sleepHours)}</Badge>}
                           <Badge variant="secondary">{adh}%</Badge>
                         </div>
                       </div>
@@ -286,7 +286,7 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
           </Select>
           {record.sleepHours > 0 && (
             <Badge variant="outline" className="gap-1">
-              <Moon size={12} /> {record.sleepHours}h
+              <Moon size={12} /> {formatSleepHours(record.sleepHours)}
             </Badge>
           )}
           {record.exerciseMinutes > 0 && (

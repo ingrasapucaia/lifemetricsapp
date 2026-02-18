@@ -4,9 +4,10 @@ export interface Habit {
   icon?: string; // lucide icon name
   color?: string;
   category?: "geral" | "exercicio";
-  targetType: "check" | "minutes" | "count" | "hours_minutes";
+  targetType: "check" | "minutes" | "count" | "hours_minutes" | "km" | "miles";
   targetValue?: number; // for hours_minutes, stored as total minutes
   active: boolean;
+  showOnDashboard?: boolean;
   createdAt: string;
 }
 
@@ -31,6 +32,7 @@ export interface Achievement {
   title: string;
   area: string;
   feeling: string;
+  icon?: string;
   date: string;
   createdAt: string;
 }
@@ -49,11 +51,11 @@ export type Period = "7d" | "30d" | "total";
 
 export const MOOD_TAGS = [
   { value: "feliz", label: "Feliz", hsl: "45 90% 48%", bgHsl: "45 100% 92%" },
-  { value: "produtiva", label: "Produtiva", hsl: "270 55% 55%", bgHsl: "270 80% 94%" },
+  { value: "produtiva", label: "Produtividade", hsl: "270 55% 55%", bgHsl: "270 80% 94%" },
   { value: "normal", label: "Normal", hsl: "145 40% 46%", bgHsl: "145 60% 92%" },
-  { value: "ansiosa", label: "Ansiosa", hsl: "25 50% 40%", bgHsl: "30 60% 92%" },
-  { value: "cansada", label: "Cansada", hsl: "25 80% 52%", bgHsl: "25 100% 93%" },
-  { value: "emotiva", label: "Emotiva", hsl: "330 65% 55%", bgHsl: "330 80% 94%" },
+  { value: "ansiosa", label: "Ansiedade", hsl: "25 50% 40%", bgHsl: "30 60% 92%" },
+  { value: "cansada", label: "Cansaço", hsl: "25 80% 52%", bgHsl: "25 100% 93%" },
+  { value: "emotiva", label: "Emocional", hsl: "330 65% 55%", bgHsl: "330 80% 94%" },
   { value: "triste", label: "Triste", hsl: "200 60% 55%", bgHsl: "200 80% 93%" },
 ] as const;
 
@@ -79,9 +81,32 @@ export const ACHIEVEMENT_AREAS = [
   "Profissional", "Pessoal", "Saúde", "Financeiro", "Relacionamento", "Criatividade",
 ] as const;
 
+export const ACHIEVEMENT_AREA_COLORS: Record<string, { hsl: string; bgHsl: string }> = {
+  "Profissional": { hsl: "217 70% 50%", bgHsl: "217 80% 93%" },
+  "Pessoal": { hsl: "142 60% 45%", bgHsl: "142 70% 92%" },
+  "Saúde": { hsl: "168 64% 38%", bgHsl: "168 70% 92%" },
+  "Financeiro": { hsl: "38 90% 50%", bgHsl: "38 100% 92%" },
+  "Relacionamento": { hsl: "330 65% 55%", bgHsl: "330 80% 93%" },
+  "Criatividade": { hsl: "270 50% 55%", bgHsl: "270 70% 93%" },
+};
+
 export const HABIT_ICONS = [
   "Book", "Dumbbell", "Droplets", "Apple", "Moon", "Sun", "Coffee", "Heart",
   "Brain", "Target", "Trophy", "Music", "Camera", "Pencil", "Clock", "Zap",
   "Flame", "Star", "Check", "Footprints", "Bike", "Salad", "Pill", "Glasses",
   "Headphones", "Laptop", "Smile", "Shield", "Leaf", "Mountain",
 ] as const;
+
+// Pastel colors for habits in charts
+export const HABIT_PASTEL_COLORS = [
+  "hsl(168 60% 70%)", "hsl(270 60% 75%)", "hsl(38 80% 72%)", "hsl(330 60% 75%)",
+  "hsl(200 60% 72%)", "hsl(142 50% 68%)", "hsl(25 70% 72%)", "hsl(45 80% 70%)",
+  "hsl(217 60% 72%)", "hsl(0 60% 75%)",
+];
+
+export function formatSleepHours(hours: number): string {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}min`;
+}
