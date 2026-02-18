@@ -1,116 +1,56 @@
+# Redesign das Etiquetas de Humor
 
-
-# metrics — Controle de Hábitos e Autoconsciência Guiada
-
-App web completo para check-in diário, acompanhamento de hábitos e insights simulados. Sem backend, sem auth — tudo local com localStorage e dados mock realistas.
+Baseado na imagem de referencia, as tags de humor devem ser **badges pill com fundo pastel** e um **dot colorido** a esquerda -- estilo similar a labels de status.
 
 ---
 
-## Estrutura e Navegação
+## O que muda
 
-- **Sidebar fixa** com links: Dashboard, Meus Registros, e Meu Perfil (no rodapé)
-- Sidebar colapsável em mobile (drawer/overlay)
-- Destaque visual na rota ativa
-- Tipografia Inter, tema claro, layout clean e espaçado
-- **3 rotas**: `/dashboard`, `/registros`, `/perfil`
+### 1. Cores mais suaves (pastel) no `MOOD_TAGS` (`src/types/index.ts`)
 
----
+Atualizar os valores HSL para tons pastel que combinem com a imagem de referencia. Tambem adicionar uma propriedade `bg` (fundo pastel) separada da cor do dot:
 
-## Dados e Persistência Local
 
-- Interfaces TypeScript: `Habit`, `DailyRecord`, `UserProfile`
-- **Seed inicial**: 6 hábitos ativos + 45 registros diários com variações realistas (humor, sono, exercício, aderência 60-85%)
-- Persistência em localStorage; ao carregar, usa seed se vazio
-- Botão "resetar dados de demonstração" no perfil
+| Tag       | Dot (saturado) | Background (pastel)  |
+| --------- | -------------- | -------------------- |
+| Feliz     | amarelo        | amarelo claro pastel |
+| Produtiva | roxo           | roxo claro pastel    |
+| Normal    | verde          | verde claro pastel   |
+| Ansiosa   | marrom         | marrom claro pastel  |
+| Cansada   | laranja        | laranja claro pastel |
+| &nbsp;    | &nbsp;         | &nbsp;               |
+| Emotiva   | rosa/magenta   | rosa quente pastel   |
+| Triste    | azul claro     | azul claro pastel    |
 
----
 
-## Dashboard (página principal)
+**Nota:** Remova a opção TPM das tags.
 
-### Filtro de Período
-- Segmented control: 7 dias / 30 dias / Total
+### 2. Componente `MoodBadge` reutilizavel
 
-### Check-in do Dia (cards)
-- **Humor**: 5 botões (1–5) com toast ao selecionar
-- **Sono**: input numérico (step 0.5, 0–12h)
-- **Hábitos**: checklist com checkboxes e inputs numéricos conforme tipo; progresso do dia (ex: 4/6); ações "marcar tudo" e "limpar"
-- **Exercício**: input de minutos
-- **Diário opcional** (colapsável): 3 botões que abrem modais com textarea — "como se sentiu", "procrastinação", "gratidão"
-- Autosave com indicador discreto "salvo"
+Criar um pequeno componente (ou inline) que renderiza a tag como:
 
-### Métricas do Período
-- Cards: aderência média, sono médio, humor médio, exercício total
-- **Gráfico 1**: aderência diária (barras) com tooltip
-- **Gráfico 2**: sono + humor (linhas duplas)
-- Tabela: top 3 e bottom 3 hábitos por consistência
+```
+[dot colorido] [texto] -- com fundo pastel arredondado (rounded-full, px-3 py-1)
+```
 
-### Insights (micro-orientações simuladas)
-- "Resumo do dia" (3-5 bullets baseados nos dados de hoje)
-- "Micro-orientações para amanhã" (3 sugestões práticas geradas por regras locais)
-- "Padrões do período" (2 correlações simples)
-- Botão "gerar insights" com skeleton loading simulado (800-1200ms)
-- Empty state se poucos dados no período
+### 3. Atualizar todos os pontos de uso
+
+- **CheckIn.tsx** (linhas 124-148): Dropdown de humor -- itens do select com o novo estilo pill
+- **Records.tsx** (linha 155-161): Badge na lista de registros
+- **Records.tsx** (linhas 257-272): Dropdown rapido no painel do dia
+- **Metrics.tsx**: Dots do grafico e tooltip
 
 ---
 
-## Meus Registros
+## Arquivos modificados
 
-### Visualização
-- **Duas abas**: Calendário e Lista
-- Calendário mensal com dots nos dias com registro; ao clicar, abre painel lateral com detalhes do dia
-- Lista com resumo por registro e botão "ver"
 
-### Painel do Dia
-- Resumo em chips (humor, sono, exercício, aderência)
-- Hábitos editáveis inline
-- Diário com preview e botão editar
+| Arquivo                                | Mudanca                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/types/index.ts`                   | Atualizar HSL do MOOD_TAGS, adicionar campo `bgHsl` para fundo pastel, adicionar tag "tpm" |
+| `src/components/dashboard/CheckIn.tsx` | Estilizar itens do Select com fundo pastel pill                                            |
+| `src/pages/Records.tsx`                | Atualizar badges e dropdown do humor                                                       |
+| `src/components/dashboard/Metrics.tsx` | Atualizar cores dos dots no grafico                                                        |
 
-### Ações
-- Criar novo registro (modal com seletor de data, opção "copiar do dia anterior")
-- Editar inline com autosave
-- Deletar com modal de confirmação
 
-### Filtros
-- Busca por texto nas notas
-- Filtro por humor, sono, registro completo
-- Chips de filtros ativos com botão limpar
-- Empty states para sem registros e sem resultados
-
----
-
-## Meu Perfil
-
-### Informações
-- Nome, objetivo principal, área de foco (select), preferências (início da semana, tom dos insights)
-
-### Hábitos (CRUD)
-- Tabela com nome, tipo, meta, ativo (switch), ações (editar/deletar)
-- Modal para criar/editar com validações (nome obrigatório, sem duplicados)
-- Deletar com confirmação
-
-### Ações Utilitárias
-- Exportar dados (JSON com botão copiar)
-- Importar dados (textarea + validação)
-- Resetar dados de demonstração
-- "Limpar dados locais" (reset completo)
-
----
-
-## Microinterações e UX
-
-- **Toasts** em todas as ações (criar, editar, deletar, importar, erro)
-- **Skeleton loading** ao carregar dados e gerar insights
-- **Empty states** com CTAs claros
-- **Modais de confirmação** para ações destrutivas
-- Hover states suaves, animações de expansão/colapso
-- Indicador "salvo agora" que desaparece em 1.5s
-
----
-
-## Atalhos de Teclado
-
-- `G D` → Dashboard, `G R` → Registros, `G P` → Perfil
-- `N` → Novo registro, `T` → Ir para hoje, `/` → Focar busca
-- `?` → Modal de atalhos
-- Indicações em tooltips
-
+Nenhuma mudanca estrutural ou de layout -- apenas cores e estilo das tags de humor.
