@@ -1,3 +1,4 @@
+// Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Habit, DailyRecord, UserProfile, Achievement } from "@/types";
 import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
