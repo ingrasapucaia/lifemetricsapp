@@ -124,9 +124,12 @@ export default function CheckIn({ today, record, habits }: Props) {
               <SelectTrigger>
                 <SelectValue placeholder="Selecione seu humor">
                   {moodTag && (
-                    <span className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                      style={{ backgroundColor: `hsl(${moodTag.bgHsl})` }}
+                    >
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: `hsl(${moodTag.hsl})` }}
                       />
                       {moodTag.label}
@@ -137,9 +140,12 @@ export default function CheckIn({ today, record, habits }: Props) {
               <SelectContent>
                 {MOOD_TAGS.map((m) => (
                   <SelectItem key={m.value} value={m.value}>
-                    <span className="flex items-center gap-2">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                      style={{ backgroundColor: `hsl(${m.bgHsl})` }}
+                    >
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: `hsl(${m.hsl})` }}
                       />
                       {m.label}

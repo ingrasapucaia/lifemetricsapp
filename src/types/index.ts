@@ -48,13 +48,13 @@ export interface UserProfile {
 export type Period = "7d" | "30d" | "total";
 
 export const MOOD_TAGS = [
-  { value: "feliz", label: "Feliz", hsl: "142 60% 45%" },
-  { value: "produtiva", label: "Produtiva", hsl: "217 70% 50%" },
-  { value: "normal", label: "Normal", hsl: "220 10% 55%" },
-  { value: "ansiosa", label: "Ansiosa", hsl: "38 90% 50%" },
-  { value: "cansada", label: "Cansada", hsl: "270 50% 55%" },
-  { value: "emotiva", label: "Emotiva", hsl: "330 65% 55%" },
-  { value: "triste", label: "Triste", hsl: "210 20% 45%" },
+  { value: "feliz", label: "Feliz", hsl: "45 90% 48%", bgHsl: "45 100% 92%" },
+  { value: "produtiva", label: "Produtiva", hsl: "270 55% 55%", bgHsl: "270 80% 94%" },
+  { value: "normal", label: "Normal", hsl: "145 40% 46%", bgHsl: "145 60% 92%" },
+  { value: "ansiosa", label: "Ansiosa", hsl: "25 50% 40%", bgHsl: "30 60% 92%" },
+  { value: "cansada", label: "Cansada", hsl: "25 80% 52%", bgHsl: "25 100% 93%" },
+  { value: "emotiva", label: "Emotiva", hsl: "330 65% 55%", bgHsl: "330 80% 94%" },
+  { value: "triste", label: "Triste", hsl: "200 60% 55%", bgHsl: "200 80% 93%" },
 ] as const;
 
 export type MoodTagValue = typeof MOOD_TAGS[number]["value"];

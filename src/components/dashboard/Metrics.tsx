@@ -84,8 +84,13 @@ export default function Metrics({ records, habits }: Props) {
                         <p className="font-medium">{label}</p>
                         {tag && (
                           <p className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${tag.hsl})` }} />
-                            Humor: {tag.label}
+                            <span
+                              className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs"
+                              style={{ backgroundColor: `hsl(${tag.bgHsl})` }}
+                            >
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${tag.hsl})` }} />
+                              {tag.label}
+                            </span>
                           </p>
                         )}
                         {sleepEntry && <p>Sono: {sleepEntry.value}h</p>}

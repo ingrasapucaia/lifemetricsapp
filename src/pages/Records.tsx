@@ -157,10 +157,13 @@ export default function Records() {
                         <span className="text-sm font-medium">{format(parseISO(r.date), "dd/MM/yyyy")}</span>
                         <div className="flex gap-1.5 flex-wrap">
                           {tag && (
-                            <Badge variant="secondary" className="gap-1">
+                            <span
+                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                              style={{ backgroundColor: `hsl(${tag.bgHsl})` }}
+                            >
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${tag.hsl})` }} />
                               {tag.label}
-                            </Badge>
+                            </span>
                           )}
                           {r.sleepHours > 0 && <Badge variant="secondary">{r.sleepHours}h</Badge>}
                           <Badge variant="secondary">{adh}%</Badge>
@@ -257,7 +260,10 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
             <SelectTrigger className="w-auto h-7 text-xs gap-1 px-2">
               <SelectValue placeholder="Humor">
                 {moodTag && (
-                  <span className="flex items-center gap-1">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs"
+                    style={{ backgroundColor: `hsl(${moodTag.bgHsl})` }}
+                  >
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${moodTag.hsl})` }} />
                     {moodTag.label}
                   </span>
@@ -267,7 +273,10 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
             <SelectContent>
               {MOOD_TAGS.map((m) => (
                 <SelectItem key={m.value} value={m.value}>
-                  <span className="flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                    style={{ backgroundColor: `hsl(${m.bgHsl})` }}
+                  >
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${m.hsl})` }} />
                     {m.label}
                   </span>
