@@ -24,14 +24,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            {period === "7d" ? "Últimos 7 dias" : period === "30d" ? "Últimos 30 dias" : "Todos os registros"}
-          </p>
-        </div>
-        <div className="flex bg-muted rounded-lg p-1 self-start">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+      </div>
+
+      <CheckIn today={today} record={todayRecord} habits={habits} />
+
+      {/* Period filter - between check-in and metrics */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {period === "7d" ? "Últimos 7 dias" : period === "30d" ? "Últimos 30 dias" : "Todos os registros"}
+        </p>
+        <div className="flex bg-muted rounded-lg p-1">
           {periods.map((p) => (
             <button
               key={p.value}
@@ -49,7 +53,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <CheckIn today={today} record={todayRecord} habits={habits} />
       <Metrics records={periodRecords} habits={habits} />
       <Insights records={periodRecords} habits={habits} profile={profile} todayRecord={todayRecord} />
     </div>

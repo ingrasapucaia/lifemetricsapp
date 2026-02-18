@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/hooks/useStore";
-import { Habit } from "@/types";
+import { Habit, HABIT_ICONS } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,13 +10,21 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Download, Upload, RotateCcw, Eraser } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Upload, RotateCcw, Eraser, icons } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function IconPreview({ name, size = 16 }: { name?: string; size?: number }) {
+  if (!name) return null;
+  const Icon = icons[name as keyof typeof icons];
+  if (!Icon) return null;
+  return <Icon size={size} />;
+}
 
 export default function Profile() {
   const store = useStore();
@@ -31,15 +39,23 @@ export default function Profile() {
   const [importText, setImportText] = useState("");
 
   const [hName, setHName] = useState("");
-  const [hType, setHType] = useState<"check" | "minutes" | "count">("check");
+  const [hType, setHType] = useState<"check" | "minutes" | "count" | "hours_minutes">("check");
   const [hTarget, setHTarget] = useState(0);
+  const [hTargetHours, setHTargetHours] = useState(0);
+  const [hTargetMins, setHTargetMins] = useState(0);
   const [hActive, setHActive] = useState(true);
+  const [hIcon, setHIcon] = useState<string>("");
+  const [hCategory, setHCategory] = useState<"geral" | "exercicio">("geral");
 
   const openModal = (h?: Habit) => {
     setHName(h?.name || "");
     setHType(h?.targetType || "check");
     setHTarget(h?.targetValue || 0);
+    setHTargetHours(h?.targetType === "hours_minutes" && h?.targetValue ? Math.floor(h.targetValue / 60) : 0);
+    setHTargetMins(h?.targetType === "hours_minutes" && h?.targetValue ? h.targetValue % 60 : 0);
     setHActive(h?.active ?? true);
+    setHIcon(h?.icon || "");
+    setHCategory(h?.category || "geral");
     setHabitModal({ open: true, editing: h });
   };
 
@@ -48,7 +64,15 @@ export default function Profile() {
     const dup = habits.find((h) => h.name.toLowerCase() === hName.trim().toLowerCase() && h.id !== habitModal.editing?.id);
     if (dup) { toast.error("Já existe um hábito com este nome"); return; }
 
-    const data = { name: hName.trim(), targetType: hType, targetValue: hType !== "check" ? hTarget : undefined, active: hActive };
+    const targetValue = hType === "hours_minutes" ? hTargetHours * 60 + hTargetMins : hType !== "check" ? hTarget : undefined;
+    const data = {
+      name: hName.trim(),
+      targetType: hType,
+      targetValue,
+      active: hActive,
+      icon: hIcon || undefined,
+      category: hCategory,
+    };
     if (habitModal.editing) { updateHabit(habitModal.editing.id, data); toast("Hábito atualizado"); }
     else { addHabit(data); toast("Hábito criado"); }
     setHabitModal({ open: false });
@@ -68,6 +92,16 @@ export default function Profile() {
   };
 
   const json = JSON.stringify({ habits, records, profile }, null, 2);
+
+  const typeLabel = (t: string) => {
+    switch (t) {
+      case "check": return "Check";
+      case "minutes": return "Minutos";
+      case "count": return "Contagem";
+      case "hours_minutes": return "Horas/Min";
+      default: return t;
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -151,11 +185,18 @@ export default function Profile() {
               <TableBody>
                 {habits.map((h) => (
                   <TableRow key={h.id}>
-                    <TableCell className="font-medium">{h.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {h.targetType === "check" ? "Check" : h.targetType === "minutes" ? "Minutos" : "Contagem"}
+                    <TableCell className="font-medium">
+                      <span className="flex items-center gap-2">
+                        <IconPreview name={h.icon} />
+                        {h.name}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{h.targetValue || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{typeLabel(h.targetType)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {h.targetType === "hours_minutes" && h.targetValue
+                        ? `${Math.floor(h.targetValue / 60)}h ${h.targetValue % 60}min`
+                        : h.targetValue || "—"}
+                    </TableCell>
                     <TableCell>
                       <Switch checked={h.active} onCheckedChange={(c) => updateHabit(h.id, { active: c })} />
                     </TableCell>
@@ -188,6 +229,52 @@ export default function Profile() {
           <DialogHeader><DialogTitle>{habitModal.editing ? "Editar hábito" : "Novo hábito"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5"><Label>Nome</Label><Input value={hName} onChange={(e) => setHName(e.target.value)} placeholder="Ex: Treino" /></div>
+
+            {/* Icon selector */}
+            <div className="space-y-1.5">
+              <Label>Ícone</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start gap-2">
+                    {hIcon ? <IconPreview name={hIcon} /> : null}
+                    {hIcon || "Selecionar ícone"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-3">
+                  <div className="grid grid-cols-6 gap-2">
+                    {HABIT_ICONS.map((iconName) => {
+                      const Icon = icons[iconName as keyof typeof icons];
+                      if (!Icon) return null;
+                      return (
+                        <button
+                          key={iconName}
+                          onClick={() => setHIcon(iconName)}
+                          className={cn(
+                            "p-2 rounded-md hover:bg-muted transition-colors flex items-center justify-center",
+                            hIcon === iconName && "bg-primary/10 ring-2 ring-primary"
+                          )}
+                          title={iconName}
+                        >
+                          <Icon size={18} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Categoria</Label>
+              <Select value={hCategory} onValueChange={(v) => setHCategory(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geral">Geral</SelectItem>
+                  <SelectItem value="exercicio">Exercício</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Tipo</Label>
               <Select value={hType} onValueChange={(v) => setHType(v as any)}>
@@ -196,10 +283,22 @@ export default function Profile() {
                   <SelectItem value="check">Check (sim/não)</SelectItem>
                   <SelectItem value="minutes">Minutos</SelectItem>
                   <SelectItem value="count">Contagem</SelectItem>
+                  <SelectItem value="hours_minutes">Horas e minutos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {hType !== "check" && (
+            {hType === "hours_minutes" && (
+              <div className="space-y-1.5">
+                <Label>Meta</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="number" min={0} max={23} value={hTargetHours || ""} onChange={(e) => setHTargetHours(Number(e.target.value))} placeholder="0" className="w-20" />
+                  <span className="text-sm text-muted-foreground">h</span>
+                  <Input type="number" min={0} max={59} value={hTargetMins || ""} onChange={(e) => setHTargetMins(Number(e.target.value))} placeholder="0" className="w-20" />
+                  <span className="text-sm text-muted-foreground">min</span>
+                </div>
+              </div>
+            )}
+            {(hType === "minutes" || hType === "count") && (
               <div className="space-y-1.5">
                 <Label>Meta</Label>
                 <Input type="number" min={0} value={hTarget || ""} onChange={(e) => setHTarget(Number(e.target.value))} placeholder="Ex: 30" />

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
-import { DailyRecord } from "@/types";
+import { DailyRecord, MOOD_TAGS, getMoodTag, moodToNumber } from "@/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { calculateDailyAdherence, isHabitCompleted } from "@/lib/metrics";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, X, CalendarDays, List } from "lucide-react";
+import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3 } from "lucide-react";
 
 export default function Records() {
   const { records, habits, upsertRecord, deleteRecord } = useStore();
@@ -144,6 +145,7 @@ export default function Records() {
             <div className="space-y-2 mt-4">
               {filtered.map((r) => {
                 const adh = calculateDailyAdherence(r, habits);
+                const tag = getMoodTag(r.mood);
                 return (
                   <Card
                     key={r.id}
@@ -154,7 +156,12 @@ export default function Records() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-sm font-medium">{format(parseISO(r.date), "dd/MM/yyyy")}</span>
                         <div className="flex gap-1.5 flex-wrap">
-                          {r.mood > 0 && <Badge variant="secondary">{["😞","😕","😐","🙂","😄"][r.mood-1]}</Badge>}
+                          {tag && (
+                            <Badge variant="secondary" className="gap-1">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${tag.hsl})` }} />
+                              {tag.label}
+                            </Badge>
+                          )}
                           {r.sleepHours > 0 && <Badge variant="secondary">{r.sleepHours}h</Badge>}
                           <Badge variant="secondary">{adh}%</Badge>
                         </div>
@@ -228,6 +235,7 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
   }
 
   const adh = calculateDailyAdherence(record, habits as any);
+  const moodTag = getMoodTag(record.mood);
 
   return (
     <Card>
@@ -241,10 +249,45 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
           </Button>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {record.mood > 0 && <Badge variant="outline">{["😞","😕","😐","🙂","😄"][record.mood-1]} Humor {record.mood}</Badge>}
-          {record.sleepHours > 0 && <Badge variant="outline">🌙 {record.sleepHours}h</Badge>}
-          {record.exerciseMinutes > 0 && <Badge variant="outline">💪 {record.exerciseMinutes} min</Badge>}
-          <Badge variant="outline">📊 {adh}%</Badge>
+          {/* Quick mood dropdown */}
+          <Select
+            value={typeof record.mood === "string" ? record.mood : ""}
+            onValueChange={(v) => onUpdate({ mood: v })}
+          >
+            <SelectTrigger className="w-auto h-7 text-xs gap-1 px-2">
+              <SelectValue placeholder="Humor">
+                {moodTag && (
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${moodTag.hsl})` }} />
+                    {moodTag.label}
+                  </span>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {MOOD_TAGS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${m.hsl})` }} />
+                    {m.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {record.sleepHours > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Moon size={12} /> {record.sleepHours}h
+            </Badge>
+          )}
+          {record.exerciseMinutes > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Dumbbell size={12} /> {record.exerciseMinutes} min
+            </Badge>
+          )}
+          <Badge variant="outline" className="gap-1">
+            <BarChart3 size={12} /> {adh}%
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -275,9 +318,9 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
         {(record.noteFeeling || record.noteProcrastination || record.noteGratitude) && (
           <div className="space-y-2 border-t pt-3">
             <p className="text-sm font-medium">Diário</p>
-            {record.noteFeeling && <p className="text-sm text-muted-foreground">💭 {record.noteFeeling}</p>}
-            {record.noteProcrastination && <p className="text-sm text-muted-foreground">⏰ {record.noteProcrastination}</p>}
-            {record.noteGratitude && <p className="text-sm text-muted-foreground">🙏 {record.noteGratitude}</p>}
+            {record.noteFeeling && <p className="text-sm text-muted-foreground">{record.noteFeeling}</p>}
+            {record.noteProcrastination && <p className="text-sm text-muted-foreground">{record.noteProcrastination}</p>}
+            {record.noteGratitude && <p className="text-sm text-muted-foreground">{record.noteGratitude}</p>}
           </div>
         )}
       </CardContent>

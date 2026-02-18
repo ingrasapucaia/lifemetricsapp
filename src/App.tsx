@@ -7,6 +7,7 @@ import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Records from "@/pages/Records";
 import Profile from "@/pages/Profile";
+import Achievements from "@/pages/Achievements";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -20,6 +21,7 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/registros" element={<Records />} />
+            <Route path="/conquistas" element={<Achievements />} />
             <Route path="/perfil" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />

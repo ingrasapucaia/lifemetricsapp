@@ -1,4 +1,4 @@
-import { DailyRecord, Habit, Period } from "@/types";
+import { DailyRecord, Habit, Period, moodToNumber } from "@/types";
 import { subDays, parseISO, isAfter, format } from "date-fns";
 
 export function getRecordsForPeriod(records: DailyRecord[], period: Period): DailyRecord[] {
@@ -30,7 +30,7 @@ export function calculatePeriodMetrics(records: DailyRecord[], habits: Habit[]) 
 
   const adherences = records.map((r) => calculateDailyAdherence(r, habits));
   const sleeps = records.filter((r) => r.sleepHours > 0).map((r) => r.sleepHours);
-  const moods = records.filter((r) => r.mood > 0).map((r) => r.mood);
+  const moods = records.filter((r) => moodToNumber(r.mood) > 0).map((r) => moodToNumber(r.mood));
   const exercises = records.map((r) => r.exerciseMinutes);
 
   return {
@@ -60,6 +60,7 @@ export function getChartData(records: DailyRecord[], habits: Habit[]) {
       date: format(parseISO(r.date), "dd/MM"),
       adherence: calculateDailyAdherence(r, habits),
       sleep: r.sleepHours,
-      mood: r.mood,
+      mood: moodToNumber(r.mood),
+      moodTag: typeof r.mood === "string" ? r.mood : "",
     }));
 }
