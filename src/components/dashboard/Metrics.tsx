@@ -88,24 +88,104 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
           iconColor="hsl(270 55% 55%)"
           sparkData={chart.map((c) => c.sleep)}
         />
-        <MetricCard
-          icon={<Dumbbell size={18} />}
-          label="Exercício total"
-          value={`${m.totalExercise} min`}
-          bgColor="hsl(38 100% 92%)"
-          iconColor="hsl(38 90% 50%)"
-          sparkData={chart.map((c) => {
-            const rec = records.find((r) => format(parseISO(r.date), "dd/MM") === c.date);
-            return rec?.exerciseMinutes || 0;
-          })}
-        />
       </div>
+
+      {/* Dynamic exercise/habit metric cards */}
+      {(() => {
+        const exerciseHabits = visibleHabits.filter((h) => h.category === "exercicio");
+        const cards: React.ReactNode[] = [];
+        exerciseHabits.forEach((h, idx) => {
+          if (h.targetType === "minutes" || h.targetType === "hours_minutes") {
+            const total = records.reduce((sum, r) => {
+              const val = r.habitChecks[h.id];
+              return sum + (typeof val === "number" ? val : 0);
+            }, 0);
+            const sparkData = sortedRecords.map((r) => typeof r.habitChecks[h.id] === "number" ? (r.habitChecks[h.id] as number) : 0);
+            cards.push(
+              <MetricCard
+                key={h.id}
+                icon={<Dumbbell size={18} />}
+                label={h.name}
+                value={h.targetType === "hours_minutes" ? `${Math.floor(total / 60)}h ${total % 60}min` : `${total}min`}
+                bgColor="hsl(38 100% 92%)"
+                iconColor="hsl(38 90% 50%)"
+                sparkData={sparkData}
+              />
+            );
+          } else if (h.targetType === "km" || h.targetType === "miles") {
+            const total = records.reduce((sum, r) => {
+              const val = r.habitChecks[h.id];
+              return sum + (typeof val === "number" ? val : 0);
+            }, 0);
+            const unit = h.targetType === "km" ? "km" : "mi";
+            const sparkData = sortedRecords.map((r) => typeof r.habitChecks[h.id] === "number" ? (r.habitChecks[h.id] as number) : 0);
+            cards.push(
+              <MetricCard
+                key={h.id}
+                icon={<Dumbbell size={18} />}
+                label={h.name}
+                value={`${+total.toFixed(1)}${unit}`}
+                bgColor="hsl(38 100% 92%)"
+                iconColor="hsl(38 90% 50%)"
+                sparkData={sparkData}
+              />
+            );
+          }
+        });
+        if (cards.length > 0) {
+          return <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{cards}</div>;
+        }
+        return null;
+      })()}
 
       {/* Habit metrics cards */}
       {visibleHabits.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {visibleHabits.map((h, idx) => {
             const color = HABIT_PASTEL_COLORS[idx % HABIT_PASTEL_COLORS.length];
+
+            // Dynamic value based on habit type
+            if ((h.targetType === "minutes" || h.targetType === "hours_minutes") && h.category !== "exercicio") {
+              const total = records.reduce((sum, r) => {
+                const val = r.habitChecks[h.id];
+                return sum + (typeof val === "number" ? val : 0);
+              }, 0);
+              const display = h.targetType === "hours_minutes" ? `${Math.floor(total / 60)}h ${total % 60}min` : `${total}min`;
+              return (
+                <Card key={h.id} className="overflow-hidden">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                      <span className="text-xs text-muted-foreground truncate">{h.name}</span>
+                    </div>
+                    <p className="text-lg font-bold">{display}</p>
+                    <p className="text-[10px] text-muted-foreground">total no período</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            if ((h.targetType === "km" || h.targetType === "miles") && h.category !== "exercicio") {
+              const total = records.reduce((sum, r) => {
+                const val = r.habitChecks[h.id];
+                return sum + (typeof val === "number" ? val : 0);
+              }, 0);
+              const unit = h.targetType === "km" ? "km" : "mi";
+              return (
+                <Card key={h.id} className="overflow-hidden">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                      <span className="text-xs text-muted-foreground truncate">{h.name}</span>
+                    </div>
+                    <p className="text-lg font-bold">{+total.toFixed(1)}{unit}</p>
+                    <p className="text-[10px] text-muted-foreground">total no período</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // Default: percentage (check, count, etc.)
             const completedDays = records.filter((r) => {
               const val = r.habitChecks[h.id];
               if (h.targetType === "check") return val === true;
@@ -118,10 +198,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
               <Card key={h.id} className="overflow-hidden">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <div
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: color }}
-                    />
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                     <span className="text-xs text-muted-foreground truncate">{h.name}</span>
                   </div>
                   <p className="text-lg font-bold">{rate}%</p>
