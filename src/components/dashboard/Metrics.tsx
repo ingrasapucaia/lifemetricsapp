@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { DailyRecord, Habit } from "@/types";
+import { DailyRecord, Habit, getMoodTag } from "@/types";
 import { calculatePeriodMetrics, getHabitConsistency, getChartData } from "@/lib/metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
+  Tooltip, ResponsiveContainer, Legend, Cell,
 } from "recharts";
 import { TrendingUp, Moon, Smile, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export default function Metrics({ records, habits }: Props) {
       <h2 className="text-lg font-semibold">Métricas do período</h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat icon={<TrendingUp size={16} />} label="Aderência" value={`${m.avgAdherence}%`} />
+        <Stat icon={<TrendingUp size={16} />} label="Hábitos concluídos" value={`${m.avgAdherence}%`} />
         <Stat icon={<Moon size={16} />} label="Sono médio" value={`${m.avgSleep}h`} />
         <Stat icon={<Smile size={16} />} label="Humor médio" value={`${m.avgMood}/5`} />
         <Stat icon={<Dumbbell size={16} />} label="Exercício total" value={`${m.totalExercise} min`} />
@@ -46,7 +46,7 @@ export default function Metrics({ records, habits }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Aderência diária</CardTitle>
+            <CardTitle className="text-sm font-medium">Hábitos concluídos por dia</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -55,7 +55,7 @@ export default function Metrics({ records, habits }: Props) {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} />
                 <Tooltip />
-                <Bar dataKey="adherence" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Aderência %" />
+                <Bar dataKey="adherence" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Concluídos %" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -72,10 +72,49 @@ export default function Metrics({ records, habits }: Props) {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="sleep" tick={{ fontSize: 11 }} domain={[0, 12]} />
                 <YAxis yAxisId="mood" orientation="right" tick={{ fontSize: 11 }} domain={[0, 5]} />
-                <Tooltip />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const moodEntry = payload.find((p) => p.dataKey === "mood");
+                    const sleepEntry = payload.find((p) => p.dataKey === "sleep");
+                    const moodTagVal = (moodEntry?.payload as any)?.moodTag;
+                    const tag = moodTagVal ? getMoodTag(moodTagVal) : null;
+                    return (
+                      <div className="bg-background border rounded-lg p-2 shadow-md text-sm space-y-1">
+                        <p className="font-medium">{label}</p>
+                        {tag && (
+                          <p className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `hsl(${tag.hsl})` }} />
+                            Humor: {tag.label}
+                          </p>
+                        )}
+                        {sleepEntry && <p>Sono: {sleepEntry.value}h</p>}
+                      </div>
+                    );
+                  }}
+                />
                 <Legend />
                 <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(220, 70%, 50%)" name="Sono (h)" strokeWidth={2} dot={false} />
-                <Line yAxisId="mood" type="monotone" dataKey="mood" stroke="hsl(35, 92%, 50%)" name="Humor" strokeWidth={2} dot={false} />
+                <Line
+                  yAxisId="mood"
+                  type="monotone"
+                  dataKey="mood"
+                  name="Humor"
+                  strokeWidth={2}
+                  dot={(props: any) => {
+                    const tag = getMoodTag(props.payload?.moodTag);
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={4}
+                        fill={tag ? `hsl(${tag.hsl})` : "hsl(35, 92%, 50%)"}
+                        stroke="none"
+                      />
+                    );
+                  }}
+                  stroke="hsl(35, 92%, 50%)"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -90,7 +129,9 @@ export default function Metrics({ records, habits }: Props) {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-xs text-muted-foreground mb-2">🏆 Mais consistentes</p>
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <TrendingUp size={12} /> Mais consistentes
+                </p>
                 {top3.map(({ habit, rate }) => (
                   <div key={habit.id} className="flex items-center justify-between py-1.5">
                     <span className="text-sm">{habit.name}</span>
@@ -101,7 +142,9 @@ export default function Metrics({ records, habits }: Props) {
                 ))}
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">⚠️ Menos consistentes</p>
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <Smile size={12} /> Menos consistentes
+                </p>
                 {bottom3.map(({ habit, rate }) => (
                   <div key={habit.id} className="flex items-center justify-between py-1.5">
                     <span className="text-sm">{habit.name}</span>
