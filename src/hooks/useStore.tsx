@@ -1,13 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, UserProfile, Achievement } from "@/types";
-import { seedHabits, seedProfile, generateSeedRecords, seedAchievements } from "@/data/seed";
+import { Habit, DailyRecord, UserProfile } from "@/types";
+import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
 
-const KEYS = {
-  habits: "metrics-habits",
-  records: "metrics-records",
-  profile: "metrics-profile",
-  achievements: "metrics-achievements",
-};
+const KEYS = { habits: "metrics-habits", records: "metrics-records", profile: "metrics-profile" };
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -26,19 +21,15 @@ interface StoreType {
   habits: Habit[];
   records: DailyRecord[];
   profile: UserProfile;
-  achievements: Achievement[];
   upsertRecord: (updates: Partial<DailyRecord> & { date: string }) => void;
   deleteRecord: (id: string) => void;
   addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
-  reorderHabits: (fromIndex: number, toIndex: number) => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
-  addAchievement: (a: Omit<Achievement, "id" | "createdAt">) => void;
-  deleteAchievement: (id: string) => void;
   resetToSeed: () => void;
   clearAll: () => void;
-  importData: (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile; achievements?: Achievement[] }) => void;
+  importData: (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile }) => void;
 }
 
 const StoreContext = createContext<StoreType | null>(null);
@@ -47,12 +38,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>(() => load(KEYS.habits, seedHabits));
   const [records, setRecords] = useState<DailyRecord[]>(() => load(KEYS.records, generateSeedRecords()));
   const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, seedProfile));
-  const [achievements, setAchievements] = useState<Achievement[]>(() => load(KEYS.achievements, seedAchievements));
 
   useEffect(() => { save(KEYS.habits, habits); }, [habits]);
   useEffect(() => { save(KEYS.records, records); }, [records]);
   useEffect(() => { save(KEYS.profile, profile); }, [profile]);
-  useEffect(() => { save(KEYS.achievements, achievements); }, [achievements]);
 
   const upsertRecord = useCallback((updates: Partial<DailyRecord> & { date: string }) => {
     setRecords((prev) => {
@@ -84,10 +73,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addHabit = useCallback((habit: Omit<Habit, "id" | "createdAt">) => {
-    setHabits((prev) => [
-      ...prev,
-      { ...habit, id: `h-${Date.now()}`, order: prev.length, createdAt: new Date().toISOString() },
-    ]);
+    setHabits((prev) => [...prev, { ...habit, id: `h-${Date.now()}`, createdAt: new Date().toISOString() }]);
   }, []);
 
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
@@ -104,50 +90,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const reorderHabits = useCallback((fromIndex: number, toIndex: number) => {
-    setHabits((prev) => {
-      const sorted = [...prev].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      const [moved] = sorted.splice(fromIndex, 1);
-      sorted.splice(toIndex, 0, moved);
-      return sorted.map((h, i) => ({ ...h, order: i }));
-    });
-  }, []);
-
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const addAchievement = useCallback((a: Omit<Achievement, "id" | "createdAt">) => {
-    setAchievements((prev) => [
-      { ...a, id: `a-${Date.now()}`, createdAt: new Date().toISOString() },
-      ...prev,
-    ]);
-  }, []);
-
-  const deleteAchievement = useCallback((id: string) => {
-    setAchievements((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
   const resetToSeed = useCallback(() => {
     setHabits(seedHabits);
     setRecords(generateSeedRecords());
     setProfile(seedProfile);
-    setAchievements(seedAchievements);
   }, []);
 
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
-    setProfile({ displayName: "", mainGoal: "", focusArea: "misto", preferences: { weekStartsOn: "mon", insightsTone: "direto" } });
-    setAchievements([]);
+    setProfile({
+      displayName: "",
+      mainGoal: "",
+      focusArea: "misto",
+      preferences: { weekStartsOn: "mon", insightsTone: "direto" },
+    });
   }, []);
 
   const importData = useCallback(
-    (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile; achievements?: Achievement[] }) => {
+    (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile }) => {
       setHabits(data.habits);
       setRecords(data.records);
       setProfile(data.profile);
-      if (data.achievements) setAchievements(data.achievements);
     },
     []
   );
@@ -155,11 +123,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <StoreContext.Provider
       value={{
-        habits, records, profile, achievements,
+        habits, records, profile,
         upsertRecord, deleteRecord,
-        addHabit, updateHabit, deleteHabit, reorderHabits,
-        updateProfile, addAchievement, deleteAchievement,
-        resetToSeed, clearAll, importData,
+        addHabit, updateHabit, deleteHabit,
+        updateProfile, resetToSeed, clearAll, importData,
       }}
     >
       {children}

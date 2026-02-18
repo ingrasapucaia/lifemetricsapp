@@ -1,4 +1,4 @@
-import { DailyRecord, Habit, Period, MOOD_OPTIONS } from "@/types";
+import { DailyRecord, Habit, Period } from "@/types";
 import { subDays, parseISO, isAfter, format } from "date-fns";
 
 export function getRecordsForPeriod(records: DailyRecord[], period: Period): DailyRecord[] {
@@ -6,14 +6,6 @@ export function getRecordsForPeriod(records: DailyRecord[], period: Period): Dai
   const days = period === "7d" ? 7 : 30;
   const cutoff = subDays(new Date(), days);
   return records.filter((r) => isAfter(parseISO(r.date), cutoff));
-}
-
-export function getMoodValue(record: DailyRecord): number {
-  if (record.moodLabel) {
-    const opt = MOOD_OPTIONS.find((m) => m.label === record.moodLabel);
-    return opt?.value ?? 3;
-  }
-  return record.mood;
 }
 
 export function isHabitCompleted(habit: Habit, value: boolean | number | undefined): boolean {
@@ -38,7 +30,7 @@ export function calculatePeriodMetrics(records: DailyRecord[], habits: Habit[]) 
 
   const adherences = records.map((r) => calculateDailyAdherence(r, habits));
   const sleeps = records.filter((r) => r.sleepHours > 0).map((r) => r.sleepHours);
-  const moods = records.filter((r) => getMoodValue(r) > 0).map((r) => getMoodValue(r));
+  const moods = records.filter((r) => r.mood > 0).map((r) => r.mood);
   const exercises = records.map((r) => r.exerciseMinutes);
 
   return {
@@ -68,6 +60,6 @@ export function getChartData(records: DailyRecord[], habits: Habit[]) {
       date: format(parseISO(r.date), "dd/MM"),
       adherence: calculateDailyAdherence(r, habits),
       sleep: r.sleepHours,
-      mood: getMoodValue(r),
+      mood: r.mood,
     }));
 }

@@ -5,9 +5,7 @@ import { StoreProvider } from "@/hooks/useStore";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
-import MetricsPage from "@/pages/MetricsPage";
 import Records from "@/pages/Records";
-import Achievements from "@/pages/Achievements";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 
@@ -21,9 +19,7 @@ const App = () => (
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/metricas" element={<MetricsPage />} />
             <Route path="/registros" element={<Records />} />
-            <Route path="/conquistas" element={<Achievements />} />
             <Route path="/perfil" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
