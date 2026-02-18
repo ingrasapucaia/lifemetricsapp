@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { DailyRecord, Habit, MOOD_TAGS, getMoodTag } from "@/types";
+import { DailyRecord, Habit, MOOD_TAGS, getMoodTag, formatSleepHours } from "@/types";
 import { useStore } from "@/hooks/useStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Clock, Droplet, icons,
+  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +57,49 @@ function WaterDrops({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
+function TimeSelect({ hours, minutes, onChangeHours, onChangeMinutes }: {
+  hours: number;
+  minutes: number;
+  onChangeHours: (h: number) => void;
+  onChangeMinutes: (m: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Select value={String(hours)} onValueChange={(v) => onChangeHours(Number(v))}>
+        <SelectTrigger className="w-[72px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 24 }, (_, i) => (
+            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, "0")}h</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={String(minutes)} onValueChange={(v) => onChangeMinutes(Number(v))}>
+        <SelectTrigger className="w-[80px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 60 }, (_, i) => (
+            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, "0")}min</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function calculateSleepDuration(sleepTime: string, wakeTime: string): number {
+  if (!sleepTime || !wakeTime) return 0;
+  const [sh, sm] = sleepTime.split(":").map(Number);
+  const [wh, wm] = wakeTime.split(":").map(Number);
+  let sleepMins = sh * 60 + sm;
+  let wakeMins = wh * 60 + wm;
+  if (wakeMins <= sleepMins) wakeMins += 24 * 60; // crosses midnight
+  const diff = wakeMins - sleepMins;
+  return +(diff / 60).toFixed(2);
+}
+
 interface Props {
   today: string;
   record: DailyRecord | undefined;
@@ -88,9 +131,8 @@ export default function CheckIn({ today, record, habits }: Props) {
   );
 
   const mood = record?.mood || "";
-  const sleep = record?.sleepHours || 0;
-  const exercise = record?.exerciseMinutes || 0;
   const water = record?.waterIntake || 0;
+  const sleepTime = record?.sleepTime || "";
   const wakeUp = record?.wakeUpTime || "";
   const checks = record?.habitChecks || {};
   const done = active.filter((h) => isHabitCompleted(h, checks[h.id])).length;
@@ -98,9 +140,23 @@ export default function CheckIn({ today, record, habits }: Props) {
 
   const moodTag = getMoodTag(mood);
 
-  // Sleep hours/minutes decomposition
-  const sleepH = Math.floor(sleep);
-  const sleepM = Math.round((sleep - sleepH) * 60);
+  // Parse sleep/wake times for selects
+  const [sleepH, sleepM] = sleepTime ? sleepTime.split(":").map(Number) : [23, 0];
+  const [wakeH, wakeM] = wakeUp ? wakeUp.split(":").map(Number) : [7, 0];
+
+  const calculatedSleep = calculateSleepDuration(sleepTime, wakeUp);
+
+  const updateSleepTime = (h: number, m: number) => {
+    const newSleepTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const newSleep = calculateSleepDuration(newSleepTime, wakeUp);
+    up({ sleepTime: newSleepTime, sleepHours: newSleep });
+  };
+
+  const updateWakeTime = (h: number, m: number) => {
+    const newWakeTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const newSleep = calculateSleepDuration(sleepTime, newWakeTime);
+    up({ wakeUpTime: newWakeTime, sleepHours: newSleep });
+  };
 
   return (
     <section className="space-y-4">
@@ -161,65 +217,37 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* Wake up time */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock size={16} /> Acordei às
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Input
-              type="time"
-              value={wakeUp}
-              onChange={(e) => up({ wakeUpTime: e.target.value })}
-              className="w-32"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Sleep */}
+        {/* Unified Sleep card */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Moon size={16} /> Sono
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(sleepH)}
-                onValueChange={(v) => {
-                  const h = Number(v);
-                  up({ sleepHours: h + sleepM / 60 });
-                }}
-              >
-                <SelectTrigger className="w-[72px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 13 }, (_, i) => (
-                    <SelectItem key={i} value={String(i)}>{i}h</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={String(sleepM)}
-                onValueChange={(v) => {
-                  const m = Number(v);
-                  up({ sleepHours: sleepH + m / 60 });
-                }}
-              >
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[0, 15, 30, 45].map((m) => (
-                    <SelectItem key={m} value={String(m)}>{m}min</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Dormi às</p>
+              <TimeSelect
+                hours={sleepH}
+                minutes={sleepM}
+                onChangeHours={(h) => updateSleepTime(h, sleepM)}
+                onChangeMinutes={(m) => updateSleepTime(sleepH, m)}
+              />
             </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Acordei às</p>
+              <TimeSelect
+                hours={wakeH}
+                minutes={wakeM}
+                onChangeHours={(h) => updateWakeTime(h, wakeM)}
+                onChangeMinutes={(m) => updateWakeTime(wakeH, m)}
+              />
+            </div>
+            {(sleepTime || wakeUp) && (
+              <p className="text-sm font-medium text-primary">
+                Dormiu {formatSleepHours(calculatedSleep)}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -235,7 +263,7 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* General Habits */}
+        {/* Habits */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -292,31 +320,6 @@ export default function CheckIn({ today, record, habits }: Props) {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Fitness */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Dumbbell size={16} /> Fitness
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <Input
-                type="number"
-                min={0}
-                max={240}
-                value={exercise || ""}
-                onChange={(e) =>
-                  up({ exerciseMinutes: Math.min(240, Math.max(0, Number(e.target.value))) })
-                }
-                placeholder="0"
-                className="w-24"
-              />
-              <span className="text-sm text-muted-foreground">minutos</span>
-            </div>
           </CardContent>
         </Card>
       </div>

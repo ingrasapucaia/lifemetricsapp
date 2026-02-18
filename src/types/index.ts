@@ -16,6 +16,7 @@ export interface DailyRecord {
   date: string; // yyyy-MM-dd
   mood: string; // mood tag value (e.g. "feliz", "ansiosa")
   wakeUpTime?: string; // HH:mm
+  sleepTime?: string; // HH:mm — hora que dormiu
   sleepHours: number;
   waterIntake: number; // 0-8 drops
   exerciseMinutes: number;

@@ -305,7 +305,15 @@ export default function Profile() {
 
             <div className="space-y-1.5">
               <Label>Categoria</Label>
-              <Select value={hCategory} onValueChange={(v) => setHCategory(v as any)}>
+              <Select value={hCategory} onValueChange={(v) => {
+                const cat = v as "geral" | "exercicio";
+                setHCategory(cat);
+                // Reset type if incompatible
+                const validTypes = cat === "exercicio" ? ["hours_minutes", "km"] : ["check", "count", "hours_minutes"];
+                if (!validTypes.includes(hType)) {
+                  setHType(validTypes[0] as Habit["targetType"]);
+                }
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="geral">Geral</SelectItem>
@@ -319,12 +327,18 @@ export default function Profile() {
               <Select value={hType} onValueChange={(v) => setHType(v as Habit["targetType"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="check">Check (sim/não)</SelectItem>
-                  <SelectItem value="minutes">Minutos</SelectItem>
-                  <SelectItem value="count">Contagem</SelectItem>
-                  <SelectItem value="hours_minutes">Horas e minutos</SelectItem>
-                  <SelectItem value="km">Quilômetros (km)</SelectItem>
-                  <SelectItem value="miles">Milhas (miles)</SelectItem>
+                  {hCategory === "exercicio" ? (
+                    <>
+                      <SelectItem value="hours_minutes">Horas e minutos</SelectItem>
+                      <SelectItem value="km">Quilômetros (km)</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="check">Check (sim/não)</SelectItem>
+                      <SelectItem value="count">Contagem</SelectItem>
+                      <SelectItem value="hours_minutes">Horas e minutos</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
