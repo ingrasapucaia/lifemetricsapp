@@ -48,6 +48,38 @@ export interface UserProfile {
   };
 }
 
+export interface GoalAction {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority?: "importante" | "urgente" | "atrasado" | "proximo";
+  createdAt: string;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  type: "meta" | "projeto";
+  status: "começar" | "em progresso" | "concluída" | "arquivada";
+  actions: GoalAction[];
+  createdAt: string;
+  deadline?: string;
+}
+
+export const GOAL_PRIORITY_COLORS: Record<string, { hsl: string; bgHsl: string }> = {
+  importante: { hsl: "142 50% 45%", bgHsl: "142 60% 90%" },
+  urgente: { hsl: "25 80% 50%", bgHsl: "25 70% 90%" },
+  atrasado: { hsl: "0 60% 50%", bgHsl: "0 60% 90%" },
+  proximo: { hsl: "45 80% 45%", bgHsl: "45 80% 90%" },
+};
+
+export const GOAL_STATUS_COLORS: Record<string, { hsl: string; bgHsl: string }> = {
+  "começar": { hsl: "200 60% 50%", bgHsl: "200 60% 92%" },
+  "em progresso": { hsl: "45 80% 45%", bgHsl: "45 80% 90%" },
+  "concluída": { hsl: "142 50% 45%", bgHsl: "142 60% 90%" },
+  "arquivada": { hsl: "0 0% 50%", bgHsl: "0 0% 92%" },
+};
+
 export type Period = "7d" | "30d" | "total";
 
 export const MOOD_TAGS = [

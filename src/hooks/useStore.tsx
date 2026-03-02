@@ -1,6 +1,6 @@
 // Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, UserProfile, Achievement } from "@/types";
+import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction } from "@/types";
 import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
 
 const KEYS = {
@@ -8,6 +8,7 @@ const KEYS = {
   records: "metrics-records",
   profile: "metrics-profile",
   achievements: "metrics-achievements",
+  goals: "metrics-goals",
 };
 
 function load<T>(key: string, fallback: T): T {
@@ -39,6 +40,7 @@ interface StoreType {
   records: DailyRecord[];
   profile: UserProfile;
   achievements: Achievement[];
+  goals: Goal[];
   upsertRecord: (updates: Partial<DailyRecord> & { date: string }) => void;
   deleteRecord: (id: string) => void;
   addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
@@ -49,6 +51,13 @@ interface StoreType {
   addAchievement: (a: Omit<Achievement, "id" | "createdAt">) => void;
   updateAchievement: (id: string, updates: Partial<Achievement>) => void;
   deleteAchievement: (id: string) => void;
+  addGoal: (g: Omit<Goal, "id" | "createdAt" | "actions">) => void;
+  updateGoal: (id: string, updates: Partial<Goal>) => void;
+  deleteGoal: (id: string) => void;
+  addGoalAction: (goalId: string, action: Omit<GoalAction, "id" | "createdAt" | "completed">) => void;
+  updateGoalAction: (goalId: string, actionId: string, updates: Partial<GoalAction>) => void;
+  deleteGoalAction: (goalId: string, actionId: string) => void;
+  toggleGoalAction: (goalId: string, actionId: string) => void;
   resetToSeed: () => void;
   clearAll: () => void;
   importData: (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile }) => void;
@@ -61,11 +70,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [records, setRecords] = useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, generateSeedRecords())));
   const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, seedProfile));
   const [achievements, setAchievements] = useState<Achievement[]>(() => load(KEYS.achievements, []));
+  const [goals, setGoals] = useState<Goal[]>(() => load(KEYS.goals, []));
 
   useEffect(() => { save(KEYS.habits, habits); }, [habits]);
   useEffect(() => { save(KEYS.records, records); }, [records]);
   useEffect(() => { save(KEYS.profile, profile); }, [profile]);
   useEffect(() => { save(KEYS.achievements, achievements); }, [achievements]);
+  useEffect(() => { save(KEYS.goals, goals); }, [goals]);
 
   const upsertRecord = useCallback((updates: Partial<DailyRecord> & { date: string }) => {
     setRecords((prev) => {
@@ -143,17 +154,92 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAchievements((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  // Goals CRUD
+  const addGoal = useCallback((g: Omit<Goal, "id" | "createdAt" | "actions">) => {
+    setGoals((prev) => [...prev, { ...g, id: `g-${Date.now()}`, actions: [], createdAt: new Date().toISOString() }]);
+  }, []);
+
+  const updateGoal = useCallback((id: string, updates: Partial<Goal>) => {
+    setGoals((prev) => {
+      const old = prev.find((g) => g.id === id);
+      const next = prev.map((g) => (g.id === id ? { ...g, ...updates } : g));
+      // Auto-create achievement when completed
+      if (old && old.status !== "concluída" && updates.status === "concluída") {
+        const goal = next.find((g) => g.id === id)!;
+        setAchievements((a) => [
+          ...a,
+          {
+            id: `a-${Date.now()}`,
+            title: goal.title,
+            area: goal.type === "projeto" ? "Profissional" : "Pessoal",
+            feeling: "Meta concluída! 🎉",
+            icon: "Trophy",
+            date: new Date().toISOString().slice(0, 10),
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      }
+      return next;
+    });
+  }, []);
+
+  const deleteGoal = useCallback((id: string) => {
+    setGoals((prev) => prev.filter((g) => g.id !== id));
+  }, []);
+
+  const addGoalAction = useCallback((goalId: string, action: Omit<GoalAction, "id" | "createdAt" | "completed">) => {
+    setGoals((prev) =>
+      prev.map((g) => {
+        if (g.id !== goalId || g.actions.length >= 30) return g;
+        return {
+          ...g,
+          actions: [...g.actions, { ...action, id: `ga-${Date.now()}`, completed: false, createdAt: new Date().toISOString() }],
+        };
+      })
+    );
+  }, []);
+
+  const updateGoalAction = useCallback((goalId: string, actionId: string, updates: Partial<GoalAction>) => {
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, actions: g.actions.map((a) => (a.id === actionId ? { ...a, ...updates } : a)) }
+          : g
+      )
+    );
+  }, []);
+
+  const deleteGoalAction = useCallback((goalId: string, actionId: string) => {
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId ? { ...g, actions: g.actions.filter((a) => a.id !== actionId) } : g
+      )
+    );
+  }, []);
+
+  const toggleGoalAction = useCallback((goalId: string, actionId: string) => {
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, actions: g.actions.map((a) => (a.id === actionId ? { ...a, completed: !a.completed } : a)) }
+          : g
+      )
+    );
+  }, []);
+
   const resetToSeed = useCallback(() => {
     setHabits(seedHabits);
     setRecords(generateSeedRecords());
     setProfile(seedProfile);
     setAchievements([]);
+    setGoals([]);
   }, []);
 
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
     setAchievements([]);
+    setGoals([]);
     setProfile({
       displayName: "",
       mainGoal: "",
@@ -174,10 +260,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <StoreContext.Provider
       value={{
-        habits, records, profile, achievements,
+        habits, records, profile, achievements, goals,
         upsertRecord, deleteRecord,
         addHabit, updateHabit, deleteHabit, reorderHabit,
         updateProfile, addAchievement, updateAchievement, deleteAchievement,
+        addGoal, updateGoal, deleteGoal,
+        addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction,
         resetToSeed, clearAll, importData,
       }}
     >

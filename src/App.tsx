@@ -8,6 +8,9 @@ import Dashboard from "@/pages/Dashboard";
 import Records from "@/pages/Records";
 import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
+import Goals from "@/pages/Goals";
+import GoalDetail from "@/pages/GoalDetail";
+import ArchivedGoals from "@/pages/ArchivedGoals";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
@@ -21,7 +24,10 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/registros" element={<Records />} />
+            <Route path="/metas" element={<Goals />} />
+            <Route path="/metas/:id" element={<GoalDetail />} />
             <Route path="/conquistas" element={<Achievements />} />
+            <Route path="/arquivados" element={<ArchivedGoals />} />
             <Route path="/perfil" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
