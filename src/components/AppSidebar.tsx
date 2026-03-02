@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, User, Menu, Trophy } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -8,7 +8,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
+  { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
+  { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
 
 function Links({ onClick }: { onClick?: () => void }) {
