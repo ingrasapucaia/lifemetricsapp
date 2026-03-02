@@ -1,90 +1,102 @@
+# Metas de Vida e Projetos Arquivados
 
+## Resumo
 
-# Melhorias no Check-in, Metricas e Perfil
-
----
-
-## 1. Check-in: Unificar "Acordei as" e "Sono" em uma unica caixa
-
-Substituir os dois cards separados ("Acordei as" e "Sono") por um unico card "Sono" com:
-- Campo "Dormi as" (input time HH:mm)
-- Campo "Acordei as" (input time HH:mm)
-- Calculo automatico das horas dormidas exibido abaixo (ex: "7h 30min")
-- Remover o campo manual de horas de sono — sera calculado automaticamente
-- Adicionar campo `sleepTime` ao `DailyRecord` em `src/types/index.ts`
-
-O calculo leva em conta que "dormi as 23:00, acordei as 06:30" = 7h30min (cruza meia-noite).
-
-Arquivo: `src/types/index.ts`, `src/components/dashboard/CheckIn.tsx`, `src/hooks/useStore.tsx`
+Criar um sistema completo de metas/projetos com ações internas, barra de progresso, etiquetas de prioridade coloridas em pastel, e integração com conquistas e arquivo.
 
 ---
 
-## 2. Design do seletor de horario "Acordei as" / "Dormi as"
+## Modelo de Dados (`src/types/index.ts`)
 
-Ambos os campos usarao o mesmo design: dois selects lado a lado (horas 0-23 + minutos 0-59, todos os minutos disponiveis), mesmo estilo dos selects de sono atuais.
+Novas interfaces:
 
-Arquivo: `src/components/dashboard/CheckIn.tsx`
+```typescript
+interface GoalAction {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority?: "importante" | "urgente" | "atrasado" | "proximo";
+  createdAt: string;
+}
 
----
+interface Goal {
+  id: string;
+  title: string;
+  type: "meta" | "projeto";
+  status: "começar" | "em progresso" | "concluída" | "arquivada";
+  actions: GoalAction[]; // max 30
+  createdAt: string;
+  deadline?: string; // yyyy-MM-dd, editável
+}
+```
 
-## 3. Remover caixa "Fitness" do check-in
+Constantes para cores pastel das etiquetas de prioridade:
 
-Excluir o card "Fitness" (linhas 298-321) do CheckIn, ja que exercicios sao registrados nos habitos da categoria "exercicio".
-
-Arquivo: `src/components/dashboard/CheckIn.tsx`
-
----
-
-## 4. Metricas de vida: exercicio baseado nos habitos
-
-Substituir a metrica fixa "Exercicio total" (que usava `exerciseMinutes` do record) por metricas dinamicas calculadas a partir dos habitos da categoria "exercicio":
-
-| Tipo do habito | Metrica exibida | Exemplo |
-|---|---|---|
-| minutes ou hours_minutes | Tempo somado do periodo | "Treino: 200min" |
-| km | KMs somados do periodo | "Corrida: 45km" |
-| miles | Milhas somadas | "Natacao: 10mi" |
-| check | Porcentagem padrao | "Leitura: 85%" |
-
-Para habitos "check" (categoria geral ou exercicio), continua exibindo a porcentagem de dias concluidos.
-
-Para habitos com tipo tempo (minutes/hours_minutes), soma o valor numerico registrado no periodo.
-
-Para habitos km/miles, soma os valores numericos.
-
-Os cards de metrica de cada habito visivel mostrarao o valor somado/percentual adequado ao tipo, com sparkline e fundo pastel.
-
-Arquivos: `src/components/dashboard/Metrics.tsx`, `src/lib/metrics.ts`
+- prioridade: verde pastel
+- urgente: laranja pastel
+- atrasado: vermelho pastel
+- proximo: amarelo pastel
 
 ---
 
-## 5. Perfil: filtrar tipos por categoria
+## Store (`src/hooks/useStore.tsx`)
 
-No modal de novo/editar habito, os tipos disponiveis mudam conforme a categoria selecionada:
+Adicionar estado `goals` com localStorage key `metrics-goals`. Novas funções:
 
-**Categoria "Exercicio":**
-- Horas e minutos
-- Quilometros (km)
+- `addGoal`, `updateGoal`, `deleteGoal`
+- `addGoalAction`, `updateGoalAction`, `deleteGoalAction`, `toggleGoalAction`
 
-**Categoria "Geral":**
-- Check (sim/nao)
-- Contagem
-- Horas e minutos
-
-Ao trocar a categoria, se o tipo selecionado nao for compativel, resetar para o primeiro tipo disponivel.
-
-Arquivo: `src/pages/Profile.tsx`
+Quando status muda para "concluída": criar automaticamente uma Achievement na aba conquistas.
+Quando status muda para "arquivada": a meta aparece apenas em "Projetos Arquivados".
 
 ---
 
-## Resumo dos arquivos modificados
+## Página "Metas de Vida" (`src/pages/Goals.tsx`)
 
-| Arquivo | Mudancas |
-|---|---|
-| `src/types/index.ts` | Adicionar `sleepTime?: string` ao DailyRecord |
-| `src/components/dashboard/CheckIn.tsx` | Unificar sono (dormi/acordei + calculo auto), remover Fitness, novo design selects de horario |
-| `src/components/dashboard/Metrics.tsx` | Metricas de exercicio dinamicas por tipo de habito (tempo/km/%) |
-| `src/lib/metrics.ts` | Funcao para calcular metricas por habito (soma tempo, km, %) |
-| `src/pages/Profile.tsx` | Filtrar tipos de habito por categoria |
-| `src/hooks/useStore.tsx` | Suporte ao novo campo sleepTime |
+- Lista de metas/projetos com etiqueta tipo (meta/projeto), status, barra de progresso (% = ações concluídas / total de ações)
+- Botão "Nova meta/projeto" abre modal com: título, tipo (meta/projeto), prazo, status
+- Clicar numa meta abre página de detalhe com lista de ações
+- Cada ação: checkbox, título, etiqueta de prioridade (colorida pastel), botões editar/apagar
+- Barra de progresso 0-100% calculada automaticamente
+- Limite de 30 ações por meta
 
+---
+
+## Página "Projetos Arquivados" (`src/pages/ArchivedGoals.tsx`)
+
+- Lista metas com status "arquivada"
+- Botão para restaurar (muda status de volta para "começar"), movendo para "Metas de Vida"
+
+---
+
+## Sidebar (`src/components/AppSidebar.tsx`)
+
+Adicionar dois links ao menu:
+
+- "Metas de Vida" (ícone `Target`) entre "Meus Registros" e "Minhas Conquistas"
+- "Arquivados" (ícone `Archive`) após "Minhas Conquistas"
+
+---
+
+## Rotas (`src/App.tsx`)
+
+Adicionar:
+
+- `/metas` → Goals
+- `/metas/:id` → GoalDetail (detalhe da meta com ações)
+- `/arquivados` → ArchivedGoals
+
+---
+
+## Arquivos a criar/modificar
+
+
+| Arquivo                         | Ação                                            |
+| ------------------------------- | ----------------------------------------------- |
+| `src/types/index.ts`            | Adicionar Goal, GoalAction, constantes de cores |
+| `src/hooks/useStore.tsx`        | Estado goals + CRUD completo                    |
+| `src/pages/Goals.tsx`           | Criar - lista de metas                          |
+| `src/pages/GoalDetail.tsx`      | Criar - detalhe com ações                       |
+| `src/pages/ArchivedGoals.tsx`   | Criar - metas arquivadas                        |
+| `src/components/AppSidebar.tsx` | Adicionar links                                 |
+| `src/App.tsx`                   | Adicionar rotas                                 |
