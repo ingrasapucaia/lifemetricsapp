@@ -170,7 +170,7 @@ export default function Profile() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Meus Hábitos</CardTitle>
-            <Button size="sm" onClick={()  className="rounded-xl"=> openModal()}><Plus size={14} /> Novo hábito</Button>
+            <Button size="sm" className="rounded-xl" onClick={() => openModal()}><Plus size={14} /> Novo hábito</Button>
           </div>
         </CardHeader>
         <CardContent>
