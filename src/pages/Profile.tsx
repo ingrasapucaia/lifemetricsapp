@@ -110,7 +110,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold tracking-tight">Meu Perfil</h1>
+      <h1 className="text-2xl font-bold tracking-tight tracking-tight">Meu Perfil</h1>
 
       {/* Info */}
       <Card>
@@ -170,7 +170,7 @@ export default function Profile() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Meus Hábitos</CardTitle>
-            <Button size="sm" onClick={() => openModal()}><Plus size={14} /> Novo hábito</Button>
+            <Button size="sm" onClick={()  className="rounded-xl"=> openModal()}><Plus size={14} /> Novo hábito</Button>
           </div>
         </CardHeader>
         <CardContent>
