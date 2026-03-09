@@ -13,13 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons,
+  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Saved({ show }: { show: boolean }) {
   if (!show) return null;
-  return <span className="text-xs text-primary animate-fade-in">✓ Salvo</span>;
+  return <span className="text-xs text-primary animate-fade-in font-medium">✓ Salvo</span>;
 }
 
 function HabitIcon({ name, size = 14 }: { name?: string; size?: number }) {
@@ -32,27 +32,27 @@ function HabitIcon({ name, size = 14 }: { name?: string; size?: number }) {
 function WaterDrops({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const max = 8;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {Array.from({ length: max }, (_, i) => (
         <button
           key={i}
           type="button"
           onClick={() => onChange(value === i + 1 ? i : i + 1)}
-          className="group transition-all"
+          className="group transition-all duration-200"
           title={`${i + 1} copo(s)`}
         >
           <Droplet
-            size={18}
+            size={20}
             className={cn(
-              "transition-colors sm:w-[22px] sm:h-[22px]",
+              "transition-all duration-200 sm:w-[24px] sm:h-[24px]",
               i < value
-                ? "fill-primary/70 text-primary"
-                : "text-muted-foreground/30 group-hover:text-muted-foreground/50"
+                ? "fill-metric-water text-metric-water scale-110"
+                : "text-muted-foreground/25 group-hover:text-muted-foreground/50"
             )}
           />
         </button>
       ))}
-      <span className="text-xs text-muted-foreground self-center ml-1">{value}/8</span>
+      <span className="text-xs text-muted-foreground self-center ml-1 font-medium">{value}/8</span>
     </div>
   );
 }
@@ -66,7 +66,7 @@ function TimeSelect({ hours, minutes, onChangeHours, onChangeMinutes }: {
   return (
     <div className="flex items-center gap-2">
       <Select value={String(hours)} onValueChange={(v) => onChangeHours(Number(v))}>
-        <SelectTrigger className="w-[72px]">
+        <SelectTrigger className="w-[72px] rounded-xl">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -76,7 +76,7 @@ function TimeSelect({ hours, minutes, onChangeHours, onChangeMinutes }: {
         </SelectContent>
       </Select>
       <Select value={String(minutes)} onValueChange={(v) => onChangeMinutes(Number(v))}>
-        <SelectTrigger className="w-[80px]">
+        <SelectTrigger className="w-[80px] rounded-xl">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -95,7 +95,7 @@ function calculateSleepDuration(sleepTime: string, wakeTime: string): number {
   const [wh, wm] = wakeTime.split(":").map(Number);
   let sleepMins = sh * 60 + sm;
   let wakeMins = wh * 60 + wm;
-  if (wakeMins <= sleepMins) wakeMins += 24 * 60; // crosses midnight
+  if (wakeMins <= sleepMins) wakeMins += 24 * 60;
   const diff = wakeMins - sleepMins;
   return +(diff / 60).toFixed(2);
 }
@@ -140,7 +140,6 @@ export default function CheckIn({ today, record, habits }: Props) {
 
   const moodTag = getMoodTag(mood);
 
-  // Parse sleep/wake times for selects
   const [sleepH, sleepM] = sleepTime ? sleepTime.split(":").map(Number) : [23, 0];
   const [wakeH, wakeM] = wakeUp ? wakeUp.split(":").map(Number) : [7, 0];
 
@@ -161,16 +160,22 @@ export default function CheckIn({ today, record, habits }: Props) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Check-in do dia</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <ClipboardCheck size={18} className="text-primary" />
+          Check-in do dia
+        </h2>
         <Saved show={saved} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Mood */}
-        <Card>
+        <Card className="bg-metric-mood-bg border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Smile size={16} /> Humor
+              <div className="w-7 h-7 rounded-full bg-metric-mood/10 flex items-center justify-center">
+                <Smile size={14} className="text-metric-mood" />
+              </div>
+              Humor
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -181,7 +186,7 @@ export default function CheckIn({ today, record, habits }: Props) {
                 toast("Humor registrado");
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl bg-card/80">
                 <SelectValue placeholder="Selecione seu humor">
                   {moodTag && (
                     <span
@@ -217,11 +222,14 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* Unified Sleep card */}
-        <Card>
+        {/* Sleep */}
+        <Card className="bg-metric-sleep-bg border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Moon size={16} /> Sono
+              <div className="w-7 h-7 rounded-full bg-metric-sleep/10 flex items-center justify-center">
+                <Moon size={14} className="text-metric-sleep" />
+              </div>
+              Sono
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -244,7 +252,7 @@ export default function CheckIn({ today, record, habits }: Props) {
               />
             </div>
             {(sleepTime || wakeUp) && (
-              <p className="text-sm font-medium text-primary">
+              <p className="text-sm font-semibold text-metric-sleep">
                 Dormiu {formatSleepHours(calculatedSleep)}
               </p>
             )}
@@ -252,10 +260,13 @@ export default function CheckIn({ today, record, habits }: Props) {
         </Card>
 
         {/* Water */}
-        <Card>
+        <Card className="bg-metric-water-bg border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Droplet size={16} /> Água
+              <div className="w-7 h-7 rounded-full bg-metric-water/10 flex items-center justify-center">
+                <Droplet size={14} className="text-metric-water" />
+              </div>
+              Água
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -267,14 +278,18 @@ export default function CheckIn({ today, record, habits }: Props) {
         <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">
-                Hábitos do dia ({done}/{active.length})
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-metric-habits-bg flex items-center justify-center">
+                  <ClipboardCheck size={14} className="text-metric-habits" />
+                </div>
+                Hábitos do dia
+                <span className="text-xs text-muted-foreground font-normal ml-1">({done}/{active.length})</span>
               </CardTitle>
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs rounded-xl"
                   onClick={() => {
                     const all: Record<string, boolean | number> = {};
                     active.forEach((h) => {
@@ -288,19 +303,19 @@ export default function CheckIn({ today, record, habits }: Props) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs rounded-xl"
                   onClick={() => up({ habitChecks: {} })}
                 >
                   Limpar
                 </Button>
               </div>
             </div>
-            <Progress value={pct} className="h-2 mt-1" />
+            <Progress value={pct} className="h-2 mt-2" />
           </CardHeader>
           <CardContent className="space-y-4">
             {generalHabits.length > 0 && (
               <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {generalHabits.map((h) => (
                     <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
                   ))}
@@ -313,7 +328,7 @@ export default function CheckIn({ today, record, habits }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                   <Dumbbell size={12} /> Exercício
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {exerciseHabits.map((h) => (
                     <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
                   ))}
@@ -327,13 +342,13 @@ export default function CheckIn({ today, record, habits }: Props) {
       {/* Journal */}
       <Collapsible open={journalOpen} onOpenChange={setJournalOpen}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between">
+          <Button variant="ghost" className="w-full justify-between rounded-xl">
             <span className="flex items-center gap-2">
               <BookOpen size={16} /> Diário (opcional)
             </span>
             <ChevronDown
               size={16}
-              className={cn("transition-transform", journalOpen && "rotate-180")}
+              className={cn("transition-transform duration-200", journalOpen && "rotate-180")}
             />
           </Button>
         </CollapsibleTrigger>
@@ -377,7 +392,7 @@ function HabitRow({
   const unitLabel = h.targetType === "km" ? "km" : h.targetType === "miles" ? "mi" : h.targetType === "minutes" ? "min" : "x";
 
   return (
-    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200">
       <HabitIcon name={h.icon} />
       {h.targetType === "check" ? (
         <Checkbox
@@ -396,7 +411,7 @@ function HabitRow({
               const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
               onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
             }}
-            className="w-14 h-8 text-sm"
+            className="w-14 h-8 text-sm rounded-lg"
             placeholder="0"
           />
           <span className="text-xs text-muted-foreground">h</span>
@@ -410,7 +425,7 @@ function HabitRow({
               const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
               onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
             }}
-            className="w-14 h-8 text-sm"
+            className="w-14 h-8 text-sm rounded-lg"
             placeholder="0"
           />
           <span className="text-xs text-muted-foreground">min</span>
@@ -423,7 +438,7 @@ function HabitRow({
           step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
           value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
           onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
-          className="w-20 h-8 text-sm"
+          className="w-20 h-8 text-sm rounded-lg"
           placeholder="0"
         />
       )}
@@ -463,7 +478,7 @@ function JournalBtn({
     >
       <Button
         variant="outline"
-        className="h-auto py-3 flex flex-col items-start text-left"
+        className="h-auto py-3 flex flex-col items-start text-left rounded-xl"
         onClick={() => setOpen(true)}
       >
         <span className="text-sm font-medium flex items-center gap-2">
@@ -485,19 +500,20 @@ function JournalBtn({
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={placeholder}
           rows={4}
+          placeholder={placeholder}
+          className="rounded-xl"
         />
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+        <div className="flex justify-end gap-2 mt-2">
+          <Button variant="ghost" onClick={() => setOpen(false)} className="rounded-xl">
             Cancelar
           </Button>
           <Button
             onClick={() => {
               onSave(text);
               setOpen(false);
-              toast("Registro salvo");
             }}
+            className="rounded-xl"
           >
             Salvar
           </Button>
