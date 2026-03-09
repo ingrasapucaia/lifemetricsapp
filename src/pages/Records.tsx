@@ -77,7 +77,7 @@ export default function Records() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Meus Registros</h1>
-        <Button onClick={() => { setShowNew(true); setNewDate(format(new Date(), "yyyy-MM-dd")); }}>
+        <Button onClick={() => { setShowNew(true); setNewDate(format(new Date(), "yyyy-MM-dd")); }} className="rounded-xl">
           <Plus size={16} /> Novo registro
         </Button>
       </div>
@@ -88,7 +88,7 @@ export default function Records() {
           placeholder="Buscar nas notas..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 rounded-xl"
           id="records-search"
         />
         {search && (
@@ -99,9 +99,9 @@ export default function Records() {
       </div>
 
       <Tabs defaultValue="calendar">
-        <TabsList>
-          <TabsTrigger value="calendar" className="gap-2"><CalendarDays size={14} /> Calendário</TabsTrigger>
-          <TabsTrigger value="list" className="gap-2"><List size={14} /> Lista</TabsTrigger>
+        <TabsList className="rounded-xl">
+          <TabsTrigger value="calendar" className="gap-2 rounded-lg"><CalendarDays size={14} /> Calendário</TabsTrigger>
+          <TabsTrigger value="list" className="gap-2 rounded-lg"><List size={14} /> Lista</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar">
@@ -149,7 +149,7 @@ export default function Records() {
                 return (
                   <Card
                     key={r.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="cursor-pointer hover:shadow-card-hover transition-all duration-200"
                     onClick={() => setSelected(parseISO(r.date))}
                   >
                     <CardContent className="p-4 flex items-center justify-between flex-wrap gap-2">
@@ -165,11 +165,11 @@ export default function Records() {
                               {tag.label}
                             </span>
                           )}
-                          {r.sleepHours > 0 && <Badge variant="secondary">{formatSleepHours(r.sleepHours)}</Badge>}
-                          <Badge variant="secondary">{adh}%</Badge>
+                          {r.sleepHours > 0 && <Badge variant="secondary" className="rounded-full">{formatSleepHours(r.sleepHours)}</Badge>}
+                          <Badge variant="secondary" className="rounded-full">{adh}%</Badge>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm">Ver</Button>
+                      <Button variant="ghost" size="sm" className="rounded-xl">Ver</Button>
                     </CardContent>
                   </Card>
                 );
@@ -186,11 +186,11 @@ export default function Records() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Data</label>
-              <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+              <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="rounded-xl" />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowNew(false)}>Cancelar</Button>
-              <Button onClick={handleCreate}>Criar</Button>
+              <Button variant="ghost" onClick={() => setShowNew(false)} className="rounded-xl">Cancelar</Button>
+              <Button onClick={handleCreate} className="rounded-xl">Criar</Button>
             </div>
           </div>
         </DialogContent>
@@ -231,7 +231,7 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
           <p className="text-muted-foreground mb-3">
             Sem registro para {date ? format(parseISO(date), "dd/MM/yyyy") : ""}.
           </p>
-          <Button onClick={() => onUpdate({})}>Criar registro</Button>
+          <Button onClick={() => onUpdate({})} className="rounded-xl">Criar registro</Button>
         </CardContent>
       </Card>
     );
@@ -247,17 +247,16 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
           <CardTitle className="text-base">
             {format(parseISO(date), "dd 'de' MMMM, yyyy", { locale: ptBR })}
           </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onDelete}>
+          <Button variant="ghost" size="icon" onClick={onDelete} className="rounded-lg">
             <Trash2 size={16} className="text-destructive" />
           </Button>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Quick mood dropdown */}
           <Select
             value={typeof record.mood === "string" ? record.mood : ""}
             onValueChange={(v) => onUpdate({ mood: v })}
           >
-            <SelectTrigger className="w-auto h-7 text-xs gap-1 px-2">
+            <SelectTrigger className="w-auto h-7 text-xs gap-1 px-2 rounded-lg">
               <SelectValue placeholder="Humor">
                 {moodTag && (
                   <span
@@ -285,16 +284,16 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
             </SelectContent>
           </Select>
           {record.sleepHours > 0 && (
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className="gap-1 rounded-full">
               <Moon size={12} /> {formatSleepHours(record.sleepHours)}
             </Badge>
           )}
           {record.exerciseMinutes > 0 && (
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className="gap-1 rounded-full">
               <Dumbbell size={12} /> {record.exerciseMinutes} min
             </Badge>
           )}
-          <Badge variant="outline" className="gap-1">
+          <Badge variant="outline" className="gap-1 rounded-full">
             <BarChart3 size={12} /> {adh}%
           </Badge>
         </div>
@@ -304,7 +303,7 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
           <p className="text-sm font-medium mb-2">Hábitos</p>
           <div className="space-y-2">
             {(habits as any[]).map((h: any) => (
-              <div key={h.id} className="flex items-center gap-3">
+              <div key={h.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors">
                 {h.targetType === "check" ? (
                   <Checkbox
                     checked={record.habitChecks[h.id] === true}
@@ -313,7 +312,7 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
                 ) : (
                   <Input
                     type="number"
-                    className="w-20 h-8 text-sm"
+                    className="w-20 h-8 text-sm rounded-lg"
                     value={typeof record.habitChecks[h.id] === "number" ? (record.habitChecks[h.id] as number) : ""}
                     onChange={(e) => onUpdate({ habitChecks: { ...record.habitChecks, [h.id]: Number(e.target.value) } })}
                   />

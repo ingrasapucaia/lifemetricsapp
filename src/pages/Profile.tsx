@@ -110,7 +110,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Meu Perfil</h1>
+      <h1 className="text-2xl font-bold tracking-tight tracking-tight">Meu Perfil</h1>
 
       {/* Info */}
       <Card>
@@ -170,7 +170,7 @@ export default function Profile() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Meus Hábitos</CardTitle>
-            <Button size="sm" onClick={() => openModal()}><Plus size={14} /> Novo hábito</Button>
+            <Button size="sm" className="rounded-xl" onClick={() => openModal()}><Plus size={14} /> Novo hábito</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -255,10 +255,10 @@ export default function Profile() {
       <Card>
         <CardHeader><CardTitle className="text-base">Ações</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => setExportOpen(true)}><Download size={14} /> Exportar</Button>
-          <Button variant="outline" onClick={() => setImportOpen(true)}><Upload size={14} /> Importar</Button>
-          <Button variant="outline" onClick={() => setConfirmReset(true)}><RotateCcw size={14} /> Resetar demo</Button>
-          <Button variant="destructive" onClick={() => setConfirmClear(true)}><Eraser size={14} /> Limpar dados</Button>
+          <Button variant="outline" onClick={() => setExportOpen(true)} className="rounded-xl"><Download size={14} /> Exportar</Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)} className="rounded-xl"><Upload size={14} /> Importar</Button>
+          <Button variant="outline" onClick={() => setConfirmReset(true)} className="rounded-xl"><RotateCcw size={14} /> Resetar demo</Button>
+          <Button variant="destructive" onClick={() => setConfirmClear(true)} className="rounded-xl"><Eraser size={14} /> Limpar dados</Button>
         </CardContent>
       </Card>
 

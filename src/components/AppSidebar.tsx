@@ -16,8 +16,8 @@ const mainLinks = [
 function Links({ onClick }: { onClick?: () => void }) {
   return (
     <>
-      <nav className="flex-1 flex flex-col gap-1 p-4">
-        <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+      <nav className="flex-1 flex flex-col gap-0.5 p-4">
+        <p className="px-3 mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
           Menu
         </p>
         {mainLinks.map((l) => (
@@ -27,32 +27,32 @@ function Links({ onClick }: { onClick?: () => void }) {
             onClick={onClick}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/10 text-primary font-medium shadow-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )
             }
           >
-            <l.icon size={18} />
+            <l.icon size={18} strokeWidth={1.8} />
             {l.label}
           </NavLink>
         ))}
       </nav>
-      <div className="border-t p-4">
+      <div className="border-t border-border/50 p-4">
         <NavLink
           to="/perfil"
           onClick={onClick}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
               isActive
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary/10 text-primary font-medium shadow-sm"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )
           }
         >
-          <User size={18} />
+          <User size={18} strokeWidth={1.8} />
           Meu Perfil
         </NavLink>
       </div>
@@ -66,9 +66,10 @@ export function AppSidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r bg-card z-30">
-        <div className="px-6 py-5 border-b">
-          <h1 className="text-lg font-bold tracking-tight text-foreground">metrics</h1>
+      <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-border/50 bg-sidebar z-30">
+        <div className="px-6 py-6 border-b border-border/50">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">metrics</h1>
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto">
           <Links />
@@ -76,7 +77,7 @@ export function AppSidebar() {
       </aside>
 
       {/* Mobile header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-b px-4 h-14 flex items-center gap-3">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-lg border-b border-border/50 px-4 h-14 flex items-center gap-3">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0">
@@ -84,15 +85,16 @@ export function AppSidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-60 p-0 flex flex-col">
-            <div className="px-6 py-5 border-b">
-              <h1 className="text-lg font-bold tracking-tight">metrics</h1>
+            <div className="px-6 py-6 border-b border-border/50">
+              <h1 className="text-xl font-bold tracking-tight">metrics</h1>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
             </div>
             <div className="flex flex-col flex-1">
               <Links onClick={() => setOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold">metrics</span>
+        <span className="text-sm font-bold tracking-tight">metrics</span>
       </header>
     </>
   );

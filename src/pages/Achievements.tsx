@@ -25,6 +25,12 @@ function IconPreview({ name, size = 16 }: { name?: string; size?: number }) {
   return <Icon size={size} />;
 }
 
+const STAT_THEMES = [
+  { bg: "hsl(var(--metric-habits-bg))", icon: "hsl(var(--metric-habits))" },
+  { bg: "hsl(var(--metric-exercise-bg))", icon: "hsl(var(--metric-exercise))" },
+  { bg: "hsl(var(--metric-sleep-bg))", icon: "hsl(var(--metric-sleep))" },
+];
+
 export default function Achievements() {
   const { achievements, addAchievement, updateAchievement, deleteAchievement } = useStore();
   const [showModal, setShowModal] = useState(false);
@@ -87,48 +93,35 @@ export default function Achievements() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Minhas Conquistas</h1>
-        <Button onClick={openNew}>
+        <Button onClick={openNew} className="rounded-xl">
           <Plus size={16} /> Nova conquista
         </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
-              <Calendar size={14} />
-              <span className="text-xs">Este mês</span>
-            </div>
-            <p className="text-2xl font-bold">{monthCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
-              <Star size={14} />
-              <span className="text-xs">Este ano</span>
-            </div>
-            <p className="text-2xl font-bold">{yearCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
-              <Trophy size={14} />
-              <span className="text-xs">Total</span>
-            </div>
-            <p className="text-2xl font-bold">{totalCount}</p>
-            <p className="text-xs text-muted-foreground">{totalCount} pts</p>
-          </CardContent>
-        </Card>
+        {[
+          { icon: Calendar, label: "Este mês", value: monthCount, theme: STAT_THEMES[0] },
+          { icon: Star, label: "Este ano", value: yearCount, theme: STAT_THEMES[1] },
+          { icon: Trophy, label: "Total", value: totalCount, theme: STAT_THEMES[2] },
+        ].map((stat, i) => (
+          <Card key={i} className="border-0" style={{ backgroundColor: stat.theme.bg }}>
+            <CardContent className="p-5 text-center">
+              <div className="w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: `${stat.theme.icon}18` }}>
+                <stat.icon size={16} style={{ color: stat.theme.icon }} />
+              </div>
+              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* List */}
       {sorted.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <Trophy className="mx-auto mb-3 text-muted-foreground" size={32} />
+            <Trophy className="mx-auto mb-3 text-muted-foreground opacity-30" size={32} />
             <p className="text-muted-foreground mb-2">Nenhuma conquista ainda.</p>
             <p className="text-sm text-muted-foreground">Registre suas vitórias, grandes ou pequenas!</p>
           </CardContent>
@@ -138,11 +131,13 @@ export default function Achievements() {
           {sorted.map((a) => {
             const areaColor = ACHIEVEMENT_AREA_COLORS[a.area];
             return (
-              <Card key={a.id} className="hover:bg-muted/30 transition-colors">
-                <CardContent className="p-4 flex items-start justify-between gap-3">
+              <Card key={a.id} className="hover:shadow-card-hover transition-all duration-200">
+                <CardContent className="p-5 flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <div className="mt-0.5">
-                      <IconPreview name={a.icon} size={18} />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ backgroundColor: areaColor ? `hsl(${areaColor.bgHsl})` : "hsl(var(--muted))" }}
+                    >
+                      <IconPreview name={a.icon} size={16} />
                     </div>
                     <div className="flex-1 space-y-1.5">
                       <p className="text-sm font-medium">{a.title}</p>
@@ -170,10 +165,10 @@ export default function Achievements() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(a)}>
+                    <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => openEdit(a)}>
                       <Pencil size={14} />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDelTarget(a.id)}>
+                    <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => setDelTarget(a.id)}>
                       <Trash2 size={14} className="text-destructive" />
                     </Button>
                   </div>
@@ -191,15 +186,14 @@ export default function Achievements() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Título</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Consegui uma promoção" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Consegui uma promoção" className="rounded-xl" />
             </div>
 
-            {/* Icon selector */}
             <div className="space-y-1.5">
               <Label>Ícone</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start gap-2">
+                  <Button variant="outline" className="w-full justify-start gap-2 rounded-xl">
                     <IconPreview name={iconName} />
                     {iconName || "Selecionar ícone"}
                   </Button>
@@ -214,7 +208,7 @@ export default function Achievements() {
                           key={ic}
                           onClick={() => setIconName(ic)}
                           className={cn(
-                            "p-2 rounded-md hover:bg-muted transition-colors flex items-center justify-center",
+                            "p-2 rounded-lg hover:bg-muted transition-all duration-200 flex items-center justify-center",
                             iconName === ic && "bg-primary/10 ring-2 ring-primary"
                           )}
                           title={ic}
@@ -231,7 +225,7 @@ export default function Achievements() {
             <div className="space-y-1.5">
               <Label>Área da vida</Label>
               <Select value={area} onValueChange={(v) => setArea(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ACHIEVEMENT_AREAS.map((a) => (
                     <SelectItem key={a} value={a}>{a}</SelectItem>
@@ -245,15 +239,16 @@ export default function Achievements() {
                 value={feeling}
                 onChange={(e) => setFeeling(e.target.value)}
                 placeholder="Como você se sentiu? Ex: Orgulhosa, aliviada..."
+                className="rounded-xl"
               />
             </div>
             <div className="space-y-1.5">
               <Label>Data</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl" />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowModal(false)}>Cancelar</Button>
-              <Button onClick={handleSave}>Salvar</Button>
+              <Button variant="ghost" onClick={() => setShowModal(false)} className="rounded-xl">Cancelar</Button>
+              <Button onClick={handleSave} className="rounded-xl">Salvar</Button>
             </div>
           </div>
         </DialogContent>

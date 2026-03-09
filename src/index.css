@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 40 33% 99%;
+    --background: 42 40% 98%;
     --foreground: 220 15% 12%;
 
     --card: 0 0% 100%;
@@ -30,19 +30,31 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 91%;
-    --input: 220 15% 91%;
+    --border: 220 12% 93%;
+    --input: 220 12% 93%;
     --ring: 168 64% 38%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 168 12% 97%;
+    /* Metric theme colors */
+    --metric-habits: 168 60% 42%;
+    --metric-habits-bg: 168 60% 94%;
+    --metric-sleep: 270 50% 58%;
+    --metric-sleep-bg: 270 60% 95%;
+    --metric-exercise: 38 80% 52%;
+    --metric-exercise-bg: 38 80% 94%;
+    --metric-water: 200 60% 50%;
+    --metric-water-bg: 200 60% 94%;
+    --metric-mood: 330 55% 58%;
+    --metric-mood-bg: 330 55% 95%;
+
+    --sidebar-background: 42 25% 97%;
     --sidebar-foreground: 220 10% 30%;
     --sidebar-primary: 168 64% 38%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 168 12% 93%;
     --sidebar-accent-foreground: 220 10% 20%;
-    --sidebar-border: 168 8% 90%;
+    --sidebar-border: 220 10% 93%;
     --sidebar-ring: 168 64% 38%;
 
     --chart-1: 168 64% 38%;
@@ -63,5 +75,14 @@
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.04);
   }
 }

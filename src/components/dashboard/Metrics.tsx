@@ -6,7 +6,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, Cell,
 } from "recharts";
-import { TrendingUp, Moon, Dumbbell, Droplets } from "lucide-react";
+import { TrendingUp, Moon, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 
@@ -33,7 +33,6 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
   const consistency = useMemo(() => getHabitConsistency(records, habits), [records, habits]);
   const chart = useMemo(() => getChartData(records, habits), [records, habits]);
 
-  // Build habit daily data for pixel tracker
   const activeHabits = habits.filter((h) => h.active);
   const visibleHabits = activeHabits.filter((h) => h.showOnDashboard !== false);
   const sortedRecords = useMemo(() => [...records].sort((a, b) => a.date.localeCompare(b.date)), [records]);
@@ -49,18 +48,18 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Métricas de vida</h2>
-        <div className="flex bg-muted rounded-lg p-1">
+        <div className="flex bg-muted rounded-xl p-1">
           {periods.map((p) => (
             <button
               key={p.value}
               onClick={() => setPeriod(p.value)}
               className={cn(
-                "px-3 py-1.5 text-sm rounded-md transition-colors",
+                "px-3 py-1.5 text-sm rounded-lg transition-all duration-200",
                 period === p.value
-                  ? "bg-background text-foreground shadow-sm font-medium"
+                  ? "bg-card text-foreground shadow-sm font-medium"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -70,22 +69,22 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
         </div>
       </div>
 
-      {/* Summary cards - colorful pastel design */}
+      {/* Summary metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <MetricCard
           icon={<TrendingUp size={18} />}
           label="Hábitos concluídos"
           value={`${m.avgAdherence}%`}
-          bgColor="hsl(168 70% 92%)"
-          iconColor="hsl(168 64% 38%)"
+          bgColor="hsl(var(--metric-habits-bg))"
+          iconColor="hsl(var(--metric-habits))"
           sparkData={chart.map((c) => c.adherence)}
         />
         <MetricCard
           icon={<Moon size={18} />}
           label="Sono médio"
           value={formatSleepHours(m.avgSleep)}
-          bgColor="hsl(270 80% 94%)"
-          iconColor="hsl(270 55% 55%)"
+          bgColor="hsl(var(--metric-sleep-bg))"
+          iconColor="hsl(var(--metric-sleep))"
           sparkData={chart.map((c) => c.sleep)}
         />
       </div>
@@ -94,7 +93,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
       {(() => {
         const exerciseHabits = visibleHabits.filter((h) => h.category === "exercicio");
         const cards: React.ReactNode[] = [];
-        exerciseHabits.forEach((h, idx) => {
+        exerciseHabits.forEach((h) => {
           if (h.targetType === "minutes" || h.targetType === "hours_minutes") {
             const total = records.reduce((sum, r) => {
               const val = r.habitChecks[h.id];
@@ -107,8 +106,8 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                 icon={<Dumbbell size={18} />}
                 label={h.name}
                 value={h.targetType === "hours_minutes" ? `${Math.floor(total / 60)}h ${total % 60}min` : `${total}min`}
-                bgColor="hsl(38 100% 92%)"
-                iconColor="hsl(38 90% 50%)"
+                bgColor="hsl(var(--metric-exercise-bg))"
+                iconColor="hsl(var(--metric-exercise))"
                 sparkData={sparkData}
               />
             );
@@ -125,8 +124,8 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                 icon={<Dumbbell size={18} />}
                 label={h.name}
                 value={`${+total.toFixed(1)}${unit}`}
-                bgColor="hsl(38 100% 92%)"
-                iconColor="hsl(38 90% 50%)"
+                bgColor="hsl(var(--metric-exercise-bg))"
+                iconColor="hsl(var(--metric-exercise))"
                 sparkData={sparkData}
               />
             );
@@ -144,7 +143,6 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
           {visibleHabits.map((h, idx) => {
             const color = HABIT_PASTEL_COLORS[idx % HABIT_PASTEL_COLORS.length];
 
-            // Dynamic value based on habit type
             if ((h.targetType === "minutes" || h.targetType === "hours_minutes") && h.category !== "exercicio") {
               const total = records.reduce((sum, r) => {
                 const val = r.habitChecks[h.id];
@@ -152,14 +150,14 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
               }, 0);
               const display = h.targetType === "hours_minutes" ? `${Math.floor(total / 60)}h ${total % 60}min` : `${total}min`;
               return (
-                <Card key={h.id} className="overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <Card key={h.id} className="overflow-hidden border-0" style={{ backgroundColor: `${color}15` }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                       <span className="text-xs text-muted-foreground truncate">{h.name}</span>
                     </div>
-                    <p className="text-lg font-bold">{display}</p>
-                    <p className="text-[10px] text-muted-foreground">total no período</p>
+                    <p className="text-xl font-bold">{display}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">total no período</p>
                   </CardContent>
                 </Card>
               );
@@ -172,20 +170,19 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
               }, 0);
               const unit = h.targetType === "km" ? "km" : "mi";
               return (
-                <Card key={h.id} className="overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <Card key={h.id} className="overflow-hidden border-0" style={{ backgroundColor: `${color}15` }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                       <span className="text-xs text-muted-foreground truncate">{h.name}</span>
                     </div>
-                    <p className="text-lg font-bold">{+total.toFixed(1)}{unit}</p>
-                    <p className="text-[10px] text-muted-foreground">total no período</p>
+                    <p className="text-xl font-bold">{+total.toFixed(1)}{unit}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">total no período</p>
                   </CardContent>
                 </Card>
               );
             }
 
-            // Default: percentage (check, count, etc.)
             const completedDays = records.filter((r) => {
               const val = r.habitChecks[h.id];
               if (h.targetType === "check") return val === true;
@@ -195,14 +192,14 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
             const rate = records.length > 0 ? Math.round((completedDays / records.length) * 100) : 0;
 
             return (
-              <Card key={h.id} className="overflow-hidden">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <Card key={h.id} className="overflow-hidden border-0" style={{ backgroundColor: `${color}15` }}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                     <span className="text-xs text-muted-foreground truncate">{h.name}</span>
                   </div>
-                  <p className="text-lg font-bold">{rate}%</p>
-                  <p className="text-[10px] text-muted-foreground">{completedDays}/{records.length} dias</p>
+                  <p className="text-xl font-bold">{rate}%</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{completedDays}/{records.length} dias</p>
                 </CardContent>
               </Card>
             );
@@ -211,7 +208,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Habits bar chart with pastel colors */}
+        {/* Habits bar chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Hábitos concluídos por dia</CardTitle>
@@ -219,11 +216,18 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chart}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="adherence" radius={[4, 4, 0, 0]} name="Concluídos %">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                  }}
+                />
+                <Bar dataKey="adherence" radius={[6, 6, 0, 0]} name="Concluídos %">
                   {chart.map((_, idx) => (
                     <Cell key={idx} fill={PASTEL_BAR_COLORS[idx % PASTEL_BAR_COLORS.length]} />
                   ))}
@@ -241,10 +245,10 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chart}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="sleep" tick={{ fontSize: 11 }} domain={[0, 12]} />
-                <YAxis yAxisId="mood" orientation="right" tick={{ fontSize: 11 }} domain={[0, 5]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis yAxisId="sleep" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} domain={[0, 12]} />
+                <YAxis yAxisId="mood" orientation="right" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} domain={[0, 5]} />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
@@ -253,7 +257,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                     const moodTagVal = (moodEntry?.payload as any)?.moodTag;
                     const tag = moodTagVal ? getMoodTag(moodTagVal) : null;
                     return (
-                      <div className="bg-background border rounded-lg p-2 shadow-md text-sm space-y-1">
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-card text-sm space-y-1.5">
                         <p className="font-medium">{label}</p>
                         {tag && (
                           <p className="flex items-center gap-1.5">
@@ -272,14 +276,14 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(220, 70%, 50%)" name="Sono (h)" strokeWidth={2} dot={false} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} />
                 <Line
                   yAxisId="mood"
                   type="monotone"
                   dataKey="mood"
                   name="Humor"
-                  strokeWidth={2}
-                  stroke="hsl(270, 80%, 75%)"
+                  strokeWidth={2.5}
+                  stroke="hsl(var(--metric-mood))"
                   dot={(props: any) => {
                     const tag = getMoodTag(props.payload?.moodTag);
                     return (
@@ -287,7 +291,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                         cx={props.cx}
                         cy={props.cy}
                         r={4}
-                        fill={tag ? `hsl(${tag.hsl})` : "hsl(270, 80%, 75%)"}
+                        fill={tag ? `hsl(${tag.hsl})` : "hsl(var(--metric-mood))"}
                         stroke="none"
                       />
                     );
@@ -306,11 +310,11 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
             <CardTitle className="text-sm font-medium">Consistência dos hábitos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {consistency.map(({ habit, rate }, idx) => {
                 const color = HABIT_PASTEL_COLORS[idx % HABIT_PASTEL_COLORS.length];
                 return (
-                  <div key={habit.id} className="space-y-1">
+                  <div key={habit.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium truncate max-w-[140px]">{habit.name}</span>
                       <span className={cn("text-xs font-semibold", rate >= 70 ? "text-primary" : "text-muted-foreground")}>
@@ -326,7 +330,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
                         return (
                           <div
                             key={r.date}
-                            className="w-3 h-3 rounded-[2px] transition-colors"
+                            className="w-3.5 h-3.5 rounded-[3px] transition-colors duration-200"
                             style={{
                               backgroundColor: done ? color : "hsl(var(--muted))",
                             }}
@@ -363,29 +367,32 @@ function MetricCard({
 }) {
   const max = Math.max(...sparkData, 1);
   const points = sparkData.map((v, i) => {
-    const x = (i / Math.max(sparkData.length - 1, 1)) * 60;
-    const y = 20 - (v / max) * 18;
+    const x = (i / Math.max(sparkData.length - 1, 1)) * 64;
+    const y = 22 - (v / max) * 20;
     return `${x},${y}`;
   }).join(" ");
 
   return (
-    <Card className="overflow-hidden" style={{ backgroundColor: bgColor }}>
-      <CardContent className="p-4">
+    <Card className="overflow-hidden border-0" style={{ backgroundColor: bgColor }}>
+      <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2" style={{ color: iconColor }}>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+              style={{ backgroundColor: `${iconColor}18`, color: iconColor }}
+            >
               {icon}
             </div>
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+            <p className="text-2xl font-bold tracking-tight">{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{label}</p>
           </div>
           {sparkData.length > 1 && (
-            <svg width="64" height="24" className="opacity-50 mt-2">
+            <svg width="68" height="26" className="mt-3 opacity-60">
               <polyline
                 points={points}
                 fill="none"
                 stroke={iconColor}
-                strokeWidth="1.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />

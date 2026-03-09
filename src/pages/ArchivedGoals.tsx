@@ -1,5 +1,4 @@
 import { useStore } from "@/hooks/useStore";
-import { GOAL_STATUS_COLORS } from "@/types";
 import { Archive, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +26,7 @@ export default function ArchivedGoals() {
 
       {archived.length === 0 && (
         <Card className="p-8 text-center text-muted-foreground">
-          <Archive size={40} className="mx-auto mb-3 opacity-40" />
+          <Archive size={40} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">Nenhum projeto arquivado.</p>
         </Card>
       )}
@@ -36,22 +35,22 @@ export default function ArchivedGoals() {
         {archived.map((g) => {
           const progress = g.actions.length === 0 ? 0 : Math.round((g.actions.filter((a) => a.completed).length / g.actions.length) * 100);
           return (
-            <Card key={g.id} className="p-4">
+            <Card key={g.id} className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Badge variant="secondary" className="text-[10px] px-2 py-0">{g.type}</Badge>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full">{g.type}</Badge>
                   </div>
                   <h3 className="font-semibold text-sm text-foreground">{g.title}</h3>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-3">
                     <Progress value={progress} className="h-2 flex-1" />
-                    <span className="text-xs text-muted-foreground font-medium">{progress}%</span>
+                    <span className="text-xs text-muted-foreground font-semibold">{progress}%</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                  <p className="text-[11px] text-muted-foreground mt-2">
                     Criada em {format(new Date(g.createdAt), "dd MMM yyyy", { locale: pt })}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => handleRestore(g.id)}>
+                <Button variant="outline" size="sm" className="gap-1.5 shrink-0 rounded-xl" onClick={() => handleRestore(g.id)}>
                   <RotateCcw size={14} /> Restaurar
                 </Button>
               </div>

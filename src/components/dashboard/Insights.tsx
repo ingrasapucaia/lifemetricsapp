@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw } from "lucide-react";
 
+const INSIGHT_THEMES = [
+  { bg: "hsl(var(--metric-habits-bg))", accent: "hsl(var(--metric-habits))" },
+  { bg: "hsl(var(--metric-exercise-bg))", accent: "hsl(var(--metric-exercise))" },
+  { bg: "hsl(var(--metric-sleep-bg))", accent: "hsl(var(--metric-sleep))" },
+];
+
 interface Props {
   records: DailyRecord[];
   habits: Habit[];
@@ -59,9 +65,9 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Sparkles size={18} /> Insights
+          <Sparkles size={18} className="text-metric-exercise" /> Insights
         </h2>
-        <Button variant="outline" size="sm" onClick={generate} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="rounded-xl">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           Gerar insights
         </Button>
@@ -69,38 +75,42 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4 space-y-3">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-                <Skeleton className="h-3 w-5/6" />
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="border-0" style={{ backgroundColor: INSIGHT_THEMES[i].bg }}>
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-4 w-32 bg-foreground/5" />
+                <Skeleton className="h-3 w-full bg-foreground/5" />
+                <Skeleton className="h-3 w-3/4 bg-foreground/5" />
+                <Skeleton className="h-3 w-5/6 bg-foreground/5" />
               </CardContent>
             </Card>
           ))}
         </div>
       ) : data ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InsightCard title="Resumo do dia" items={data.summary} />
-          <InsightCard title="Micro-orientações" items={data.orientations} />
-          <InsightCard title="Padrões do período" items={data.patterns} />
+          <InsightCard title="Resumo do dia" items={data.summary} theme={INSIGHT_THEMES[0]} />
+          <InsightCard title="Micro-orientações" items={data.orientations} theme={INSIGHT_THEMES[1]} />
+          <InsightCard title="Padrões do período" items={data.patterns} theme={INSIGHT_THEMES[2]} />
         </div>
       ) : null}
     </section>
   );
 }
 
-function InsightCard({ title, items }: { title: string; items: string[] }) {
+function InsightCard({ title, items, theme }: { title: string; items: string[]; theme: { bg: string; accent: string } }) {
   return (
-    <Card>
+    <Card className="border-0" style={{ backgroundColor: theme.bg }}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.accent }} />
+          {title}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-1.5">
+        <ul className="space-y-2">
           {items.map((s, i) => (
-            <li key={i} className="text-sm text-muted-foreground leading-relaxed">
+            <li key={i} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
+              <span className="text-xs font-medium mt-0.5 shrink-0" style={{ color: theme.accent }}>{i + 1}.</span>
               {s}
             </li>
           ))}

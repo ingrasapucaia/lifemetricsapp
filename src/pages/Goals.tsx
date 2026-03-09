@@ -47,7 +47,7 @@ export default function Goals() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5 rounded-xl">
               <Plus size={16} /> Nova
             </Button>
           </DialogTrigger>
@@ -58,12 +58,12 @@ export default function Goals() {
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label>Título</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Aprender inglês" />
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Aprender inglês" className="rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={type} onValueChange={(v) => setType(v as "meta" | "projeto")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="meta">Meta</SelectItem>
                     <SelectItem value="projeto">Projeto</SelectItem>
@@ -72,9 +72,9 @@ export default function Goals() {
               </div>
               <div className="space-y-2">
                 <Label>Prazo (opcional)</Label>
-                <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="rounded-xl" />
               </div>
-              <Button onClick={handleAdd} className="w-full">Criar</Button>
+              <Button onClick={handleAdd} className="w-full rounded-xl">Criar</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -82,7 +82,7 @@ export default function Goals() {
 
       {activeGoals.length === 0 && (
         <Card className="p-8 text-center text-muted-foreground">
-          <Target size={40} className="mx-auto mb-3 opacity-40" />
+          <Target size={40} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">Nenhuma meta ou projeto criado ainda.</p>
         </Card>
       )}
@@ -94,15 +94,15 @@ export default function Goals() {
           return (
             <Card
               key={g.id}
-              className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+              className="p-5 cursor-pointer hover:shadow-card-hover transition-all duration-200"
               onClick={() => navigate(`/metas/${g.id}`)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <Badge
                       variant="secondary"
-                      className="text-[10px] px-2 py-0"
+                      className="text-[10px] px-2.5 py-0.5 rounded-full"
                       style={{
                         background: `hsl(${g.type === "meta" ? "270 60% 92%" : "200 60% 92%"})`,
                         color: `hsl(${g.type === "meta" ? "270 50% 40%" : "200 50% 35%"})`,
@@ -113,7 +113,7 @@ export default function Goals() {
                     </Badge>
                     <Badge
                       variant="secondary"
-                      className="text-[10px] px-2 py-0"
+                      className="text-[10px] px-2.5 py-0.5 rounded-full"
                       style={{
                         background: statusColor ? `hsl(${statusColor.bgHsl})` : undefined,
                         color: statusColor ? `hsl(${statusColor.hsl})` : undefined,
@@ -123,11 +123,11 @@ export default function Goals() {
                     </Badge>
                   </div>
                   <h3 className="font-semibold text-sm text-foreground truncate">{g.title}</h3>
-                  <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-3 mt-3">
                     <Progress value={progress} className="h-2 flex-1" />
-                    <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">{progress}%</span>
+                    <span className="text-xs text-muted-foreground font-semibold whitespace-nowrap">{progress}%</span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                     <span>{g.actions.length} {g.actions.length === 1 ? "ação" : "ações"}</span>
                     {g.deadline && (
                       <span>Prazo: {format(new Date(g.deadline + "T12:00:00"), "dd MMM yyyy", { locale: pt })}</span>
