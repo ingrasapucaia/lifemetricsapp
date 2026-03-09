@@ -110,7 +110,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Meu Perfil</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Meu Perfil</h1>
 
       {/* Info */}
       <Card>
