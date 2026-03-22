@@ -8,6 +8,7 @@ import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
 import { Card, CardContent } from "@/components/ui/card";
 import { Flame } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
   const radius = (size - strokeWidth) / 2;
