@@ -63,6 +63,7 @@ export type GoalStatus = "nao_comecei" | "em_progresso" | "pausado" | "atrasado"
 export interface Goal {
   id: string;
   title: string;
+  icon?: string;
   type: "meta" | "projeto";
   status: GoalStatus;
   lifeArea?: string;
