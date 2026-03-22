@@ -81,7 +81,7 @@ export function AppSidebar() {
           <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto">
-          <Links />
+          <Links onLogout={signOut} />
         </div>
       </aside>
 
