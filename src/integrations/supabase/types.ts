@@ -14,6 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          area: string
+          created_at: string
+          date: string
+          feeling: string
+          goal_id: string | null
+          icon: string | null
+          id: string
+          origin: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          date?: string
+          feeling?: string
+          goal_id?: string | null
+          icon?: string | null
+          id?: string
+          origin?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          date?: string
+          feeling?: string
+          goal_id?: string | null
+          icon?: string | null
+          id?: string
+          origin?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_actions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          goal_id: string
+          id: string
+          priority: string | null
+          title: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          goal_id: string
+          id?: string
+          priority?: string | null
+          title: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          goal_id?: string
+          id?: string
+          priority?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_actions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          aligned_with_goal: boolean
+          completed_at: string | null
+          created_at: string
+          deadline: string | null
+          id: string
+          life_area: string | null
+          reward: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aligned_with_goal?: boolean
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          life_area?: string | null
+          reward?: string | null
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aligned_with_goal?: boolean
+          completed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          life_area?: string | null
+          reward?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           challenges: string[] | null

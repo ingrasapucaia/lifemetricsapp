@@ -1,20 +1,27 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
-import { GOAL_PRIORITY_COLORS, GOAL_STATUS_COLORS, GoalAction } from "@/types";
-import { ArrowLeft, Plus, Pencil, Trash2, Check } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getGoalStatus, getLifeArea } from "@/types";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LifeAreaBadge } from "@/components/LifeAreaBadge";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const PRIORITIES = ["importante", "urgente", "atrasado", "proximo"] as const;
 
@@ -22,6 +29,7 @@ export default function GoalDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { goals, updateGoal, deleteGoal, addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction } = useStore();
+  const { profile: authProfile } = useAuth();
 
   const goal = goals.find((g) => g.id === id);
 
@@ -30,9 +38,15 @@ export default function GoalDetail() {
   const [editingAction, setEditingAction] = useState<GoalAction | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editPriority, setEditPriority] = useState<GoalAction["priority"]>(undefined);
-  const [editDeadlineOpen, setEditDeadlineOpen] = useState(false);
-  const [newDeadline, setNewDeadline] = useState("");
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(true);
+
+  // Edit details form
+  const [editGoalTitle, setEditGoalTitle] = useState("");
+  const [editLifeArea, setEditLifeArea] = useState("");
+  const [editDeadline, setEditDeadline] = useState("");
+  const [editReward, setEditReward] = useState("");
+  const [editAligned, setEditAligned] = useState(true);
 
   if (!goal) {
     return (
@@ -44,6 +58,7 @@ export default function GoalDetail() {
   }
 
   const progress = goal.actions.length === 0 ? 0 : Math.round((goal.actions.filter((a) => a.completed).length / goal.actions.length) * 100);
+  const lifeArea = getLifeArea(goal.lifeArea);
 
   function handleAddAction() {
     if (!actionTitle.trim()) return;
@@ -62,73 +77,120 @@ export default function GoalDetail() {
     setEditingAction(null);
   }
 
-  function handleStatusChange(status: string) {
-    updateGoal(goal!.id, { status: status as any });
-    setStatusOpen(false);
-    if (status === "concluída") toast.success("Meta concluída! Adicionada às conquistas. 🎉");
-    if (status === "arquivada") {
+  function handleStatusChange(newStatus: GoalStatus) {
+    updateGoal(goal!.id, { status: newStatus });
+    if (newStatus === "concluido") toast.success("Meta concluída! 🎉 Conquista desbloqueada.");
+    if (newStatus === "arquivada") {
       toast("Meta arquivada.");
       navigate("/metas");
     }
   }
 
-  function handleSaveDeadline() {
-    updateGoal(goal!.id, { deadline: newDeadline || undefined });
-    setEditDeadlineOpen(false);
+  function openEditDetails() {
+    setEditGoalTitle(goal!.title);
+    setEditLifeArea(goal!.lifeArea || "");
+    setEditDeadline(goal!.deadline || "");
+    setEditReward(goal!.reward || "");
+    setEditAligned(goal!.alignedWithGoal ?? true);
+    setEditModalOpen(true);
   }
 
-  const statusColor = GOAL_STATUS_COLORS[goal.status];
+  function handleSaveDetails() {
+    if (!editGoalTitle.trim()) return;
+    updateGoal(goal!.id, {
+      title: editGoalTitle.trim(),
+      lifeArea: editLifeArea || undefined,
+      deadline: editDeadline || undefined,
+      reward: editReward.trim() || undefined,
+      alignedWithGoal: editAligned,
+    });
+    setEditModalOpen(false);
+    toast("Detalhes atualizados!");
+  }
 
   return (
     <div className="space-y-6">
+      {/* Back button */}
       <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 rounded-xl" onClick={() => navigate("/metas")}>
         <ArrowLeft size={16} /> Voltar
       </Button>
 
+      {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full"
-            style={{
-              background: `hsl(${goal.type === "meta" ? "270 60% 92%" : "200 60% 92%"})`,
-              color: `hsl(${goal.type === "meta" ? "270 50% 40%" : "200 50% 35%"})`,
-            }}
-          >
-            {goal.type}
-          </Badge>
-          <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 cursor-pointer rounded-full"
-            onClick={() => setStatusOpen(true)}
-            style={{
-              background: statusColor ? `hsl(${statusColor.bgHsl})` : undefined,
-              color: statusColor ? `hsl(${statusColor.hsl})` : undefined,
-            }}
-          >
-            {goal.status} ▾
-          </Badge>
-        </div>
+        {lifeArea && <LifeAreaBadge value={goal.lifeArea} size="lg" className="mb-3" />}
         <h1 className="text-xl font-bold text-foreground">{goal.title}</h1>
-        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+
+        {/* Status dropdown */}
+        <div className="mt-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="focus:outline-none">
+                <StatusBadge status={goal.status} size="md" onClick={() => {}} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {GOAL_STATUSES.map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  onClick={() => handleStatusChange(s.value)}
+                  className="gap-2"
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.textColor }} />
+                  {s.label}
+                  {goal.status === s.value && <Check size={14} className="ml-auto" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
           <span>Criada em {format(new Date(goal.createdAt), "dd MMM yyyy", { locale: pt })}</span>
-          {goal.deadline ? (
-            <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => { setNewDeadline(goal.deadline || ""); setEditDeadlineOpen(true); }}>
-              Prazo: {format(new Date(goal.deadline + "T12:00:00"), "dd MMM yyyy", { locale: pt })} ✎
-            </span>
-          ) : (
-            <span className="cursor-pointer hover:text-foreground transition-colors" onClick={() => { setNewDeadline(""); setEditDeadlineOpen(true); }}>
-              + Adicionar prazo
-            </span>
+          {goal.deadline && (
+            <span>Prazo: {format(new Date(goal.deadline + "T12:00:00"), "dd MMM yyyy", { locale: pt })}</span>
           )}
         </div>
       </div>
 
+      {/* Progress */}
       <div className="flex items-center gap-3">
         <Progress value={progress} className="h-3 flex-1" />
         <span className="text-sm font-bold text-foreground">{progress}%</span>
       </div>
 
+      {/* Details section */}
+      <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <Card className="overflow-hidden">
+          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors duration-200">
+            <span className="text-sm font-semibold text-foreground">Detalhes</span>
+            <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-200", detailsOpen && "rotate-180")} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Gift size={14} className="text-muted-foreground shrink-0" />
+                <span className={goal.reward ? "text-foreground" : "text-muted-foreground"}>
+                  {goal.reward || "Sem recompensa definida"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Target size={14} className="text-muted-foreground shrink-0" />
+                <span className={goal.alignedWithGoal ? "text-foreground" : "text-muted-foreground"}>
+                  {goal.alignedWithGoal ? "Alinhada com seu objetivo" : "Não alinhada com objetivo"}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs rounded-lg text-muted-foreground" onClick={openEditDetails}>
+                <Pencil size={12} className="mr-1" /> Editar detalhes
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Add action */}
       <Card className="p-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Nova ação ({goal.actions.length}/30)
+          Ações ({goal.actions.length}/30)
         </p>
         <div className="flex gap-2">
           <Input
@@ -163,7 +225,7 @@ export default function GoalDetail() {
       {/* Actions list */}
       <div className="space-y-2">
         {goal.actions.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma ação adicionada.</p>
+          <p className="text-sm text-muted-foreground text-center py-6">Adicione ações para acompanhar seu progresso</p>
         )}
         {goal.actions.map((action) => {
           const pColor = action.priority ? GOAL_PRIORITY_COLORS[action.priority] : null;
@@ -236,41 +298,49 @@ export default function GoalDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Status change dialog */}
-      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Alterar status</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            {(["começar", "em progresso", "concluída", "arquivada"] as const).map((s) => {
-              const sc = GOAL_STATUS_COLORS[s];
-              return (
-                <Button key={s} variant="outline" className="justify-start rounded-xl"
-                  style={{ borderColor: `hsl(${sc.hsl})`, color: `hsl(${sc.hsl})` }}
-                  onClick={() => handleStatusChange(s)}
-                >
-                  {goal.status === s && <Check size={14} className="mr-1.5" />}
-                  {s}
-                </Button>
-              );
-            })}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit deadline dialog */}
-      <Dialog open={editDeadlineOpen} onOpenChange={setEditDeadlineOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Editar prazo</DialogTitle></DialogHeader>
-          <div className="space-y-4 pt-2">
-            <Input type="date" value={newDeadline} onChange={(e) => setNewDeadline(e.target.value)} className="rounded-xl" />
-            <div className="flex gap-2">
-              <Button onClick={handleSaveDeadline} className="flex-1 rounded-xl">Salvar</Button>
-              {goal.deadline && (
-                <Button variant="outline" className="rounded-xl" onClick={() => { updateGoal(goal.id, { deadline: undefined }); setEditDeadlineOpen(false); }}>
-                  Remover
-                </Button>
-              )}
+      {/* Edit details dialog */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar detalhes</DialogTitle></DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={editGoalTitle} onChange={(e) => setEditGoalTitle(e.target.value)} className="rounded-xl" />
             </div>
+            <div className="space-y-2">
+              <Label>Área de vida</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {LIFE_AREAS.map((a) => (
+                  <button
+                    key={a.value}
+                    type="button"
+                    onClick={() => setEditLifeArea(a.value)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
+                    style={{
+                      backgroundColor: a.bgColor,
+                      color: a.textColor,
+                      borderColor: editLifeArea === a.value ? a.textColor : "transparent",
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.textColor }} />
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Prazo</Label>
+              <Input type="date" value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)} className="rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label>Recompensa</Label>
+              <Input value={editReward} onChange={(e) => setEditReward(e.target.value)} placeholder="Ex: Uma viagem..." className="rounded-xl" />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm">Alinhada com objetivo de vida?</span>
+              <Switch checked={editAligned} onCheckedChange={setEditAligned} />
+            </div>
+            <Button onClick={handleSaveDetails} className="w-full rounded-xl" disabled={!editGoalTitle.trim()}>Salvar</Button>
           </div>
         </DialogContent>
       </Dialog>

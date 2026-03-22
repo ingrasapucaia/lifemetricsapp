@@ -1,11 +1,11 @@
 export interface Habit {
   id: string;
   name: string;
-  icon?: string; // lucide icon name
+  icon?: string;
   color?: string;
   category?: "geral" | "exercicio";
   targetType: "check" | "minutes" | "count" | "hours_minutes" | "km" | "miles";
-  targetValue?: number; // for hours_minutes, stored as total minutes
+  targetValue?: number;
   active: boolean;
   showOnDashboard?: boolean;
   createdAt: string;
@@ -13,12 +13,12 @@ export interface Habit {
 
 export interface DailyRecord {
   id: string;
-  date: string; // yyyy-MM-dd
-  mood: string; // mood tag value (e.g. "feliz", "ansiosa")
-  wakeUpTime?: string; // HH:mm
-  sleepTime?: string; // HH:mm — hora que dormiu
+  date: string;
+  mood: string;
+  wakeUpTime?: string;
+  sleepTime?: string;
   sleepHours: number;
-  waterIntake: number; // 0-8 drops
+  waterIntake: number;
   exerciseMinutes: number;
   habitChecks: Record<string, boolean | number>;
   noteFeeling?: string;
@@ -36,6 +36,8 @@ export interface Achievement {
   icon?: string;
   date: string;
   createdAt: string;
+  goalId?: string;
+  origin?: "meta" | "manual";
 }
 
 export interface UserProfile {
@@ -56,15 +58,76 @@ export interface GoalAction {
   createdAt: string;
 }
 
+export type GoalStatus = "nao_comecei" | "em_progresso" | "pausado" | "atrasado" | "concluido" | "arquivada";
+
 export interface Goal {
   id: string;
   title: string;
   type: "meta" | "projeto";
-  status: "começar" | "em progresso" | "concluída" | "arquivada";
+  status: GoalStatus;
+  lifeArea?: string;
+  reward?: string;
+  alignedWithGoal: boolean;
+  completedAt?: string;
   actions: GoalAction[];
   createdAt: string;
   deadline?: string;
 }
+
+// ──────────────── Life Areas ────────────────
+
+export interface LifeArea {
+  value: string;
+  label: string;
+  bgColor: string;
+  textColor: string;
+}
+
+export const LIFE_AREAS: LifeArea[] = [
+  { value: "saude", label: "Saúde", bgColor: "#D1F0E0", textColor: "#0F6E56" },
+  { value: "profissional", label: "Profissional", bgColor: "#D6E8FA", textColor: "#185FA5" },
+  { value: "financeiro", label: "Financeiro", bgColor: "#D4EDDA", textColor: "#3B6D11" },
+  { value: "estudos", label: "Estudos", bgColor: "#E8E4FB", textColor: "#4A3F9F" },
+  { value: "autocuidado", label: "Autocuidado", bgColor: "#FAE0EC", textColor: "#99335A" },
+  { value: "espiritualidade", label: "Espiritualidade", bgColor: "#FDF3DC", textColor: "#7A5C00" },
+  { value: "familia", label: "Família", bgColor: "#FFE8D6", textColor: "#8B3A0F" },
+  { value: "relacionamentos", label: "Relacionamentos", bgColor: "#FCDDE8", textColor: "#8C2E52" },
+  { value: "esportes", label: "Esportes", bgColor: "#D0F0F5", textColor: "#0A6B7C" },
+  { value: "hobbie", label: "Hobbie", bgColor: "#EDE4FB", textColor: "#5B3BA0" },
+  { value: "contribuicao_social", label: "Contribuição social", bgColor: "#E8E5E0", textColor: "#5A5550" },
+];
+
+export function getLifeArea(value?: string): LifeArea | undefined {
+  return LIFE_AREAS.find((a) => a.value === value);
+}
+
+// ──────────────── Goal Status ────────────────
+
+export interface GoalStatusConfig {
+  value: GoalStatus;
+  label: string;
+  bgColor: string;
+  textColor: string;
+}
+
+export const GOAL_STATUSES: GoalStatusConfig[] = [
+  { value: "nao_comecei", label: "Não comecei", bgColor: "#F1EFE8", textColor: "#5F5E5A" },
+  { value: "em_progresso", label: "Em progresso", bgColor: "#D6E8FA", textColor: "#185FA5" },
+  { value: "pausado", label: "Pausado", bgColor: "#FDF3DC", textColor: "#7A5C00" },
+  { value: "atrasado", label: "Atrasado", bgColor: "#FCEBEB", textColor: "#A32D2D" },
+  { value: "concluido", label: "Concluído", bgColor: "#D1F0E0", textColor: "#0F6E56" },
+];
+
+export function getGoalStatus(value?: GoalStatus): GoalStatusConfig | undefined {
+  return GOAL_STATUSES.find((s) => s.value === value);
+}
+
+// Status sort order for grouping
+export const STATUS_SORT_ORDER: GoalStatus[] = [
+  "em_progresso", "nao_comecei", "pausado", "atrasado", "concluido",
+];
+
+// ──────────────── Action Priority ────────────────
 
 export const GOAL_PRIORITY_COLORS: Record<string, { hsl: string; bgHsl: string }> = {
   importante: { hsl: "142 50% 45%", bgHsl: "142 60% 90%" },
@@ -73,12 +136,15 @@ export const GOAL_PRIORITY_COLORS: Record<string, { hsl: string; bgHsl: string }
   proximo: { hsl: "45 80% 45%", bgHsl: "45 80% 90%" },
 };
 
+// Legacy compat - kept for old references
 export const GOAL_STATUS_COLORS: Record<string, { hsl: string; bgHsl: string }> = {
   "começar": { hsl: "200 60% 50%", bgHsl: "200 60% 92%" },
   "em progresso": { hsl: "45 80% 45%", bgHsl: "45 80% 90%" },
   "concluída": { hsl: "142 50% 45%", bgHsl: "142 60% 90%" },
   "arquivada": { hsl: "0 0% 50%", bgHsl: "0 0% 92%" },
 };
+
+// ──────────────── Mood & Achievements ────────────────
 
 export type Period = "7d" | "30d" | "total";
 
@@ -130,7 +196,6 @@ export const HABIT_ICONS = [
   "Headphones", "Laptop", "Smile", "Shield", "Leaf", "Mountain",
 ] as const;
 
-// Pastel colors for habits in charts
 export const HABIT_PASTEL_COLORS = [
   "hsl(168 60% 70%)", "hsl(270 60% 75%)", "hsl(38 80% 72%)", "hsl(330 60% 75%)",
   "hsl(200 60% 72%)", "hsl(142 50% 68%)", "hsl(25 70% 72%)", "hsl(45 80% 70%)",

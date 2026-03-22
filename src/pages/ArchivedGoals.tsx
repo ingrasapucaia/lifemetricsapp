@@ -2,8 +2,8 @@ import { useStore } from "@/hooks/useStore";
 import { Archive, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { LifeAreaBadge } from "@/components/LifeAreaBadge";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ export default function ArchivedGoals() {
   const archived = goals.filter((g) => g.status === "arquivada");
 
   function handleRestore(id: string) {
-    updateGoal(id, { status: "começar" });
+    updateGoal(id, { status: "nao_comecei" });
     toast.success("Meta restaurada para 'Metas de Vida'.");
   }
 
@@ -39,7 +39,7 @@ export default function ArchivedGoals() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full">{g.type}</Badge>
+                    <LifeAreaBadge value={g.lifeArea} size="sm" />
                   </div>
                   <h3 className="font-semibold text-sm text-foreground">{g.title}</h3>
                   <div className="flex items-center gap-3 mt-3">

@@ -1,6 +1,6 @@
 // Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction } from "@/types";
+import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
 import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
 
 const KEYS = {
@@ -163,21 +163,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setGoals((prev) => {
       const old = prev.find((g) => g.id === id);
       const next = prev.map((g) => (g.id === id ? { ...g, ...updates } : g));
-      // Auto-create achievement when completed
-      if (old && old.status !== "concluída" && updates.status === "concluída") {
+      // Auto-create achievement when completed for the FIRST TIME (idempotent)
+      if (old && old.status !== "concluido" && updates.status === "concluido") {
         const goal = next.find((g) => g.id === id)!;
-        setAchievements((a) => [
-          ...a,
-          {
-            id: `a-${Date.now()}`,
-            title: goal.title,
-            area: goal.type === "projeto" ? "Profissional" : "Pessoal",
-            feeling: "Meta concluída! 🎉",
-            icon: "Trophy",
-            date: new Date().toISOString().slice(0, 10),
-            createdAt: new Date().toISOString(),
-          },
-        ]);
+        // Check if achievement already exists for this goal
+        setAchievements((a) => {
+          const existing = a.find((ach) => ach.goalId === id);
+          if (existing) return a; // Already created, skip
+          const lifeArea = goal.lifeArea ? (LIFE_AREAS.find(la => la.value === goal.lifeArea)?.label || "Pessoal") : "Pessoal";
+          return [
+            ...a,
+            {
+              id: `a-${Date.now()}`,
+              title: goal.title,
+              area: lifeArea,
+              feeling: "Meta concluída! 🎉",
+              icon: "Trophy",
+              date: new Date().toISOString().slice(0, 10),
+              createdAt: new Date().toISOString(),
+              goalId: id,
+              origin: "meta" as const,
+            },
+          ];
+        });
+      }
+      // Set completedAt on first completion
+      if (old && !old.completedAt && updates.status === "concluido") {
+        return next.map((g) => g.id === id ? { ...g, completedAt: new Date().toISOString() } : g);
       }
       return next;
     });
