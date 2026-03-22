@@ -336,12 +336,11 @@ export default function GoalDetail() {
                   </button>
                 ))}
               </div>
-              <Input value={editCustomEmoji} onChange={(e) => setEditCustomEmoji(e.target.value)} placeholder="Ou digite um emoji..." className="rounded-xl w-32" maxLength={4} />
             </div>
 
             <div className="space-y-2">
               <Label>Título</Label>
-              <Input value={editGoalTitle} onChange={(e) => setEditGoalTitle(e.target.value)} className="rounded-xl" />
+              <Textarea value={editGoalTitle} onChange={(e) => setEditGoalTitle(e.target.value)} className="rounded-xl min-h-[56px] resize-none" rows={2} />
             </div>
             <div className="space-y-2">
               <Label>Área de vida</Label>
