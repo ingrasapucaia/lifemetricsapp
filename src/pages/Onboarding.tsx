@@ -386,7 +386,8 @@ export default function Onboarding() {
       addGoal({
         title: g.title,
         type: "meta",
-        status: "começar",
+        status: "nao_comecei",
+        alignedWithGoal: true,
         deadline: g.deadline ? format(g.deadline, "yyyy-MM-dd") : undefined,
       });
     });
