@@ -70,6 +70,7 @@ function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => vo
 
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
+  const { signOut } = useAuth();
 
   return (
     <>
