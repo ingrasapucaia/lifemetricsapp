@@ -458,24 +458,39 @@ export default function Goals() {
             {/* Life area */}
             <div className="space-y-2">
               <Label>Área de vida *</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {LIFE_AREAS.map((a) => (
-                  <button
-                    key={a.value}
-                    type="button"
-                    onClick={() => setLifeArea(a.value)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
-                    style={{
-                      backgroundColor: a.bgColor,
-                      color: a.textColor,
-                      borderColor: lifeArea === a.value ? a.textColor : "transparent",
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.textColor }} />
-                    {a.label}
-                  </button>
-                ))}
-              </div>
+              <Collapsible open={lifeAreaOpen} onOpenChange={setLifeAreaOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm transition-colors hover:bg-muted/50">
+                  {lifeArea ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: getLifeArea(lifeArea)?.bgColor, color: getLifeArea(lifeArea)?.textColor }}>
+                        {getLifeArea(lifeArea)?.label}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar área de vida</span>
+                  )}
+                  <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-200", lifeAreaOpen && "rotate-180")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {LIFE_AREAS.map((a) => (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => { setLifeArea(a.value); setLifeAreaOpen(false); }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
+                        style={{
+                          backgroundColor: a.bgColor,
+                          color: a.textColor,
+                          borderColor: lifeArea === a.value ? a.textColor : "transparent",
+                        }}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
             {/* Status */}
