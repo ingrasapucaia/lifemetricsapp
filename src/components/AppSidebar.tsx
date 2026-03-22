@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -13,7 +14,7 @@ const mainLinks = [
   { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
 
-function Links({ onClick }: { onClick?: () => void }) {
+function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => void }) {
   return (
     <>
       <nav className="flex-1 flex flex-col gap-0.5 p-4">
@@ -55,6 +56,13 @@ function Links({ onClick }: { onClick?: () => void }) {
           <User size={18} strokeWidth={1.8} />
           Meu Perfil
         </NavLink>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
+        >
+          <LogOut size={18} strokeWidth={1.8} />
+          Sair
+        </button>
       </div>
     </>
   );
@@ -62,6 +70,7 @@ function Links({ onClick }: { onClick?: () => void }) {
 
 export function AppSidebar() {
   const [open, setOpen] = useState(false);
+  const { signOut } = useAuth();
 
   return (
     <>
@@ -72,7 +81,7 @@ export function AppSidebar() {
           <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto">
-          <Links />
+          <Links onLogout={signOut} />
         </div>
       </aside>
 
@@ -90,7 +99,7 @@ export function AppSidebar() {
               <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
             </div>
             <div className="flex flex-col flex-1">
-              <Links onClick={() => setOpen(false)} />
+              <Links onClick={() => setOpen(false)} onLogout={signOut} />
             </div>
           </SheetContent>
         </Sheet>

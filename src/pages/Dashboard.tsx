@@ -8,6 +8,7 @@ import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
 import { Card, CardContent } from "@/components/ui/card";
 import { Flame } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
   const radius = (size - strokeWidth) / 2;
@@ -41,6 +42,8 @@ function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; si
 
 export default function Dashboard() {
   const { records, habits, profile } = useStore();
+  const { profile: authProfile } = useAuth();
+  const displayName = authProfile?.name || profile.displayName;
   const [period, setPeriod] = useState<Period>("7d");
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -57,10 +60,10 @@ export default function Dashboard() {
       {/* Greeting + Progress Ring */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          {profile.displayName ? (
+          {displayName ? (
             <>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Olá, {profile.displayName}
+                Olá, {displayName}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Acompanhe sua evolução
