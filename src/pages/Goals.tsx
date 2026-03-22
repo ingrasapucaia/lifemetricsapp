@@ -29,6 +29,7 @@ export default function Goals() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [lifeAreaOpen, setLifeAreaOpen] = useState(false);
 
   // Form state
   const [formIcon, setFormIcon] = useState("🎯");
