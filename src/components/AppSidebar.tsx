@@ -14,7 +14,7 @@ const mainLinks = [
   { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
 
-function Links({ onClick }: { onClick?: () => void }) {
+function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => void }) {
   return (
     <>
       <nav className="flex-1 flex flex-col gap-0.5 p-4">
