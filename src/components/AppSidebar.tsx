@@ -56,6 +56,13 @@ function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => vo
           <User size={18} strokeWidth={1.8} />
           Meu Perfil
         </NavLink>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
+        >
+          <LogOut size={18} strokeWidth={1.8} />
+          Sair
+        </button>
       </div>
     </>
   );
