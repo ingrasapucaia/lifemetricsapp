@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getLifeArea } from "@/types";
 import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical } from "lucide-react";
