@@ -441,23 +441,17 @@ export default function Goals() {
                   </button>
                 ))}
               </div>
-              <Input
-                value={formCustomEmoji}
-                onChange={(e) => setFormCustomEmoji(e.target.value)}
-                placeholder="Ou digite um emoji..."
-                className="rounded-xl mt-1 w-32"
-                maxLength={4}
-              />
             </div>
 
             {/* Title */}
             <div className="space-y-2">
               <Label>Título da meta *</Label>
-              <Input
+              <Textarea
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Treinar 3x por semana por 30 dias"
-                className="rounded-xl"
+                className="rounded-xl min-h-[56px] resize-none"
+                rows={2}
               />
             </div>
 
