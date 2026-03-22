@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
