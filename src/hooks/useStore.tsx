@@ -202,7 +202,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addGoalAction = useCallback((goalId: string, action: Omit<GoalAction, "id" | "createdAt" | "completed">) => {
     setGoals((prev) =>
       prev.map((g) => {
-        if (g.id !== goalId || g.actions.length >= 30) return g;
+        if (g.id !== goalId) return g;
         return {
           ...g,
           actions: [...g.actions, { ...action, id: `ga-${Date.now()}`, completed: false, createdAt: new Date().toISOString() }],
