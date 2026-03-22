@@ -60,10 +60,10 @@ export default function Dashboard() {
       {/* Greeting + Progress Ring */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          {profile.displayName ? (
+          {displayName ? (
             <>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Olá, {profile.displayName}
+                Olá, {displayName}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Acompanhe sua evolução
