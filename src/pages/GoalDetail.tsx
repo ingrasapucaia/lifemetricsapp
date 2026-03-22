@@ -258,7 +258,7 @@ export default function GoalDetail() {
               ))}
             </SelectContent>
           </Select>
-          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim()}>
+          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
             <Plus size={16} />
           </Button>
         </div>
