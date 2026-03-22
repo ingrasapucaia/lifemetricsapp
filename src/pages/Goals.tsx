@@ -7,6 +7,7 @@ import { Plus, Target, ChevronDown, ChevronRight, Gift, ArrowUpDown, Filter, Mor
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -29,6 +30,7 @@ export default function Goals() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [lifeAreaOpen, setLifeAreaOpen] = useState(false);
 
   // Form state
   const [formIcon, setFormIcon] = useState("🎯");
@@ -440,47 +442,56 @@ export default function Goals() {
                   </button>
                 ))}
               </div>
-              <Input
-                value={formCustomEmoji}
-                onChange={(e) => setFormCustomEmoji(e.target.value)}
-                placeholder="Ou digite um emoji..."
-                className="rounded-xl mt-1 w-32"
-                maxLength={4}
-              />
             </div>
 
             {/* Title */}
             <div className="space-y-2">
               <Label>Título da meta *</Label>
-              <Input
+              <Textarea
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Treinar 3x por semana por 30 dias"
-                className="rounded-xl"
+                className="rounded-xl min-h-[56px] resize-none"
+                rows={2}
               />
             </div>
 
             {/* Life area */}
             <div className="space-y-2">
               <Label>Área de vida *</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {LIFE_AREAS.map((a) => (
-                  <button
-                    key={a.value}
-                    type="button"
-                    onClick={() => setLifeArea(a.value)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
-                    style={{
-                      backgroundColor: a.bgColor,
-                      color: a.textColor,
-                      borderColor: lifeArea === a.value ? a.textColor : "transparent",
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.textColor }} />
-                    {a.label}
-                  </button>
-                ))}
-              </div>
+              <Collapsible open={lifeAreaOpen} onOpenChange={setLifeAreaOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm transition-colors hover:bg-muted/50">
+                  {lifeArea ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: getLifeArea(lifeArea)?.bgColor, color: getLifeArea(lifeArea)?.textColor }}>
+                        {getLifeArea(lifeArea)?.label}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar área de vida</span>
+                  )}
+                  <ChevronDown size={16} className={cn("text-muted-foreground transition-transform duration-200", lifeAreaOpen && "rotate-180")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {LIFE_AREAS.map((a) => (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => { setLifeArea(a.value); setLifeAreaOpen(false); }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
+                        style={{
+                          backgroundColor: a.bgColor,
+                          color: a.textColor,
+                          borderColor: lifeArea === a.value ? a.textColor : "transparent",
+                        }}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
             {/* Status */}

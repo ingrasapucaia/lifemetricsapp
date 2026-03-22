@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getLifeArea } from "@/types";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LifeAreaBadge } from "@/components/LifeAreaBadge";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -63,7 +65,7 @@ export default function GoalDetail() {
   const lifeGoals = authProfile?.life_goals;
 
   function handleAddAction() {
-    if (!actionTitle.trim()) return;
+    if (!actionTitle.trim() || goal!.actions.length >= 50) return;
     addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority });
     setActionTitle("");
     setActionPriority(undefined);
@@ -230,7 +232,7 @@ export default function GoalDetail() {
       {/* Actions section */}
       <Card className="p-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Ações ({goal.actions.filter(a => a.completed).length}/{goal.actions.length})
+          Ações ({goal.actions.length}/50)
         </p>
         <div className="flex gap-2">
           <Input
@@ -256,7 +258,7 @@ export default function GoalDetail() {
               ))}
             </SelectContent>
           </Select>
-          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim()}>
+          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
             <Plus size={16} />
           </Button>
         </div>
@@ -336,25 +338,37 @@ export default function GoalDetail() {
                   </button>
                 ))}
               </div>
-              <Input value={editCustomEmoji} onChange={(e) => setEditCustomEmoji(e.target.value)} placeholder="Ou digite um emoji..." className="rounded-xl w-32" maxLength={4} />
             </div>
 
             <div className="space-y-2">
               <Label>Título</Label>
-              <Input value={editGoalTitle} onChange={(e) => setEditGoalTitle(e.target.value)} className="rounded-xl" />
+              <Textarea value={editGoalTitle} onChange={(e) => setEditGoalTitle(e.target.value)} className="rounded-xl min-h-[56px] resize-none" rows={2} />
             </div>
             <div className="space-y-2">
               <Label>Área de vida</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {LIFE_AREAS.map((a) => (
-                  <button key={a.value} type="button" onClick={() => setEditLifeArea(a.value)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
-                    style={{ backgroundColor: a.bgColor, color: a.textColor, borderColor: editLifeArea === a.value ? a.textColor : "transparent" }}>
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.textColor }} />
-                    {a.label}
-                  </button>
-                ))}
-              </div>
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm transition-colors hover:bg-muted/50">
+                  {editLifeArea ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: getLifeArea(editLifeArea)?.bgColor, color: getLifeArea(editLifeArea)?.textColor }}>
+                      {getLifeArea(editLifeArea)?.label}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Selecionar área de vida</span>
+                  )}
+                  <ChevronDown size={16} className="text-muted-foreground" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {LIFE_AREAS.map((a) => (
+                      <button key={a.value} type="button" onClick={() => setEditLifeArea(a.value)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
+                        style={{ backgroundColor: a.bgColor, color: a.textColor, borderColor: editLifeArea === a.value ? a.textColor : "transparent" }}>
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
