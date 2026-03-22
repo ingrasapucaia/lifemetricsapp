@@ -65,7 +65,7 @@ export default function GoalDetail() {
   const lifeGoals = authProfile?.life_goals;
 
   function handleAddAction() {
-    if (!actionTitle.trim()) return;
+    if (!actionTitle.trim() || goal!.actions.length >= 50) return;
     addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority });
     setActionTitle("");
     setActionPriority(undefined);
