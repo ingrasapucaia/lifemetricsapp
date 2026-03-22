@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          challenges: string[] | null
+          created_at: string
+          gender: string | null
+          id: string
+          insights_tone: string | null
+          life_areas: string[] | null
+          life_goals: string | null
+          main_objective: string[] | null
+          name: string | null
+          onboarding_completed: boolean
+          opportunities: string[] | null
+          strengths: string[] | null
+          updated_at: string
+          user_id: string
+          week_starts_monday: boolean | null
+        }
+        Insert: {
+          challenges?: string[] | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          insights_tone?: string | null
+          life_areas?: string[] | null
+          life_goals?: string | null
+          main_objective?: string[] | null
+          name?: string | null
+          onboarding_completed?: boolean
+          opportunities?: string[] | null
+          strengths?: string[] | null
+          updated_at?: string
+          user_id: string
+          week_starts_monday?: boolean | null
+        }
+        Update: {
+          challenges?: string[] | null
+          created_at?: string
+          gender?: string | null
+          id?: string
+          insights_tone?: string | null
+          life_areas?: string[] | null
+          life_goals?: string | null
+          main_objective?: string[] | null
+          name?: string | null
+          onboarding_completed?: boolean
+          opportunities?: string[] | null
+          strengths?: string[] | null
+          updated_at?: string
+          user_id?: string
+          week_starts_monday?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
