@@ -99,7 +99,7 @@ export function AppSidebar() {
               <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
             </div>
             <div className="flex flex-col flex-1">
-              <Links onClick={() => setOpen(false)} />
+              <Links onClick={() => setOpen(false)} onLogout={signOut} />
             </div>
           </SheetContent>
         </Sheet>
