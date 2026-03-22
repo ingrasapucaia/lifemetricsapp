@@ -232,7 +232,7 @@ export default function GoalDetail() {
       {/* Actions section */}
       <Card className="p-5">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Ações ({goal.actions.filter(a => a.completed).length}/{goal.actions.length > 0 ? goal.actions.length : 50})
+          Ações ({goal.actions.length}/50)
         </p>
         <div className="flex gap-2">
           <Input
