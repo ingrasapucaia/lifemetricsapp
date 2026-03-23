@@ -23,6 +23,10 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function HabitIcon({ name, size = 14 }: { name?: string; size?: number }) {
+  // If it's an emoji (non-ASCII), render as text
+  if (name && /[^\x00-\x7F]/.test(name)) {
+    return <span className="shrink-0" style={{ fontSize: size + 4 }}>{name}</span>;
+  }
   if (!name) return null;
   const Icon = icons[name as keyof typeof icons];
   if (!Icon) return null;
