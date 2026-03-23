@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/hooks/useStore";
-import { LIFE_AREAS, getLifeArea } from "@/types";
+import { LIFE_AREAS } from "@/types";
 import { Task, TaskInsert, TaskUpdate } from "@/hooks/useTasks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -8,8 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import LifeAreaCollapsible from "@/components/LifeAreaCollapsible";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarDays } from "lucide-react";
 
 const PRIORITY_COLORS = {
   alta: { bg: "#FCEBEB", text: "#A32D2D" },
@@ -37,6 +43,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
   const [reward, setReward] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -59,12 +66,6 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       }
     }
   }, [open, task, defaultDate]);
-
-  const toggleArea = (value: string) => {
-    setLifeAreas((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    );
-  };
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
@@ -89,6 +90,8 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
     }
   };
 
+  const selectedDate = date ? parseISO(date) : undefined;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -108,10 +111,35 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
             />
           </div>
 
-          {/* Date */}
+          {/* Date — custom calendar popover */}
           <div className="space-y-2">
             <Label>Data</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl" />
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal rounded-xl",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarDays size={16} className="mr-2 text-muted-foreground" />
+                  {date ? format(parseISO(date), "dd/MM/yyyy") : "Selecionar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => {
+                    if (d) setDate(format(d, "yyyy-MM-dd"));
+                    setCalOpen(false);
+                  }}
+                  locale={ptBR}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Priority */}
@@ -139,28 +167,14 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
             </div>
           </div>
 
-          {/* Life areas */}
+          {/* Life areas — collapsible */}
           <div className="space-y-2">
             <Label>Área(s) de vida</Label>
-            <div className="flex flex-wrap gap-2">
-              {LIFE_AREAS.map((a) => (
-                <button
-                  key={a.value}
-                  type="button"
-                  onClick={() => toggleArea(a.value)}
-                  className={cn(
-                    "text-xs px-3 py-1.5 rounded-full font-medium transition-all duration-200 border-2"
-                  )}
-                  style={{
-                    backgroundColor: a.bgColor,
-                    color: a.textColor,
-                    borderColor: lifeAreas.includes(a.value) ? a.textColor : "transparent",
-                  }}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
+            <LifeAreaCollapsible
+              multiple
+              selected={lifeAreas}
+              onSelectedChange={setLifeAreas}
+            />
           </div>
 
           {/* Goal */}
