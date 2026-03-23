@@ -68,6 +68,8 @@ export interface Goal {
   status: GoalStatus;
   lifeArea?: string;
   reward?: string;
+  rewarded?: boolean;
+  rewardedAt?: string;
   alignedWithGoal: boolean;
   completedAt?: string;
   actions: GoalAction[];
