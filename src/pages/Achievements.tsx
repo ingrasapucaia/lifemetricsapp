@@ -1,25 +1,13 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
+import { useStore } from "@/hooks/useStore";
 import { getLifeArea } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LifeAreaBadge } from "@/components/LifeAreaBadge";
 import { toast } from "sonner";
 import { Trophy, Star, Calendar, Gift, Check } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-
-interface CompletedGoal {
-  id: string;
-  title: string;
-  icon: string | null;
-  life_area: string | null;
-  completed_at: string | null;
-  reward: string | null;
-  rewarded: boolean;
-  rewarded_at: string | null;
-}
 
 const STAT_THEMES = [
   { bg: "hsl(var(--metric-habits-bg))", icon: "hsl(var(--metric-habits))" },
@@ -28,26 +16,12 @@ const STAT_THEMES = [
 ];
 
 export default function Achievements() {
-  const { user } = useAuth();
-  const [goals, setGoals] = useState<CompletedGoal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { goals, updateGoal } = useStore();
 
-  const fetchCompleted = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("goals")
-      .select("id, title, life_area, completed_at, reward, rewarded, rewarded_at")
-      .eq("user_id", user.id)
-      .eq("status", "concluido")
-      .order("completed_at", { ascending: false });
-    setGoals((data as CompletedGoal[]) || []);
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { fetchCompleted(); }, [fetchCompleted]);
-
-  const sorted = useMemo(
-    () => [...goals].sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || "")),
+  const completed = useMemo(
+    () => goals
+      .filter((g) => g.status === "concluido")
+      .sort((a, b) => (b.completedAt || b.createdAt).localeCompare(a.completedAt || a.createdAt)),
     [goals],
   );
 
@@ -55,29 +29,17 @@ export default function Achievements() {
   const thisMonth = format(now, "yyyy-MM");
   const thisYear = format(now, "yyyy");
 
-  const monthCount = goals.filter((g) => g.completed_at?.startsWith(thisMonth)).length;
-  const yearCount = goals.filter((g) => g.completed_at?.startsWith(thisYear)).length;
-  const totalCount = goals.length;
+  const monthCount = completed.filter((g) => (g.completedAt || g.createdAt).startsWith(thisMonth)).length;
+  const yearCount = completed.filter((g) => (g.completedAt || g.createdAt).startsWith(thisYear)).length;
+  const totalCount = completed.length;
 
-  const handleReward = async (goalId: string, rewarded: boolean) => {
-    const updates = rewarded
-      ? { rewarded: true, rewarded_at: new Date().toISOString() }
-      : { rewarded: false, rewarded_at: null };
-
-    await supabase.from("goals").update(updates).eq("id", goalId);
-    setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g)),
-    );
+  const handleReward = (goalId: string, rewarded: boolean) => {
+    updateGoal(goalId, {
+      rewarded,
+      rewardedAt: rewarded ? new Date().toISOString() : undefined,
+    } as any);
     toast(rewarded ? "Recompensa marcada! 🎁" : "Recompensa desmarcada.");
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
@@ -109,7 +71,7 @@ export default function Achievements() {
       </div>
 
       {/* List */}
-      {sorted.length === 0 ? (
+      {completed.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Trophy className="mx-auto mb-3 text-muted-foreground opacity-30" size={32} />
@@ -121,9 +83,9 @@ export default function Achievements() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {sorted.map((g) => {
-            const completedDate = g.completed_at
-              ? format(parseISO(g.completed_at), "dd 'de' MMMM 'de' yyyy", { locale: pt })
+          {completed.map((g) => {
+            const completedDate = g.completedAt
+              ? format(new Date(g.completedAt), "dd 'de' MMMM 'de' yyyy", { locale: pt })
               : null;
 
             return (
@@ -139,7 +101,7 @@ export default function Achievements() {
                       <p className="text-[15px] font-medium">{g.title}</p>
 
                       <div className="flex items-center gap-2 flex-wrap">
-                        <LifeAreaBadge value={g.life_area || undefined} size="sm" />
+                        <LifeAreaBadge value={g.lifeArea} size="sm" />
                         {completedDate && (
                           <span className="text-xs text-muted-foreground">
                             Concluída em {completedDate}
@@ -159,19 +121,19 @@ export default function Achievements() {
                             <span className="text-xs text-muted-foreground">Já se recompensou?</span>
                             <div className="flex gap-1.5">
                               <Button
-                                variant={g.rewarded ? "default" : "outline"}
+                                variant={(g as any).rewarded ? "default" : "outline"}
                                 size="sm"
                                 className="h-7 rounded-lg text-xs gap-1"
                                 onClick={() => handleReward(g.id, true)}
                               >
-                                {g.rewarded && <Check size={12} />} Sim
+                                {(g as any).rewarded && <Check size={12} />} Sim
                               </Button>
                               <Button
-                                variant={!g.rewarded ? "outline" : "ghost"}
+                                variant={!(g as any).rewarded ? "outline" : "ghost"}
                                 size="sm"
                                 className="h-7 rounded-lg text-xs"
                                 style={
-                                  !g.rewarded
+                                  !(g as any).rewarded
                                     ? { backgroundColor: "#FDF3DC", color: "#7A5C00", borderColor: "#7A5C00" }
                                     : undefined
                                 }
@@ -182,7 +144,7 @@ export default function Achievements() {
                             </div>
                           </div>
 
-                          {g.rewarded && (
+                          {(g as any).rewarded && (
                             <p className="text-xs font-medium" style={{ color: "#0F6E56" }}>
                               Recompensa recebida ✓
                             </p>
