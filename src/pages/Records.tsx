@@ -152,7 +152,7 @@ export default function Records() {
                   <Card
                     key={r.id}
                     className="cursor-pointer hover:shadow-card-hover transition-all duration-200"
-                    onClick={() => setSelected(parseISO(r.date))}
+                    onClick={() => { setSelected(parseISO(r.date)); setActiveTab("calendar"); }}
                   >
                     <CardContent className="p-4 flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3 flex-wrap">
