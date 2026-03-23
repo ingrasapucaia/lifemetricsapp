@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/hooks/useStore";
 import {
   Habit, LIFE_AREAS, getLifeArea, HabitMetricType, HabitFrequency, HabitTimeUnit,
