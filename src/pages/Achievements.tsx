@@ -121,19 +121,19 @@ export default function Achievements() {
                             <span className="text-xs text-muted-foreground">Já se recompensou?</span>
                             <div className="flex gap-1.5">
                               <Button
-                                variant={(g as any).rewarded ? "default" : "outline"}
+                                variant={g.rewarded ? "default" : "outline"}
                                 size="sm"
                                 className="h-7 rounded-lg text-xs gap-1"
                                 onClick={() => handleReward(g.id, true)}
                               >
-                                {(g as any).rewarded && <Check size={12} />} Sim
+                                {g.rewarded && <Check size={12} />} Sim
                               </Button>
                               <Button
-                                variant={!(g as any).rewarded ? "outline" : "ghost"}
+                                variant={!g.rewarded ? "outline" : "ghost"}
                                 size="sm"
                                 className="h-7 rounded-lg text-xs"
                                 style={
-                                  !(g as any).rewarded
+                                  !g.rewarded
                                     ? { backgroundColor: "#FDF3DC", color: "#7A5C00", borderColor: "#7A5C00" }
                                     : undefined
                                 }
@@ -144,7 +144,7 @@ export default function Achievements() {
                             </div>
                           </div>
 
-                          {(g as any).rewarded && (
+                          {g.rewarded && (
                             <p className="text-xs font-medium" style={{ color: "#0F6E56" }}>
                               Recompensa recebida ✓
                             </p>
