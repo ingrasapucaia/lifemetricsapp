@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
+  { to: "/habitos", label: "Controle de hábitos", icon: CheckSquare },
   { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
