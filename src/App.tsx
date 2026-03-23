@@ -13,6 +13,7 @@ import Achievements from "@/pages/Achievements";
 import Goals from "@/pages/Goals";
 import GoalDetail from "@/pages/GoalDetail";
 import ArchivedGoals from "@/pages/ArchivedGoals";
+import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
