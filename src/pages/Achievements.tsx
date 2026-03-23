@@ -1,28 +1,24 @@
-import { useState, useMemo } from "react";
-import { useStore } from "@/hooks/useStore";
-import { Achievement, ACHIEVEMENT_AREAS, ACHIEVEMENT_AREA_COLORS, HABIT_ICONS } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { getLifeArea } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { LifeAreaBadge } from "@/components/LifeAreaBadge";
 import { toast } from "sonner";
-import { Plus, Trash2, Trophy, Star, Calendar, Pencil, icons } from "lucide-react";
+import { Trophy, Star, Calendar, Gift, Check } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { cn } from "@/lib/utils";
+import { pt } from "date-fns/locale";
 
-function IconPreview({ name, size = 16 }: { name?: string; size?: number }) {
-  if (!name) return null;
-  const Icon = icons[name as keyof typeof icons];
-  if (!Icon) return null;
-  return <Icon size={size} />;
+interface CompletedGoal {
+  id: string;
+  title: string;
+  icon: string | null;
+  life_area: string | null;
+  completed_at: string | null;
+  reward: string | null;
+  rewarded: boolean;
+  rewarded_at: string | null;
 }
 
 const STAT_THEMES = [
@@ -32,70 +28,62 @@ const STAT_THEMES = [
 ];
 
 export default function Achievements() {
-  const { achievements, addAchievement, updateAchievement, deleteAchievement } = useStore();
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [delTarget, setDelTarget] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [goals, setGoals] = useState<CompletedGoal[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [title, setTitle] = useState("");
-  const [area, setArea] = useState<string>(ACHIEVEMENT_AREAS[0]);
-  const [feeling, setFeeling] = useState("");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [iconName, setIconName] = useState<string>("Trophy");
+  const fetchCompleted = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("goals")
+      .select("id, title, icon, life_area, completed_at, reward, rewarded, rewarded_at")
+      .eq("user_id", user.id)
+      .eq("status", "concluido")
+      .order("completed_at", { ascending: false });
+    setGoals((data as CompletedGoal[]) || []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { fetchCompleted(); }, [fetchCompleted]);
 
   const sorted = useMemo(
-    () => [...achievements].sort((a, b) => b.date.localeCompare(a.date)),
-    [achievements]
+    () => [...goals].sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || "")),
+    [goals],
   );
 
   const now = new Date();
   const thisMonth = format(now, "yyyy-MM");
   const thisYear = format(now, "yyyy");
 
-  const monthCount = achievements.filter((a) => a.date.startsWith(thisMonth)).length;
-  const yearCount = achievements.filter((a) => a.date.startsWith(thisYear)).length;
-  const totalCount = achievements.length;
+  const monthCount = goals.filter((g) => g.completed_at?.startsWith(thisMonth)).length;
+  const yearCount = goals.filter((g) => g.completed_at?.startsWith(thisYear)).length;
+  const totalCount = goals.length;
 
-  const openNew = () => {
-    setEditingId(null);
-    setTitle("");
-    setArea(ACHIEVEMENT_AREAS[0]);
-    setFeeling("");
-    setDate(format(new Date(), "yyyy-MM-dd"));
-    setIconName("Trophy");
-    setShowModal(true);
+  const handleReward = async (goalId: string, rewarded: boolean) => {
+    const updates = rewarded
+      ? { rewarded: true, rewarded_at: new Date().toISOString() }
+      : { rewarded: false, rewarded_at: null };
+
+    await supabase.from("goals").update(updates).eq("id", goalId);
+    setGoals((prev) =>
+      prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g)),
+    );
+    toast(rewarded ? "Recompensa marcada! 🎁" : "Recompensa desmarcada.");
   };
 
-  const openEdit = (a: Achievement) => {
-    setEditingId(a.id);
-    setTitle(a.title);
-    setArea(a.area);
-    setFeeling(a.feeling);
-    setDate(a.date);
-    setIconName(a.icon || "Trophy");
-    setShowModal(true);
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) { toast.error("Título é obrigatório"); return; }
-    const data = { title: title.trim(), area, feeling, date, icon: iconName };
-    if (editingId) {
-      updateAchievement(editingId, data);
-      toast("Conquista atualizada!");
-    } else {
-      addAchievement(data);
-      toast("Conquista adicionada!");
-    }
-    setShowModal(false);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div>
         <h1 className="text-2xl font-bold">Minhas Conquistas</h1>
-        <Button onClick={openNew} className="rounded-xl">
-          <Plus size={16} /> Nova conquista
-        </Button>
+        <p className="text-sm text-muted-foreground mt-1">Metas que você concluiu</p>
       </div>
 
       {/* Stats */}
@@ -107,7 +95,10 @@ export default function Achievements() {
         ].map((stat, i) => (
           <Card key={i} className="border-0" style={{ backgroundColor: stat.theme.bg }}>
             <CardContent className="p-5 text-center">
-              <div className="w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: `${stat.theme.icon}18` }}>
+              <div
+                className="w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center"
+                style={{ backgroundColor: `${stat.theme.icon}18` }}
+              >
                 <stat.icon size={16} style={{ color: stat.theme.icon }} />
               </div>
               <p className="text-2xl font-bold">{stat.value}</p>
@@ -122,55 +113,83 @@ export default function Achievements() {
         <Card className="text-center py-12">
           <CardContent>
             <Trophy className="mx-auto mb-3 text-muted-foreground opacity-30" size={32} />
-            <p className="text-muted-foreground mb-2">Nenhuma conquista ainda.</p>
-            <p className="text-sm text-muted-foreground">Registre suas vitórias, grandes ou pequenas!</p>
+            <p className="text-muted-foreground mb-2">Nenhuma conquista ainda</p>
+            <p className="text-sm text-muted-foreground">
+              Conclua suas metas para vê-las aparecer aqui.
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {sorted.map((a) => {
-            const areaColor = ACHIEVEMENT_AREA_COLORS[a.area];
+          {sorted.map((g) => {
+            const completedDate = g.completed_at
+              ? format(parseISO(g.completed_at), "dd 'de' MMMM 'de' yyyy", { locale: pt })
+              : null;
+
             return (
-              <Card key={a.id} className="hover:shadow-card-hover transition-all duration-200">
-                <CardContent className="p-5 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ backgroundColor: areaColor ? `hsl(${areaColor.bgHsl})` : "hsl(var(--muted))" }}
-                    >
-                      <IconPreview name={a.icon} size={16} />
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <p className="text-sm font-medium">{a.title}</p>
+              <Card key={g.id} className="hover:shadow-card-hover transition-all duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    {/* Icon */}
+                    <span className="text-[32px] leading-none shrink-0 mt-0.5">
+                      {g.icon || "🏆"}
+                    </span>
+
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <p className="text-[15px] font-medium">{g.title}</p>
+
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs"
-                          style={{
-                            backgroundColor: areaColor ? `hsl(${areaColor.bgHsl})` : "hsl(220 10% 94%)",
-                            color: areaColor ? `hsl(${areaColor.hsl})` : "hsl(220 10% 45%)",
-                          }}
-                        >
-                          <span
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: areaColor ? `hsl(${areaColor.hsl})` : "hsl(220 10% 60%)" }}
-                          />
-                          {a.area}
-                        </span>
-                        {a.feeling && (
-                          <span className="text-xs text-muted-foreground italic">"{a.feeling}"</span>
+                        <LifeAreaBadge value={g.life_area || undefined} size="sm" />
+                        {completedDate && (
+                          <span className="text-xs text-muted-foreground">
+                            Concluída em {completedDate}
+                          </span>
                         )}
-                        <span className="text-xs text-muted-foreground">
-                          {format(parseISO(a.date), "dd/MM/yyyy")}
-                        </span>
                       </div>
+
+                      {/* Reward section */}
+                      {g.reward && (
+                        <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Gift size={14} className="text-muted-foreground shrink-0" />
+                            <span>{g.reward}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Já se recompensou?</span>
+                            <div className="flex gap-1.5">
+                              <Button
+                                variant={g.rewarded ? "default" : "outline"}
+                                size="sm"
+                                className="h-7 rounded-lg text-xs gap-1"
+                                onClick={() => handleReward(g.id, true)}
+                              >
+                                {g.rewarded && <Check size={12} />} Sim
+                              </Button>
+                              <Button
+                                variant={!g.rewarded ? "outline" : "ghost"}
+                                size="sm"
+                                className="h-7 rounded-lg text-xs"
+                                style={
+                                  !g.rewarded
+                                    ? { backgroundColor: "#FDF3DC", color: "#7A5C00", borderColor: "#7A5C00" }
+                                    : undefined
+                                }
+                                onClick={() => handleReward(g.id, false)}
+                              >
+                                Ainda não
+                              </Button>
+                            </div>
+                          </div>
+
+                          {g.rewarded && (
+                            <p className="text-xs font-medium" style={{ color: "#0F6E56" }}>
+                              Recompensa recebida ✓
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => openEdit(a)}>
-                      <Pencil size={14} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-lg" onClick={() => setDelTarget(a.id)}>
-                      <Trash2 size={14} className="text-destructive" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -178,97 +197,6 @@ export default function Achievements() {
           })}
         </div>
       )}
-
-      {/* Achievement modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Editar conquista" : "Nova conquista"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Título</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Consegui uma promoção" className="rounded-xl" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Ícone</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start gap-2 rounded-xl">
-                    <IconPreview name={iconName} />
-                    {iconName || "Selecionar ícone"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-3">
-                  <div className="grid grid-cols-6 gap-2">
-                    {HABIT_ICONS.map((ic) => {
-                      const Icon = icons[ic as keyof typeof icons];
-                      if (!Icon) return null;
-                      return (
-                        <button
-                          key={ic}
-                          onClick={() => setIconName(ic)}
-                          className={cn(
-                            "p-2 rounded-lg hover:bg-muted transition-all duration-200 flex items-center justify-center",
-                            iconName === ic && "bg-primary/10 ring-2 ring-primary"
-                          )}
-                          title={ic}
-                        >
-                          <Icon size={18} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Área da vida</Label>
-              <Select value={area} onValueChange={(v) => setArea(v)}>
-                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ACHIEVEMENT_AREAS.map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Sentimento</Label>
-              <Input
-                value={feeling}
-                onChange={(e) => setFeeling(e.target.value)}
-                placeholder="Como você se sentiu? Ex: Orgulhosa, aliviada..."
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Data</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl" />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowModal(false)} className="rounded-xl">Cancelar</Button>
-              <Button onClick={handleSave} className="rounded-xl">Salvar</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirm */}
-      <AlertDialog open={!!delTarget} onOpenChange={(o) => !o && setDelTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deletar conquista?</AlertDialogTitle>
-            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { deleteAchievement(delTarget!); setDelTarget(null); toast("Conquista removida"); }}>
-              Deletar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
