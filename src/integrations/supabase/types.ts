@@ -195,6 +195,65 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          date: string
+          goal_id: string | null
+          icon: string | null
+          id: string
+          life_areas: string[] | null
+          note: string | null
+          priority: string
+          reward: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          goal_id?: string | null
+          icon?: string | null
+          id?: string
+          life_areas?: string[] | null
+          note?: string | null
+          priority?: string
+          reward?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          goal_id?: string | null
+          icon?: string | null
+          id?: string
+          life_areas?: string[] | null
+          note?: string | null
+          priority?: string
+          reward?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
