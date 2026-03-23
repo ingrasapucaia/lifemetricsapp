@@ -178,7 +178,9 @@ export default function Goals() {
         alignedWithGoal: aligned,
       });
       if (status === "concluido" && editingGoal.status !== "concluido") {
-        toast.success("Meta concluída! 🎉 Conquista desbloqueada.");
+        toast.success("Meta concluída! 🎉 Veja em Minhas Conquistas.");
+      } else if (status !== "concluido" && editingGoal.status === "concluido") {
+        toast("Meta reaberta. Conquista removida.");
       }
       toast.success("Meta atualizada!");
     } else {
