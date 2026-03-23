@@ -201,8 +201,11 @@ export default function Goals() {
 
   function handleStatusChange(goalId: string, newStatus: GoalStatus, e: React.MouseEvent) {
     e.stopPropagation();
+    const goal = goals.find((g) => g.id === goalId);
+    const oldStatus = goal?.status;
     updateGoal(goalId, { status: newStatus });
-    if (newStatus === "concluido") toast.success("Meta concluída! 🎉 Conquista desbloqueada.");
+    if (newStatus === "concluido") toast.success("Meta concluída! 🎉 Veja em Minhas Conquistas.");
+    else if (oldStatus === "concluido") toast("Meta reaberta. Conquista removida.");
   }
 
   function handleDelete(goalId: string, e: React.MouseEvent) {

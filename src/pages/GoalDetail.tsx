@@ -119,7 +119,9 @@ export default function GoalDetail() {
       alignedWithGoal: editAligned,
     });
     if (editStatus === "concluido" && oldStatus !== "concluido") {
-      toast.success("Meta concluída! 🎉 Conquista desbloqueada.");
+      toast.success("Meta concluída! 🎉 Veja em Minhas Conquistas.");
+    } else if (editStatus !== "concluido" && oldStatus === "concluido") {
+      toast("Meta reaberta. Conquista removida.");
     }
     setEditModalOpen(false);
     toast.success("Meta atualizada!");
