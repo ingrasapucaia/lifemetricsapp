@@ -332,7 +332,7 @@ export default function Onboarding() {
   }, []);
 
   const progressPct = () => {
-    if (step === 1) return 25;
+    if (step <= 1) return 25;
     if (step === 2) return 25 + ((diagStep + 1) / DIAG_SUB_STEPS) * 25;
     if (step === 3) return 75;
     return 100;
