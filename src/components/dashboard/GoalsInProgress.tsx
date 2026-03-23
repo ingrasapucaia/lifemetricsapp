@@ -1,4 +1,5 @@
 import { useStore } from "@/hooks/useStore";
+import { useTasks } from "@/hooks/useTasks";
 import { useNavigate } from "react-router-dom";
 import { getLifeArea } from "@/types";
 import { LifeAreaBadge } from "@/components/LifeAreaBadge";
