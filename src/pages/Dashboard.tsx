@@ -97,6 +97,8 @@ export default function Dashboard() {
 
       <CheckIn today={today} record={todayRecord} habits={habits} />
 
+      <GoalsInProgress />
+
       <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
       <Insights records={periodRecords} habits={habits} profile={profile} todayRecord={todayRecord} />
     </div>
