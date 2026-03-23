@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/hooks/useStore";
 import {
   Habit, LIFE_AREAS, getLifeArea, HabitMetricType, HabitFrequency, HabitTimeUnit,
@@ -295,8 +295,9 @@ function HabitModal({ open, onClose, editing, onSave }: {
     }
   };
 
-  // Use key to reset on open
-  useState(() => { resetForm(); });
+  useEffect(() => {
+    if (open) resetForm();
+  }, [open, editing]);
 
   // Reset when editing changes or modal opens
   const handleOpenChange = (o: boolean) => {
