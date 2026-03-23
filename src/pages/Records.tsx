@@ -27,6 +27,7 @@ export default function Records() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("calendar");
   const [showNew, setShowNew] = useState(false);
   const [delTarget, setDelTarget] = useState<string | null>(null);
   const [newDate, setNewDate] = useState("");
