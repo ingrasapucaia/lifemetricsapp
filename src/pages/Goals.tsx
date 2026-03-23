@@ -17,7 +17,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import LifeAreaCollapsible from "@/components/LifeAreaCollapsible";
 import { toast } from "sonner";
 
 type SortMode = "created" | "deadline" | "status";
