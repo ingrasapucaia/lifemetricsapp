@@ -1,102 +1,56 @@
-# Metas de Vida e Projetos Arquivados
 
-## Resumo
 
-Criar um sistema completo de metas/projetos com ações internas, barra de progresso, etiquetas de prioridade coloridas em pastel, e integração com conquistas e arquivo.
+# Plan: Fix Two Critical Bugs
 
----
+## Problem Analysis
 
-## Modelo de Dados (`src/types/index.ts`)
-
-Novas interfaces:
-
+### Bug 1 — Seed data loaded for new users
+The `useStore` hook (line 69-71) uses seed data as fallback when localStorage is empty:
 ```typescript
-interface GoalAction {
-  id: string;
-  title: string;
-  completed: boolean;
-  priority?: "importante" | "urgente" | "atrasado" | "proximo";
-  createdAt: string;
-}
+useState<Habit[]>(() => load(KEYS.habits, seedHabits));
+useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, generateSeedRecords())));
+useState<UserProfile>(() => load(KEYS.profile, seedProfile));
+```
+Every new user gets 6 fake habits and 50 fake daily records. The onboarding then ADDS more habits on top of the seed data.
 
-interface Goal {
-  id: string;
-  title: string;
-  type: "meta" | "projeto";
-  status: "começar" | "em progresso" | "concluída" | "arquivada";
-  actions: GoalAction[]; // max 30
-  createdAt: string;
-  deadline?: string; // yyyy-MM-dd, editável
-}
+### Bug 2 — Emoji icons showing as text names
+The seed habits use Lucide icon names (`"Droplets"`, `"Dumbbell"`, `"Book"`) in the `icon` field. The new UI expects emoji characters. When the app renders `h.icon`, it checks for non-ASCII characters — Lucide names fail that check, so they render as raw text (as seen in the screenshot: "Heart", "Brain", "Pencil", etc.). This is NOT a day-change bug per se — it's that the old seed/localStorage habits have Lucide icon names instead of emojis. The "day change" likely triggers a re-render or localStorage re-read that exposes the issue.
+
+## Solution
+
+### File 1: `src/hooks/useStore.tsx`
+
+**Change the fallback values from seed data to empty arrays/defaults:**
+
+- Line 69: `seedHabits` → `[]`
+- Line 70: `generateSeedRecords()` → `[]`
+- Line 71: `seedProfile` → default empty profile object
+
+**Keep `resetToSeed` function** for the "Reset demo data" feature in Profile, but it won't auto-trigger.
+
+**Remove the seed import** if no longer needed at init (keep for `resetToSeed`).
+
+### File 2: `src/components/dashboard/CheckIn.tsx`
+
+**Fix the icon rendering** in `HabitCard` (line 393): Instead of only checking for non-ASCII (emoji), also handle the case where `h.icon` is a Lucide icon name — fall back to "✅" for those. The current check `h.icon && /[^\x00-\x7F]/.test(h.icon)` already handles this correctly (Lucide names are ASCII, so they fall through to "✅"). But the `HabitIcon` function at line 24-33 renders Lucide icons by name for non-emoji icons. This means older habits with Lucide icon names would show the Lucide icon in some places. The real fix is ensuring consistency.
+
+Actually, re-reading the code: `HabitCard` in CheckIn.tsx line 393 already does `h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"` — so Lucide names would show as "✅". The screenshot shows "Heart", "Brain" etc. rendered as text, which means there's likely a different rendering path or the `HabitCard` in `Habits.tsx` (line 198) does `{h.icon || "✅"}` WITHOUT the emoji check.
+
+Looking at `Habits.tsx` line 198: `{h.icon || "✅"}` — this renders Lucide icon names as raw text. That's the bug.
+
+### File 3: `src/pages/Habits.tsx`
+
+**Fix line 198**: Change `{h.icon || "✅"}` to use the same emoji check:
+```typescript
+{h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"}
 ```
 
-Constantes para cores pastel das etiquetas de prioridade:
+### Summary of Changes
 
-- prioridade: verde pastel
-- urgente: laranja pastel
-- atrasado: vermelho pastel
-- proximo: amarelo pastel
+| File | Change |
+|------|--------|
+| `src/hooks/useStore.tsx` | Change fallback from seed data to empty arrays/objects for new users |
+| `src/pages/Habits.tsx` | Fix icon rendering to show "✅" for non-emoji icon values |
 
----
+These two changes fix both bugs: new users start clean, and Lucide icon names no longer render as raw text. No layout, design, or other functionality changes.
 
-## Store (`src/hooks/useStore.tsx`)
-
-Adicionar estado `goals` com localStorage key `metrics-goals`. Novas funções:
-
-- `addGoal`, `updateGoal`, `deleteGoal`
-- `addGoalAction`, `updateGoalAction`, `deleteGoalAction`, `toggleGoalAction`
-
-Quando status muda para "concluída": criar automaticamente uma Achievement na aba conquistas.
-Quando status muda para "arquivada": a meta aparece apenas em "Projetos Arquivados".
-
----
-
-## Página "Metas de Vida" (`src/pages/Goals.tsx`)
-
-- Lista de metas/projetos com etiqueta tipo (meta/projeto), status, barra de progresso (% = ações concluídas / total de ações)
-- Botão "Nova meta/projeto" abre modal com: título, tipo (meta/projeto), prazo, status
-- Clicar numa meta abre página de detalhe com lista de ações
-- Cada ação: checkbox, título, etiqueta de prioridade (colorida pastel), botões editar/apagar
-- Barra de progresso 0-100% calculada automaticamente
-- Limite de 30 ações por meta
-
----
-
-## Página "Projetos Arquivados" (`src/pages/ArchivedGoals.tsx`)
-
-- Lista metas com status "arquivada"
-- Botão para restaurar (muda status de volta para "começar"), movendo para "Metas de Vida"
-
----
-
-## Sidebar (`src/components/AppSidebar.tsx`)
-
-Adicionar dois links ao menu:
-
-- "Metas de Vida" (ícone `Target`) entre "Meus Registros" e "Minhas Conquistas"
-- "Arquivados" (ícone `Archive`) após "Minhas Conquistas"
-
----
-
-## Rotas (`src/App.tsx`)
-
-Adicionar:
-
-- `/metas` → Goals
-- `/metas/:id` → GoalDetail (detalhe da meta com ações)
-- `/arquivados` → ArchivedGoals
-
----
-
-## Arquivos a criar/modificar
-
-
-| Arquivo                         | Ação                                            |
-| ------------------------------- | ----------------------------------------------- |
-| `src/types/index.ts`            | Adicionar Goal, GoalAction, constantes de cores |
-| `src/hooks/useStore.tsx`        | Estado goals + CRUD completo                    |
-| `src/pages/Goals.tsx`           | Criar - lista de metas                          |
-| `src/pages/GoalDetail.tsx`      | Criar - detalhe com ações                       |
-| `src/pages/ArchivedGoals.tsx`   | Criar - metas arquivadas                        |
-| `src/components/AppSidebar.tsx` | Adicionar links                                 |
-| `src/App.tsx`                   | Adicionar rotas                                 |
