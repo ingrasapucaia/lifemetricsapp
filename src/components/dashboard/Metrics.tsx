@@ -37,15 +37,7 @@ export default function Metrics({ records, habits, period, setPeriod }: Props) {
   const visibleHabits = activeHabits.filter((h) => h.showOnDashboard !== false);
   const sortedRecords = useMemo(() => [...records].sort((a, b) => a.date.localeCompare(b.date)), [records]);
 
-  if (records.length === 0) {
-    return (
-      <Card className="text-center py-8">
-        <CardContent>
-          <p className="text-muted-foreground">Sem registros neste período.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // No empty state — always show cards/charts with zeroed values
 
   return (
     <section className="space-y-5">
