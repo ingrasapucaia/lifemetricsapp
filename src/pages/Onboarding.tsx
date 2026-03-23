@@ -301,8 +301,8 @@ export default function Onboarding() {
   const { user, refreshProfile } = useAuth();
   const { addGoal, addHabit } = useStore();
 
-  // Step tracking
-  const [step, setStep] = useState(1);
+  // Step tracking: 0 = welcome, 1-4 = original steps
+  const [step, setStep] = useState(0);
   const [diagStep, setDiagStep] = useState(0); // 0-2 within step 2
 
   // Step 1 data
