@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DailyRecord, Habit, MOOD_TAGS, getMoodTag, formatSleepHours, getLifeArea } from "@/types";
 import { useStore } from "@/hooks/useStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck,
+  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
