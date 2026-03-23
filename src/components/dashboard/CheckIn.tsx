@@ -277,69 +277,51 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* Habits */}
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-metric-habits-bg flex items-center justify-center">
-                  <ClipboardCheck size={14} className="text-metric-habits" />
-                </div>
-                Hábitos do dia
-                <span className="text-xs text-muted-foreground font-normal ml-1">({done}/{active.length})</span>
-              </CardTitle>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs rounded-xl"
-                  onClick={() => {
-                    const all: Record<string, boolean | number> = {};
-                    active.forEach((h) => {
-                      all[h.id] = h.targetType === "check" ? true : h.targetValue || 30;
-                    });
-                    up({ habitChecks: all });
-                  }}
-                >
-                  Marcar tudo
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs rounded-xl"
-                  onClick={() => up({ habitChecks: {} })}
-                >
-                  Limpar
-                </Button>
-              </div>
-            </div>
-            <Progress value={pct} className="h-2 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {generalHabits.length > 0 && (
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {generalHabits.map((h) => (
-                    <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
-                  ))}
-                </div>
-              </div>
-            )}
+      </div>
 
-            {exerciseHabits.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Dumbbell size={12} /> Exercício
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {exerciseHabits.map((h) => (
-                    <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Habits - new card-based layout */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            HÁBITOS
+            <span className="font-normal ml-1.5">({done}/{active.length})</span>
+          </p>
+          <Button
+            size="icon"
+            className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => navigate("/habitos")}
+          >
+            <Plus size={16} />
+          </Button>
+        </div>
+
+        {active.length === 0 && (
+          <Card className="border-border/60">
+            <CardContent className="py-8 text-center">
+              <p className="text-sm text-muted-foreground mb-3">Nenhum hábito ativo</p>
+              <Button variant="outline" className="rounded-xl" onClick={() => navigate("/habitos")}>
+                + Criar meu primeiro hábito
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {(() => {
+          const sortedHabits = [...active].sort((a, b) => {
+            const aDone = isHabitCompleted(a, checks[a.id]);
+            const bDone = isHabitCompleted(b, checks[b.id]);
+            if (aDone !== bDone) return aDone ? 1 : -1;
+            return 0;
+          });
+          return sortedHabits.map((h) => (
+            <HabitCard
+              key={h.id}
+              habit={h}
+              checks={checks}
+              onUpdate={(newChecks) => up({ habitChecks: newChecks })}
+            />
+          ));
+        })()}
       </div>
 
       {/* Journal */}
