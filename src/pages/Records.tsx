@@ -27,6 +27,7 @@ export default function Records() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("calendar");
   const [showNew, setShowNew] = useState(false);
   const [delTarget, setDelTarget] = useState<string | null>(null);
   const [newDate, setNewDate] = useState("");
@@ -99,7 +100,7 @@ export default function Records() {
         )}
       </div>
 
-      <Tabs defaultValue="calendar">
+      <Tabs defaultValue="calendar" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="rounded-xl">
           <TabsTrigger value="calendar" className="gap-2 rounded-lg"><CalendarDays size={14} /> Calendário</TabsTrigger>
           <TabsTrigger value="list" className="gap-2 rounded-lg"><List size={14} /> Lista</TabsTrigger>
@@ -152,7 +153,7 @@ export default function Records() {
                   <Card
                     key={r.id}
                     className="cursor-pointer hover:shadow-card-hover transition-all duration-200"
-                    onClick={() => setSelected(parseISO(r.date))}
+                    onClick={() => { setSelected(parseISO(r.date)); setActiveTab("calendar"); }}
                   >
                     <CardContent className="p-4 flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3 flex-wrap">
