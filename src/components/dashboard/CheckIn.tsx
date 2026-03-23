@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
+  Smile, Moon, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
