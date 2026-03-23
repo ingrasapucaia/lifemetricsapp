@@ -10,6 +10,7 @@ const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
   { to: "/metas", label: "Metas de Vida", icon: Target },
+  { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
   { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
