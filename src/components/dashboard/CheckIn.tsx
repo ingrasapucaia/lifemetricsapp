@@ -364,7 +364,7 @@ export default function CheckIn({ today, record, habits }: Props) {
   );
 }
 
-function HabitRow({
+function HabitCard({
   habit,
   checks,
   onUpdate,
@@ -374,79 +374,102 @@ function HabitRow({
   onUpdate: (newChecks: Record<string, boolean | number>) => void;
 }) {
   const h = habit;
-  const unitLabel = h.targetType === "km" ? "km" : h.targetType === "miles" ? "mi" : h.targetType === "minutes" ? "min" : "x";
   const area = getLifeArea(h.lifeArea);
+  const completed = isHabitCompleted(h, checks[h.id]);
+
+  const unitLabel =
+    h.targetType === "km" ? "km" :
+    h.targetType === "miles" ? "mi" :
+    h.targetType === "minutes" ? "min" :
+    h.targetType === "hours_minutes" ? "" : "x";
 
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200">
-      <HabitIcon name={h.icon} />
-      {h.targetType === "check" ? (
-        <Checkbox
-          checked={checks[h.id] === true}
-          onCheckedChange={(c) => onUpdate({ ...checks, [h.id]: !!c })}
-        />
-      ) : h.targetType === "hours_minutes" ? (
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            min={0}
-            max={23}
-            value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
-            onChange={(e) => {
-              const hrs = Number(e.target.value);
-              const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
-              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-            }}
-            className="w-14 h-8 text-sm rounded-lg"
-            placeholder="0"
-          />
-          <span className="text-xs text-muted-foreground">h</span>
-          <Input
-            type="number"
-            min={0}
-            max={59}
-            value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
-            onChange={(e) => {
-              const mins = Number(e.target.value);
-              const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
-              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-            }}
-            className="w-14 h-8 text-sm rounded-lg"
-            placeholder="0"
-          />
-          <span className="text-xs text-muted-foreground">min</span>
-        </div>
-      ) : (
-        <Input
-          type="number"
-          min={0}
-          max={999}
-          step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
-          value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
-          onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
-          className="w-20 h-8 text-sm rounded-lg"
-          placeholder="0"
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <span className="text-sm">{h.name}</span>
-        {area && (
-          <span
-            className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium align-middle"
-            style={{ backgroundColor: area.bgColor, color: area.textColor }}
-          >
-            {area.label}
-          </span>
-        )}
-      </div>
-      {h.targetType !== "check" && h.targetValue && (
-        <span className="text-xs text-muted-foreground shrink-0">
-          {h.targetType === "hours_minutes"
-            ? `${Math.floor((typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) / 60)}h${(typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) % 60}m / ${Math.floor(h.targetValue / 60)}h${h.targetValue % 60}m`
-            : `${typeof checks[h.id] === "number" ? checks[h.id] : 0}/${h.targetValue} ${unitLabel}`}
+    <Card className={cn(
+      "border-border/60 transition-all duration-200",
+      completed && "opacity-60"
+    )}>
+      <CardContent className="flex items-center gap-3 py-3 px-4">
+        {/* Emoji icon */}
+        <span className="text-2xl shrink-0 w-8 text-center">
+          {h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"}
         </span>
-      )}
-    </div>
+
+        {/* Name + area badge */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{h.name}</p>
+          {area && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium mt-0.5"
+              style={{ backgroundColor: area.bgColor, color: area.textColor }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: area.textColor }} />
+              {area.label}
+            </span>
+          )}
+        </div>
+
+        {/* Check or numeric input on the right */}
+        {h.targetType === "check" ? (
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...checks, [h.id]: !checks[h.id] })}
+            className={cn(
+              "w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200",
+              completed
+                ? "bg-primary border-primary text-primary-foreground"
+                : "border-muted-foreground/30 text-transparent hover:border-primary/50"
+            )}
+          >
+            <Check size={14} strokeWidth={3} />
+          </button>
+        ) : h.targetType === "hours_minutes" ? (
+          <div className="flex items-center gap-1 shrink-0">
+            <Input
+              type="number"
+              min={0}
+              max={23}
+              value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
+              onChange={(e) => {
+                const hrs = Number(e.target.value);
+                const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
+                onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+              }}
+              className="w-12 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">h</span>
+            <Input
+              type="number"
+              min={0}
+              max={59}
+              value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
+              onChange={(e) => {
+                const mins = Number(e.target.value);
+                const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
+                onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+              }}
+              className="w-12 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Input
+              type="number"
+              min={0}
+              max={999}
+              step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
+              value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
+              onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
+              className="w-16 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">{unitLabel}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
