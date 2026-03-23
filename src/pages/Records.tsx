@@ -179,6 +179,10 @@ export default function Records() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="agenda">
+          <AgendaTab />
+        </TabsContent>
       </Tabs>
 
       {/* New record */}
