@@ -4,6 +4,7 @@ import { Period } from "@/types";
 import { getRecordsForPeriod, isHabitCompleted } from "@/lib/metrics";
 import { format } from "date-fns";
 import CheckIn from "@/components/dashboard/CheckIn";
+import Agenda from "@/components/dashboard/Agenda";
 import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
 import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
@@ -96,6 +97,8 @@ export default function Dashboard() {
       </div>
 
       <CheckIn today={today} record={todayRecord} habits={habits} />
+
+      <Agenda />
 
       <GoalsInProgress />
 

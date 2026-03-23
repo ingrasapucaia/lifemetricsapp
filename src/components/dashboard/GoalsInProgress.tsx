@@ -1,4 +1,5 @@
 import { useStore } from "@/hooks/useStore";
+import { useTasks } from "@/hooks/useTasks";
 import { useNavigate } from "react-router-dom";
 import { getLifeArea } from "@/types";
 import { LifeAreaBadge } from "@/components/LifeAreaBadge";
@@ -10,6 +11,7 @@ import { pt } from "date-fns/locale";
 
 export default function GoalsInProgress() {
   const { goals } = useStore();
+  const { tasks } = useTasks();
   const navigate = useNavigate();
 
   const inProgress = goals
@@ -40,8 +42,13 @@ export default function GoalsInProgress() {
 
       <div className="space-y-2">
         {displayed.map((g) => {
-          const total = g.actions.length;
-          const done = g.actions.filter((a) => a.completed).length;
+          const actionTotal = g.actions.length;
+          const actionDone = g.actions.filter((a) => a.completed).length;
+          const goalTasks = tasks.filter((t) => t.goal_id === g.id);
+          const taskTotal = goalTasks.length;
+          const taskDone = goalTasks.filter((t) => t.completed).length;
+          const total = actionTotal + taskTotal;
+          const done = actionDone + taskDone;
           const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
           return (
