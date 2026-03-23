@@ -15,6 +15,7 @@ import GoalDetail from "@/pages/GoalDetail";
 import ArchivedGoals from "@/pages/ArchivedGoals";
 import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
+import MetricsPage from "@/pages/MetricsPage";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -44,6 +45,7 @@ const App = () => (
             {/* Protected */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/metricas" element={<MetricsPage />} />
               <Route path="/registros" element={<Records />} />
               <Route path="/habitos" element={<Habits />} />
               <Route path="/metas" element={<Goals />} />
