@@ -129,6 +129,8 @@ export type Database = {
           id: string
           life_area: string | null
           reward: string | null
+          rewarded: boolean
+          rewarded_at: string | null
           status: string
           title: string
           type: string
@@ -143,6 +145,8 @@ export type Database = {
           id?: string
           life_area?: string | null
           reward?: string | null
+          rewarded?: boolean
+          rewarded_at?: string | null
           status?: string
           title: string
           type?: string
@@ -157,6 +161,8 @@ export type Database = {
           id?: string
           life_area?: string | null
           reward?: string | null
+          rewarded?: boolean
+          rewarded_at?: string | null
           status?: string
           title?: string
           type?: string
