@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { calculateDailyAdherence, isHabitCompleted } from "@/lib/metrics";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3 } from "lucide-react";
+import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3, ClipboardList } from "lucide-react";
+import AgendaTab from "@/components/records/AgendaTab";
 
 export default function Records() {
   const { records, habits, upsertRecord, deleteRecord } = useStore();
