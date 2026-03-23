@@ -13,6 +13,7 @@ import Achievements from "@/pages/Achievements";
 import Goals from "@/pages/Goals";
 import GoalDetail from "@/pages/GoalDetail";
 import ArchivedGoals from "@/pages/ArchivedGoals";
+import Deadlines from "@/pages/Deadlines";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/registros" element={<Records />} />
               <Route path="/metas" element={<Goals />} />
               <Route path="/metas/:id" element={<GoalDetail />} />
+              <Route path="/prazos" element={<Deadlines />} />
               <Route path="/conquistas" element={<Achievements />} />
               <Route path="/arquivados" element={<ArchivedGoals />} />
               <Route path="/perfil" element={<Profile />} />

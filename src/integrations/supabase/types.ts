@@ -61,6 +61,30 @@ export type Database = {
           },
         ]
       }
+      deadline_acknowledgments: {
+        Row: {
+          acknowledged_at: string
+          id: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_actions: {
         Row: {
           completed: boolean
