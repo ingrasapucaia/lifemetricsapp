@@ -115,10 +115,9 @@ export default function CheckIn({ today, record, habits }: Props) {
   const [saved, setSaved] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout>>();
   const [journalOpen, setJournalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const active = habits.filter((h) => h.active);
-  const generalHabits = active.filter((h) => h.category !== "exercicio");
-  const exerciseHabits = active.filter((h) => h.category === "exercicio");
 
   const flash = () => {
     setSaved(true);
