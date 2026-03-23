@@ -99,7 +99,7 @@ export default function Records() {
         )}
       </div>
 
-      <Tabs defaultValue="calendar">
+      <Tabs defaultValue="calendar" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="rounded-xl">
           <TabsTrigger value="calendar" className="gap-2 rounded-lg"><CalendarDays size={14} /> Calendário</TabsTrigger>
           <TabsTrigger value="list" className="gap-2 rounded-lg"><List size={14} /> Lista</TabsTrigger>
