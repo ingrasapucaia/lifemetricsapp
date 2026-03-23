@@ -347,29 +347,10 @@ export default function GoalDetail() {
             </div>
             <div className="space-y-2">
               <Label>Área de vida</Label>
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border border-input bg-background text-sm transition-colors hover:bg-muted/50">
-                  {editLifeArea ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: getLifeArea(editLifeArea)?.bgColor, color: getLifeArea(editLifeArea)?.textColor }}>
-                      {getLifeArea(editLifeArea)?.label}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Selecionar área de vida</span>
-                  )}
-                  <ChevronDown size={16} className="text-muted-foreground" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {LIFE_AREAS.map((a) => (
-                      <button key={a.value} type="button" onClick={() => setEditLifeArea(a.value)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border-2"
-                        style={{ backgroundColor: a.bgColor, color: a.textColor, borderColor: editLifeArea === a.value ? a.textColor : "transparent" }}>
-                        {a.label}
-                      </button>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <LifeAreaCollapsible
+                value={editLifeArea}
+                onValueChange={setEditLifeArea}
+              />
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
