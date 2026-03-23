@@ -457,6 +457,32 @@ export default function Onboarding() {
     );
   }
 
+  // ── Welcome Screen (step 0) ─────────────────────
+  if (step === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-8 text-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">metrics</h1>
+            <p className="text-xs text-muted-foreground mt-1 tracking-wide">performance pessoal</p>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Vamos começar!</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Vamos configurar seu sistema em poucos minutos. Responda com sinceridade — quanto mais honesta for, mais personalizado fica o seu app.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <Button className="w-full rounded-full" onClick={() => setStep(1)}>
+              Começar configuração
+            </Button>
+            <p className="text-xs text-muted-foreground">Leva menos de 5 minutos</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Step Renderer ───────────────────────────────
   return (
     <div className="min-h-screen bg-background">
