@@ -11,6 +11,7 @@ import { pt } from "date-fns/locale";
 
 export default function GoalsInProgress() {
   const { goals } = useStore();
+  const { tasks } = useTasks();
   const navigate = useNavigate();
 
   const inProgress = goals
