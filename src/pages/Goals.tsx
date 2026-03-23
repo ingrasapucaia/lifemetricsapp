@@ -211,7 +211,7 @@ export default function Goals() {
   const lifeGoals = authProfile?.life_goals;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Metas</h1>
@@ -382,7 +382,7 @@ export default function Goals() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="focus:outline-none">
-                            <StatusBadge status={g.status} onClick={() => {}} />
+                            <StatusBadge status={g.status} onClick={() => {}} className="border border-border/80 shadow-sm" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
