@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import CheckIn from "@/components/dashboard/CheckIn";
 import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
+import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Flame } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -95,6 +96,8 @@ export default function Dashboard() {
       </div>
 
       <CheckIn today={today} record={todayRecord} habits={habits} />
+
+      <GoalsInProgress />
 
       <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
       <Insights records={periodRecords} habits={habits} profile={profile} todayRecord={todayRecord} />
