@@ -45,6 +45,7 @@ const App = () => (
             {/* Protected */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/metricas" element={<MetricsPage />} />
               <Route path="/registros" element={<Records />} />
               <Route path="/habitos" element={<Habits />} />
               <Route path="/metas" element={<Goals />} />

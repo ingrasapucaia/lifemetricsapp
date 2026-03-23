@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/metricas", label: "Métricas", icon: BarChart3 },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
   { to: "/habitos", label: "Controle de hábitos", icon: CheckSquare },
   { to: "/metas", label: "Metas de Vida", icon: Target },
