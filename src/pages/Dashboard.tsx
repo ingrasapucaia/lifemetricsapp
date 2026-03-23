@@ -98,6 +98,8 @@ export default function Dashboard() {
 
       <CheckIn today={today} record={todayRecord} habits={habits} />
 
+      <Agenda />
+
       <GoalsInProgress />
 
       <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
