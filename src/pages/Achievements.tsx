@@ -37,7 +37,7 @@ export default function Achievements() {
     updateGoal(goalId, {
       rewarded,
       rewardedAt: rewarded ? new Date().toISOString() : undefined,
-    } as any);
+    });
     toast(rewarded ? "Recompensa marcada! 🎁" : "Recompensa desmarcada.");
   };
 
