@@ -1,11 +1,10 @@
 import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DailyRecord, Habit, MOOD_TAGS, getMoodTag, formatSleepHours, getLifeArea } from "@/types";
 import { useStore } from "@/hooks/useStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { isHabitCompleted } from "@/lib/metrics";
 import {
-  Smile, Moon, Dumbbell, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck,
+  Smile, Moon, BookOpen, Pencil, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -115,10 +114,9 @@ export default function CheckIn({ today, record, habits }: Props) {
   const [saved, setSaved] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout>>();
   const [journalOpen, setJournalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const active = habits.filter((h) => h.active);
-  const generalHabits = active.filter((h) => h.category !== "exercicio");
-  const exerciseHabits = active.filter((h) => h.category === "exercicio");
 
   const flash = () => {
     setSaved(true);
@@ -140,7 +138,7 @@ export default function CheckIn({ today, record, habits }: Props) {
   const wakeUp = record?.wakeUpTime || "";
   const checks = record?.habitChecks || {};
   const done = active.filter((h) => isHabitCompleted(h, checks[h.id])).length;
-  const pct = active.length > 0 ? (done / active.length) * 100 : 0;
+  
 
   const moodTag = getMoodTag(mood);
 
@@ -278,69 +276,51 @@ export default function CheckIn({ today, record, habits }: Props) {
           </CardContent>
         </Card>
 
-        {/* Habits */}
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-metric-habits-bg flex items-center justify-center">
-                  <ClipboardCheck size={14} className="text-metric-habits" />
-                </div>
-                Hábitos do dia
-                <span className="text-xs text-muted-foreground font-normal ml-1">({done}/{active.length})</span>
-              </CardTitle>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs rounded-xl"
-                  onClick={() => {
-                    const all: Record<string, boolean | number> = {};
-                    active.forEach((h) => {
-                      all[h.id] = h.targetType === "check" ? true : h.targetValue || 30;
-                    });
-                    up({ habitChecks: all });
-                  }}
-                >
-                  Marcar tudo
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs rounded-xl"
-                  onClick={() => up({ habitChecks: {} })}
-                >
-                  Limpar
-                </Button>
-              </div>
-            </div>
-            <Progress value={pct} className="h-2 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {generalHabits.length > 0 && (
-              <div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {generalHabits.map((h) => (
-                    <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
-                  ))}
-                </div>
-              </div>
-            )}
+      </div>
 
-            {exerciseHabits.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Dumbbell size={12} /> Exercício
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {exerciseHabits.map((h) => (
-                    <HabitRow key={h.id} habit={h} checks={checks} onUpdate={(newChecks) => up({ habitChecks: newChecks })} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Habits - new card-based layout */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            HÁBITOS
+            <span className="font-normal ml-1.5">({done}/{active.length})</span>
+          </p>
+          <Button
+            size="icon"
+            className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => navigate("/habitos")}
+          >
+            <Plus size={16} />
+          </Button>
+        </div>
+
+        {active.length === 0 && (
+          <Card className="border-border/60">
+            <CardContent className="py-8 text-center">
+              <p className="text-sm text-muted-foreground mb-3">Nenhum hábito ativo</p>
+              <Button variant="outline" className="rounded-xl" onClick={() => navigate("/habitos")}>
+                + Criar meu primeiro hábito
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {(() => {
+          const sortedHabits = [...active].sort((a, b) => {
+            const aDone = isHabitCompleted(a, checks[a.id]);
+            const bDone = isHabitCompleted(b, checks[b.id]);
+            if (aDone !== bDone) return aDone ? 1 : -1;
+            return 0;
+          });
+          return sortedHabits.map((h) => (
+            <HabitCard
+              key={h.id}
+              habit={h}
+              checks={checks}
+              onUpdate={(newChecks) => up({ habitChecks: newChecks })}
+            />
+          ));
+        })()}
       </div>
 
       {/* Journal */}
@@ -383,7 +363,7 @@ export default function CheckIn({ today, record, habits }: Props) {
   );
 }
 
-function HabitRow({
+function HabitCard({
   habit,
   checks,
   onUpdate,
@@ -393,79 +373,102 @@ function HabitRow({
   onUpdate: (newChecks: Record<string, boolean | number>) => void;
 }) {
   const h = habit;
-  const unitLabel = h.targetType === "km" ? "km" : h.targetType === "miles" ? "mi" : h.targetType === "minutes" ? "min" : "x";
   const area = getLifeArea(h.lifeArea);
+  const completed = isHabitCompleted(h, checks[h.id]);
+
+  const unitLabel =
+    h.targetType === "km" ? "km" :
+    h.targetType === "miles" ? "mi" :
+    h.targetType === "minutes" ? "min" :
+    h.targetType === "hours_minutes" ? "" : "x";
 
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200">
-      <HabitIcon name={h.icon} />
-      {h.targetType === "check" ? (
-        <Checkbox
-          checked={checks[h.id] === true}
-          onCheckedChange={(c) => onUpdate({ ...checks, [h.id]: !!c })}
-        />
-      ) : h.targetType === "hours_minutes" ? (
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            min={0}
-            max={23}
-            value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
-            onChange={(e) => {
-              const hrs = Number(e.target.value);
-              const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
-              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-            }}
-            className="w-14 h-8 text-sm rounded-lg"
-            placeholder="0"
-          />
-          <span className="text-xs text-muted-foreground">h</span>
-          <Input
-            type="number"
-            min={0}
-            max={59}
-            value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
-            onChange={(e) => {
-              const mins = Number(e.target.value);
-              const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
-              onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
-            }}
-            className="w-14 h-8 text-sm rounded-lg"
-            placeholder="0"
-          />
-          <span className="text-xs text-muted-foreground">min</span>
-        </div>
-      ) : (
-        <Input
-          type="number"
-          min={0}
-          max={999}
-          step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
-          value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
-          onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
-          className="w-20 h-8 text-sm rounded-lg"
-          placeholder="0"
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <span className="text-sm">{h.name}</span>
-        {area && (
-          <span
-            className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium align-middle"
-            style={{ backgroundColor: area.bgColor, color: area.textColor }}
-          >
-            {area.label}
-          </span>
-        )}
-      </div>
-      {h.targetType !== "check" && h.targetValue && (
-        <span className="text-xs text-muted-foreground shrink-0">
-          {h.targetType === "hours_minutes"
-            ? `${Math.floor((typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) / 60)}h${(typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) % 60}m / ${Math.floor(h.targetValue / 60)}h${h.targetValue % 60}m`
-            : `${typeof checks[h.id] === "number" ? checks[h.id] : 0}/${h.targetValue} ${unitLabel}`}
+    <Card className={cn(
+      "border-border/60 transition-all duration-200",
+      completed && "opacity-60"
+    )}>
+      <CardContent className="flex items-center gap-3 py-3 px-4">
+        {/* Emoji icon */}
+        <span className="text-2xl shrink-0 w-8 text-center">
+          {h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"}
         </span>
-      )}
-    </div>
+
+        {/* Name + area badge */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{h.name}</p>
+          {area && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium mt-0.5"
+              style={{ backgroundColor: area.bgColor, color: area.textColor }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: area.textColor }} />
+              {area.label}
+            </span>
+          )}
+        </div>
+
+        {/* Check or numeric input on the right */}
+        {h.targetType === "check" ? (
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...checks, [h.id]: !checks[h.id] })}
+            className={cn(
+              "w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200",
+              completed
+                ? "bg-primary border-primary text-primary-foreground"
+                : "border-muted-foreground/30 text-transparent hover:border-primary/50"
+            )}
+          >
+            <Check size={14} strokeWidth={3} />
+          </button>
+        ) : h.targetType === "hours_minutes" ? (
+          <div className="flex items-center gap-1 shrink-0">
+            <Input
+              type="number"
+              min={0}
+              max={23}
+              value={typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : ""}
+              onChange={(e) => {
+                const hrs = Number(e.target.value);
+                const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
+                onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+              }}
+              className="w-12 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">h</span>
+            <Input
+              type="number"
+              min={0}
+              max={59}
+              value={typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : ""}
+              onChange={(e) => {
+                const mins = Number(e.target.value);
+                const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
+                onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
+              }}
+              className="w-12 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">min</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Input
+              type="number"
+              min={0}
+              max={999}
+              step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
+              value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
+              onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
+              className="w-16 h-8 text-sm rounded-lg text-center"
+              placeholder="0"
+            />
+            <span className="text-xs text-muted-foreground">{unitLabel}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
