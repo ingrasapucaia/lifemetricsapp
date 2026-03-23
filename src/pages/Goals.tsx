@@ -382,7 +382,7 @@ export default function Goals() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="focus:outline-none">
-                            <StatusBadge status={g.status} onClick={() => {}} />
+                            <StatusBadge status={g.status} onClick={() => {}} className="border border-border/80 shadow-sm" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
