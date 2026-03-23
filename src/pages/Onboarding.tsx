@@ -301,8 +301,8 @@ export default function Onboarding() {
   const { user, refreshProfile } = useAuth();
   const { addGoal, addHabit } = useStore();
 
-  // Step tracking
-  const [step, setStep] = useState(1);
+  // Step tracking: 0 = welcome, 1-4 = original steps
+  const [step, setStep] = useState(0);
   const [diagStep, setDiagStep] = useState(0); // 0-2 within step 2
 
   // Step 1 data
@@ -332,7 +332,7 @@ export default function Onboarding() {
   }, []);
 
   const progressPct = () => {
-    if (step === 1) return 25;
+    if (step <= 1) return 25;
     if (step === 2) return 25 + ((diagStep + 1) / DIAG_SUB_STEPS) * 25;
     if (step === 3) return 75;
     return 100;
@@ -452,6 +452,32 @@ export default function Onboarding() {
           <Button className="w-full rounded-full" onClick={() => navigate("/dashboard")}>
             Entrar no meu dashboard <ChevronRight size={16} />
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Welcome Screen (step 0) ─────────────────────
+  if (step === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-8 text-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">metrics</h1>
+            <p className="text-xs text-muted-foreground mt-1 tracking-wide">performance pessoal</p>
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-foreground">Vamos começar!</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Vamos configurar seu sistema em poucos minutos. Responda com sinceridade — quanto mais honesta for, mais personalizado fica o seu app.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <Button className="w-full rounded-full" onClick={() => setStep(1)}>
+              Começar configuração
+            </Button>
+            <p className="text-xs text-muted-foreground">Leva menos de 5 minutos</p>
+          </div>
         </div>
       </div>
     );
