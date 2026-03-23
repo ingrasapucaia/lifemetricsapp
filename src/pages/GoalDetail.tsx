@@ -79,8 +79,10 @@ export default function GoalDetail() {
   }
 
   function handleStatusChange(newStatus: GoalStatus) {
+    const oldStatus = goal!.status;
     updateGoal(goal!.id, { status: newStatus });
-    if (newStatus === "concluido") toast.success("Meta concluída! 🎉 Conquista desbloqueada.");
+    if (newStatus === "concluido") toast.success("Meta concluída! 🎉 Veja em Minhas Conquistas.");
+    else if (oldStatus === "concluido") toast("Meta reaberta. Conquista removida.");
     if (newStatus === "arquivada") {
       toast("Meta arquivada.");
       navigate("/metas");
