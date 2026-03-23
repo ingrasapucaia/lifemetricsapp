@@ -36,7 +36,7 @@ export default function Achievements() {
     if (!user) return;
     const { data } = await supabase
       .from("goals")
-      .select("id, title, icon, life_area, completed_at, reward, rewarded, rewarded_at")
+      .select("id, title, life_area, completed_at, reward, rewarded, rewarded_at")
       .eq("user_id", user.id)
       .eq("status", "concluido")
       .order("completed_at", { ascending: false });
