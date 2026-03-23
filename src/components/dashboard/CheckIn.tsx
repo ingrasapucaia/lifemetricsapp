@@ -138,7 +138,7 @@ export default function CheckIn({ today, record, habits }: Props) {
   const wakeUp = record?.wakeUpTime || "";
   const checks = record?.habitChecks || {};
   const done = active.filter((h) => isHabitCompleted(h, checks[h.id])).length;
-  const pct = active.length > 0 ? (done / active.length) * 100 : 0;
+  
 
   const moodTag = getMoodTag(mood);
 
