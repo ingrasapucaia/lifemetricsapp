@@ -66,9 +66,14 @@ interface StoreType {
 const StoreContext = createContext<StoreType | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [habits, setHabits] = useState<Habit[]>(() => load(KEYS.habits, seedHabits));
-  const [records, setRecords] = useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, generateSeedRecords())));
-  const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, seedProfile));
+  const [habits, setHabits] = useState<Habit[]>(() => load(KEYS.habits, []));
+  const [records, setRecords] = useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, [])));
+  const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, {
+    displayName: "",
+    mainGoal: "",
+    focusArea: "misto",
+    preferences: { weekStartsOn: "mon", insightsTone: "direto" },
+  }));
   const [achievements, setAchievements] = useState<Achievement[]>(() => load(KEYS.achievements, []));
   const [goals, setGoals] = useState<Goal[]>(() => load(KEYS.goals, []));
 
