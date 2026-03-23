@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { DailyRecord, Habit, MOOD_TAGS, getMoodTag, formatSleepHours } from "@/types";
+import { DailyRecord, Habit, MOOD_TAGS, getMoodTag, formatSleepHours, getLifeArea } from "@/types";
 import { useStore } from "@/hooks/useStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,10 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function HabitIcon({ name, size = 14 }: { name?: string; size?: number }) {
+  // If it's an emoji (non-ASCII), render as text
+  if (name && /[^\x00-\x7F]/.test(name)) {
+    return <span className="shrink-0" style={{ fontSize: size + 4 }}>{name}</span>;
+  }
   if (!name) return null;
   const Icon = icons[name as keyof typeof icons];
   if (!Icon) return null;
@@ -390,6 +394,7 @@ function HabitRow({
 }) {
   const h = habit;
   const unitLabel = h.targetType === "km" ? "km" : h.targetType === "miles" ? "mi" : h.targetType === "minutes" ? "min" : "x";
+  const area = getLifeArea(h.lifeArea);
 
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200">
@@ -442,9 +447,19 @@ function HabitRow({
           placeholder="0"
         />
       )}
-      <span className="text-sm flex-1">{h.name}</span>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm">{h.name}</span>
+        {area && (
+          <span
+            className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium align-middle"
+            style={{ backgroundColor: area.bgColor, color: area.textColor }}
+          >
+            {area.label}
+          </span>
+        )}
+      </div>
       {h.targetType !== "check" && h.targetValue && (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground shrink-0">
           {h.targetType === "hours_minutes"
             ? `${Math.floor((typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) / 60)}h${(typeof checks[h.id] === "number" ? (checks[h.id] as number) : 0) % 60}m / ${Math.floor(h.targetValue / 60)}h${h.targetValue % 60}m`
             : `${typeof checks[h.id] === "number" ? checks[h.id] : 0}/${h.targetValue} ${unitLabel}`}

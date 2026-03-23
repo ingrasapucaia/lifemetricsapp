@@ -1,14 +1,28 @@
+export type HabitMetricType = "check" | "tempo" | "numero" | "km" | "milhas" | "calorias" | "litros" | "reais" | "dolar" | "euro" | "personalizado";
+export type HabitFrequency = "diario" | "dias_uteis" | "semanal" | "personalizado";
+export type HabitTimeUnit = "horas" | "minutos" | "segundos";
+
 export interface Habit {
   id: string;
   name: string;
   icon?: string;
   color?: string;
   category?: "geral" | "exercicio";
+  /** @deprecated Use metricType instead */
   targetType: "check" | "minutes" | "count" | "hours_minutes" | "km" | "miles";
   targetValue?: number;
   active: boolean;
   showOnDashboard?: boolean;
   createdAt: string;
+  // New fields
+  lifeArea?: string;
+  frequency?: HabitFrequency;
+  frequencyDays?: string[];
+  metricType?: HabitMetricType;
+  metricUnit?: string;
+  metricTimeUnit?: HabitTimeUnit;
+  dailyGoal?: number;
+  reminderTime?: string;
 }
 
 export interface DailyRecord {
