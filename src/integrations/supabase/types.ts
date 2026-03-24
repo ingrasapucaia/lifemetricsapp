@@ -61,6 +61,36 @@ export type Database = {
           },
         ]
       }
+      daily_insights: {
+        Row: {
+          date: string
+          generated_at: string
+          id: string
+          orientations: string[]
+          patterns: string[]
+          summary: string[]
+          user_id: string
+        }
+        Insert: {
+          date?: string
+          generated_at?: string
+          id?: string
+          orientations?: string[]
+          patterns?: string[]
+          summary?: string[]
+          user_id: string
+        }
+        Update: {
+          date?: string
+          generated_at?: string
+          id?: string
+          orientations?: string[]
+          patterns?: string[]
+          summary?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       deadline_acknowledgments: {
         Row: {
           acknowledged_at: string

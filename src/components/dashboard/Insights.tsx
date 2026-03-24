@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DailyRecord, Habit, UserProfile } from "@/types";
-import { calculatePeriodMetrics } from "@/lib/metrics";
-import { generateDaySummary, generateMicroOrientations, generatePeriodPatterns } from "@/lib/insights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 const INSIGHT_THEMES = [
   { bg: "hsl(var(--metric-habits-bg))", accent: "hsl(var(--metric-habits))" },
@@ -29,37 +31,89 @@ interface InsightData {
 export default function Insights({ records, habits, profile, todayRecord }: Props) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<InsightData | null>(null);
+  const { user } = useAuth();
+  const today = format(new Date(), "yyyy-MM-dd");
 
-  const generate = () => {
+  const loadCached = useCallback(async () => {
+    if (!user) return false;
+    try {
+      const { data: cached } = await supabase
+        .from("daily_insights" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", today)
+        .single();
+
+      if (cached) {
+        setData({
+          summary: (cached as any).summary || [],
+          orientations: (cached as any).orientations || [],
+          patterns: (cached as any).patterns || [],
+        });
+        return true;
+      }
+    } catch {
+      // No cached data
+    }
+    return false;
+  }, [user, today]);
+
+  const generate = useCallback(async (force = false) => {
+    if (!user) return;
+
+    if (!force) {
+      const hasCached = await loadCached();
+      if (hasCached) return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      const m = calculatePeriodMetrics(records, habits);
-      setData({
-        summary: generateDaySummary(todayRecord, habits, m.avgSleep, m.avgMood, profile.preferences.insightsTone),
-        orientations: generateMicroOrientations(records, habits, profile),
-        patterns: generatePeriodPatterns(records, habits),
+    try {
+      const { data: fnData, error } = await supabase.functions.invoke("generate-insights", {
+        body: {
+          habits,
+          records: records.slice(0, 60),
+        },
       });
-      setLoading(false);
-    }, 800 + Math.random() * 400);
-  };
+
+      if (error) {
+        console.error("Error generating insights:", error);
+        toast.error("Erro ao gerar insights. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      if (fnData?.error === "rate_limited") {
+        toast.error("Limite de requisições atingido. Tente novamente em alguns minutos.");
+        setLoading(false);
+        return;
+      }
+
+      if (fnData?.error === "payment_required") {
+        toast.error("Créditos de IA esgotados.");
+        setLoading(false);
+        return;
+      }
+
+      if (fnData) {
+        setData({
+          summary: fnData.summary || [],
+          orientations: fnData.orientations || [],
+          patterns: fnData.patterns || [],
+        });
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Erro ao gerar insights.");
+    }
+    setLoading(false);
+  }, [user, habits, records, loadCached]);
 
   useEffect(() => {
-    generate();
+    generate(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
-  if (records.length < 3 && !data) {
-    return (
-      <Card className="text-center py-8">
-        <CardContent>
-          <Sparkles className="mx-auto mb-3 text-muted-foreground" size={32} />
-          <p className="text-muted-foreground">
-            Registre mais {3 - records.length} dia(s) para insights melhores.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!user) return null;
 
   return (
     <section className="space-y-4">
@@ -67,7 +121,13 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <Sparkles size={18} className="text-metric-exercise" /> Insights
         </h2>
-        <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="rounded-xl">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => generate(true)}
+          disabled={loading}
+          className="rounded-xl"
+        >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           Gerar insights
         </Button>
