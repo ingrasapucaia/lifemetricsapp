@@ -147,16 +147,21 @@ export default function CheckIn({ today, record, habits }: Props) {
 
   const calculatedSleep = calculateSleepDuration(sleepTime, wakeUp);
 
+  const defaultSleepTime = "23:00";
+  const defaultWakeTime = "07:00";
+
   const updateSleepTime = (h: number, m: number) => {
     const newSleepTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    const newSleep = calculateSleepDuration(newSleepTime, wakeUp);
-    up({ sleepTime: newSleepTime, sleepHours: newSleep });
+    const effectiveWake = wakeUp || defaultWakeTime;
+    const newSleep = calculateSleepDuration(newSleepTime, effectiveWake);
+    up({ sleepTime: newSleepTime, wakeUpTime: effectiveWake, sleepHours: newSleep });
   };
 
   const updateWakeTime = (h: number, m: number) => {
     const newWakeTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    const newSleep = calculateSleepDuration(sleepTime, newWakeTime);
-    up({ wakeUpTime: newWakeTime, sleepHours: newSleep });
+    const effectiveSleep = sleepTime || defaultSleepTime;
+    const newSleep = calculateSleepDuration(effectiveSleep, newWakeTime);
+    up({ sleepTime: effectiveSleep, wakeUpTime: newWakeTime, sleepHours: newSleep });
   };
 
   return (
