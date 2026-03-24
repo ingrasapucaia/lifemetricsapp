@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,8 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download, RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const OBJECTIVES = [
@@ -101,7 +106,9 @@ function CardSelect({ options, selected, onToggle }: {
 }
 
 export default function Profile() {
-  const { user, profile: authProfile, refreshProfile } = useAuth();
+  const { user, profile: authProfile, refreshProfile, signOut } = useAuth();
+  const { habits, records, clearAll } = useStore();
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -117,7 +124,16 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Load profile data from Supabase
+  // Reset modal
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  // Delete modal
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=step1, 2=step2
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (!authProfile) return;
     setName(authProfile.name || "");
@@ -133,7 +149,6 @@ export default function Profile() {
     setLoaded(true);
   }, [authProfile]);
 
-  // Track if anything changed
   const hasChanges = useMemo(() => {
     if (!authProfile || !loaded) return false;
     return (
@@ -176,10 +191,113 @@ export default function Profile() {
     if (error) {
       toast.error("Erro ao salvar perfil");
     } else {
-      toast("Perfil atualizado com sucesso");
+      toast("Perfil atualizado!");
       await refreshProfile();
     }
     setSaving(false);
+  };
+
+  const handleExport = async () => {
+    if (!user) return;
+    try {
+      const [profileRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("goals").select("*").eq("user_id", user.id),
+        supabase.from("goal_actions").select("*"),
+        supabase.from("tasks").select("*").eq("user_id", user.id),
+        supabase.from("achievements").select("*").eq("user_id", user.id),
+        supabase.from("deadline_acknowledgments").select("*").eq("user_id", user.id),
+      ]);
+
+      // Filter goal_actions by user's goals
+      const goalIds = (goalsRes.data || []).map((g) => g.id);
+      const userActions = (actionsRes.data || []).filter((a) => goalIds.includes(a.goal_id));
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        profile: profileRes.data,
+        habits,
+        records,
+        goals: goalsRes.data || [],
+        goalActions: userActions,
+        tasks: tasksRes.data || [],
+        achievements: achievementsRes.data || [],
+        deadlineAcknowledgments: acknowledgementsRes.data || [],
+      };
+
+      const userName = name || "usuario";
+      const date = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `metrics-dados-${userName}-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("Seus dados foram exportados com sucesso");
+    } catch {
+      toast.error("Erro ao exportar dados");
+    }
+  };
+
+  const handleReset = async () => {
+    if (!user) return;
+    setResetting(true);
+    try {
+      // Get user's goal IDs first for goal_actions
+      const { data: userGoals } = await supabase.from("goals").select("id").eq("user_id", user.id);
+      const goalIds = (userGoals || []).map((g) => g.id);
+
+      // Delete from Supabase tables
+      await Promise.all([
+        supabase.from("deadline_acknowledgments").delete().eq("user_id", user.id),
+        supabase.from("tasks").delete().eq("user_id", user.id),
+        supabase.from("achievements").delete().eq("user_id", user.id),
+        ...(goalIds.length > 0 ? [supabase.from("goal_actions").delete().in("goal_id", goalIds)] : []),
+      ]);
+      await supabase.from("goals").delete().eq("user_id", user.id);
+
+      // Clear localStorage data
+      clearAll();
+
+      setResetOpen(false);
+      toast("App resetado. Comece do zero!");
+      navigate("/dashboard");
+    } catch {
+      toast.error("Erro ao resetar o app");
+    }
+    setResetting(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !deletePassword) return;
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { password: deletePassword },
+      });
+
+      if (error || data?.error) {
+        if (data?.error === "wrong_password") {
+          setDeleteError("Senha incorreta. Tente novamente.");
+        } else {
+          setDeleteError("Erro ao excluir conta. Tente novamente.");
+        }
+        setDeleting(false);
+        return;
+      }
+
+      // Clear localStorage
+      clearAll();
+      await signOut();
+      toast("Conta excluída com sucesso");
+      navigate("/login");
+    } catch {
+      setDeleteError("Erro ao excluir conta. Tente novamente.");
+      setDeleting(false);
+    }
   };
 
   if (!loaded) {
@@ -231,10 +349,7 @@ export default function Profile() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center justify-between p-3 rounded-lg border">
               <Label className="cursor-pointer">Semana começa na segunda</Label>
-              <Switch
-                checked={weekStartsMonday}
-                onCheckedChange={setWeekStartsMonday}
-              />
+              <Switch checked={weekStartsMonday} onCheckedChange={setWeekStartsMonday} />
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg border">
               <Label>Tom dos insights</Label>
@@ -315,16 +430,135 @@ export default function Profile() {
         </Collapsible>
       </Card>
 
-      {/* Save button - only when changed */}
-      {hasChanges && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t z-50 md:left-[var(--sidebar-width)]">
-          <div className="max-w-3xl mx-auto">
-            <Button className="w-full rounded-full" onClick={handleSave} disabled={saving}>
-              {saving ? "Salvando..." : "Salvar alterações"}
+      {/* Salvar alterações */}
+      <Button
+        className="w-full rounded-full"
+        onClick={handleSave}
+        disabled={!hasChanges || saving}
+      >
+        {saving ? "Salvando..." : "Salvar alterações"}
+      </Button>
+
+      {/* Meus dados */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Meus dados</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            variant="outline"
+            className="w-full justify-center gap-2 border-primary text-primary hover:bg-primary/5"
+            onClick={handleExport}
+          >
+            <Download size={16} />
+            Exportar meus dados
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full justify-center gap-2 border-destructive/50 text-destructive hover:bg-destructive/5"
+            onClick={() => setResetOpen(true)}
+          >
+            <RotateCcw size={16} />
+            Resetar app
+          </Button>
+
+          <button
+            onClick={() => { setDeleteStep(1); setDeletePassword(""); setDeleteError(""); }}
+            className="w-full text-center text-sm text-destructive/70 hover:text-destructive transition-colors py-1"
+          >
+            Excluir minha conta
+          </button>
+        </CardContent>
+      </Card>
+
+      {/* Reset modal */}
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resetar o app?</DialogTitle>
+            <DialogDescription>
+              Isso vai apagar todos os seus registros, hábitos, metas e tarefas.
+              Seu acesso e perfil serão mantidos, mas você começará do zero.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setResetOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleReset}
+              disabled={resetting}
+            >
+              {resetting ? "Resetando..." : "Sim, resetar tudo"}
             </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete account modal */}
+      <Dialog open={deleteStep > 0} onOpenChange={(open) => { if (!open) setDeleteStep(0); }}>
+        <DialogContent className="sm:max-w-md">
+          {deleteStep === 1 && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Tem certeza?</DialogTitle>
+                <DialogDescription>
+                  Excluir sua conta é permanente. Todos os seus dados serão apagados
+                  para sempre e não poderão ser recuperados.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2 mt-2">
+                <Button variant="outline" className="w-full" onClick={() => setDeleteStep(0)}>
+                  Cancelar
+                </Button>
+                <Button
+                  className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => setDeleteStep(2)}
+                >
+                  Continuar
+                </Button>
+              </div>
+            </>
+          )}
+          {deleteStep === 2 && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Confirmação final</DialogTitle>
+                <DialogDescription>
+                  Para confirmar, digite sua senha atual abaixo:
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                <Input
+                  type="password"
+                  placeholder="Sua senha"
+                  value={deletePassword}
+                  onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                />
+                {deleteError && (
+                  <p className="text-sm text-destructive">{deleteError}</p>
+                )}
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" className="w-full" onClick={() => setDeleteStep(0)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting || !deletePassword}
+                  >
+                    {deleting ? "Excluindo..." : "Excluir minha conta definitivamente"}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
