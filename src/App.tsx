@@ -16,6 +16,7 @@ import ArchivedGoals from "@/pages/ArchivedGoals";
 import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
 import MetricsPage from "@/pages/MetricsPage";
+import InsightsPage from "@/pages/InsightsPage";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
