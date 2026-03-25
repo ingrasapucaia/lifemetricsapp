@@ -201,7 +201,7 @@ export default function Profile() {
   const handleExport = async () => {
     if (!user) return;
     try {
-      const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes, insightsRes] = await Promise.all([
+      const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("habits").select("*").eq("user_id", user.id),
         supabase.from("daily_records").select("*").eq("user_id", user.id),
@@ -210,7 +210,6 @@ export default function Profile() {
         supabase.from("tasks").select("*").eq("user_id", user.id),
         supabase.from("achievements").select("*").eq("user_id", user.id),
         supabase.from("deadline_acknowledgments").select("*").eq("user_id", user.id),
-        supabase.from("daily_insights").select("*").eq("user_id", user.id),
       ]);
 
       // Filter goal_actions by user's goals
