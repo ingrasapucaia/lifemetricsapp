@@ -255,7 +255,10 @@ export default function Profile() {
         supabase.from("achievements").delete().eq("user_id", user.id),
         ...(goalIds.length > 0 ? [supabase.from("goal_actions").delete().in("goal_id", goalIds)] : []),
       ]);
-      await supabase.from("goals").delete().eq("user_id", user.id);
+      await Promise.all([
+        supabase.from("goals").delete().eq("user_id", user.id),
+        (supabase as any).from("habits").delete().eq("user_id", user.id),
+      ]);
 
       // Clear localStorage data
       clearAll();

@@ -396,7 +396,7 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     setSaving(true);
-    // Save habits to store
+    // Save habits only from onboarding completion
     const validHabits = habits.filter((h) => h.name.trim());
     validHabits.forEach((h) => {
       const targetType = h.metricType === "kcal" || h.metricType === "liters" ? "count" : h.metricType as any;
@@ -409,6 +409,16 @@ export default function Onboarding() {
         active: true,
         showOnDashboard: true,
         lifeArea: h.area || undefined,
+        metricType:
+          h.metricType === "hours_minutes"
+            ? "tempo"
+            : h.metricType === "count"
+              ? "numero"
+              : h.metricType === "kcal"
+                ? "calorias"
+                : h.metricType === "liters"
+                  ? "litros"
+                  : (h.metricType as any),
       });
     });
 
