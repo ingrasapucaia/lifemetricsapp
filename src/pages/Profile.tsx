@@ -226,7 +226,6 @@ export default function Profile() {
         tasks: tasksRes.data || [],
         achievements: achievementsRes.data || [],
         deadlineAcknowledgments: acknowledgementsRes.data || [],
-        dailyInsights: insightsRes.data || [],
       };
 
       const userName = name || "usuario";
