@@ -168,7 +168,7 @@ interface StoreType {
 const StoreContext = createContext<StoreType | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -178,6 +178,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const fetchAll = async () => {
+      if (authLoading) return;
+
       if (!user) {
         setHabits([]);
         setRecords([]);
@@ -185,27 +187,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const [habitsRes, recordsRes, goalsRes, actionsRes] = await Promise.all([
+      const [habitsRes, recordsRes, goalsRes] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
         supabase.from("daily_records").select("*").eq("user_id", user.id).order("date", { ascending: true }),
         supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
-        supabase.from("goal_actions").select("*"),
       ]);
+
+      const goalRows = goalsRes.data || [];
+      const goalIds = goalRows.map((g: any) => g.id);
+
+      const actionsRes = goalIds.length
+        ? await supabase.from("goal_actions").select("*").in("goal_id", goalIds)
+        : { data: [], error: null };
 
       if (cancelled) return;
 
+      if (habitsRes.error || recordsRes.error || goalsRes.error || actionsRes.error) {
+        console.error("Error fetching app data:", {
+          habits: habitsRes.error,
+          records: recordsRes.error,
+          goals: goalsRes.error,
+          actions: actionsRes.error,
+        });
+      }
+
       setHabits(((habitsRes.data || []) as HabitRow[]).map(mapHabitRow));
       setRecords((recordsRes.data || []).map(mapRecordRow));
-
-      // Map goals with their actions
-      const allActions = (actionsRes.data || []).map(mapGoalActionRow);
-      const goalRows = goalsRes.data || [];
-      // Filter actions by user's goals
-      const goalIds = new Set(goalRows.map((g: any) => g.id));
-      const userActions = allActions.filter((a: any) => {
-        const raw = actionsRes.data?.find((r: any) => r.id === a.id);
-        return raw && goalIds.has(raw.goal_id);
-      });
 
       setGoals(goalRows.map((g: any) => {
         const gActions = (actionsRes.data || [])
@@ -213,16 +220,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           .map(mapGoalActionRow);
         return mapGoalRow(g, gActions);
       }));
-
-      // Clean up any residual localStorage data
-      ["metrics-habits", "metrics-records", "metrics-profile", "metrics-achievements", "metrics-goals"].forEach(
-        (key) => localStorage.removeItem(key)
-      );
     };
 
     void fetchAll();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, authLoading]);
 
   // ── Records CRUD ──────────────────────────────
 
