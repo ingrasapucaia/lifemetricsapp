@@ -245,7 +245,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const resetToSeed = useCallback(() => {
     // No longer resets to seed data — habits are user-owned and permanent
-    clearAll();
+    setHabits([]);
+    setRecords([]);
+    setAchievements([]);
+    setGoals([]);
+    setProfile({
+      displayName: "",
+      mainGoal: "",
+      focusArea: "misto",
+      preferences: { weekStartsOn: "mon", insightsTone: "direto" },
+    });
   }, []);
 
   const clearAll = useCallback(() => {
