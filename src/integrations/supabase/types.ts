@@ -91,6 +91,60 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_records: {
+        Row: {
+          created_at: string
+          date: string
+          exercise_minutes: number
+          habit_checks: Json
+          id: string
+          mood: string
+          note_feeling: string | null
+          note_gratitude: string | null
+          note_procrastination: string | null
+          sleep_hours: number
+          sleep_time: string | null
+          updated_at: string
+          user_id: string
+          wake_up_time: string | null
+          water_intake: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          exercise_minutes?: number
+          habit_checks?: Json
+          id?: string
+          mood?: string
+          note_feeling?: string | null
+          note_gratitude?: string | null
+          note_procrastination?: string | null
+          sleep_hours?: number
+          sleep_time?: string | null
+          updated_at?: string
+          user_id: string
+          wake_up_time?: string | null
+          water_intake?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          exercise_minutes?: number
+          habit_checks?: Json
+          id?: string
+          mood?: string
+          note_feeling?: string | null
+          note_gratitude?: string | null
+          note_procrastination?: string | null
+          sleep_hours?: number
+          sleep_time?: string | null
+          updated_at?: string
+          user_id?: string
+          wake_up_time?: string | null
+          water_intake?: number
+        }
+        Relationships: []
+      }
       deadline_acknowledgments: {
         Row: {
           acknowledged_at: string
