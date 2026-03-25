@@ -104,7 +104,7 @@ export default function Insights({ records, habits, todayRecord }: Props) {
       toast.error("Erro ao gerar insights.");
     }
     setLoading(false);
-  }, [user, habits, records, loadCached]);
+  }, [user, loadCached]);
 
   useEffect(() => {
     generate(false);
