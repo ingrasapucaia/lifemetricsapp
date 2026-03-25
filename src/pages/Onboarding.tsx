@@ -402,12 +402,13 @@ export default function Onboarding() {
       const targetType = h.metricType === "kcal" || h.metricType === "liters" ? "count" : h.metricType as any;
       addHabit({
         name: h.name,
-        icon: undefined,
+        icon: h.emoji || undefined,
         color: undefined,
         category: "geral",
         targetType,
         active: true,
         showOnDashboard: true,
+        lifeArea: h.area || undefined,
       });
     });
 

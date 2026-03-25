@@ -1,7 +1,6 @@
 // Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
-import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
 
 const KEYS = {
   habits: "metrics-habits",
@@ -245,11 +244,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetToSeed = useCallback(() => {
-    setHabits(seedHabits);
-    setRecords(generateSeedRecords());
-    setProfile(seedProfile);
+    // No longer resets to seed data — habits are user-owned and permanent
+    setHabits([]);
+    setRecords([]);
     setAchievements([]);
     setGoals([]);
+    setProfile({
+      displayName: "",
+      mainGoal: "",
+      focusArea: "misto",
+      preferences: { weekStartsOn: "mon", insightsTone: "direto" },
+    });
   }, []);
 
   const clearAll = useCallback(() => {
