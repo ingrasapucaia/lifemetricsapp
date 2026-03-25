@@ -1,7 +1,6 @@
 // Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
-import { seedHabits, seedProfile, generateSeedRecords } from "@/data/seed";
 
 const KEYS = {
   habits: "metrics-habits",
