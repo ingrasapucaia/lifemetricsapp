@@ -201,6 +201,75 @@ export type Database = {
         }
         Relationships: []
       }
+      habits: {
+        Row: {
+          active: boolean
+          category: string | null
+          color: string | null
+          created_at: string
+          daily_goal: number | null
+          frequency: string | null
+          frequency_days: string[] | null
+          icon: string | null
+          id: string
+          life_area: string | null
+          metric_time_unit: string | null
+          metric_type: string | null
+          metric_unit: string | null
+          name: string
+          reminder_time: string | null
+          show_on_dashboard: boolean
+          target_type: string
+          target_value: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          daily_goal?: number | null
+          frequency?: string | null
+          frequency_days?: string[] | null
+          icon?: string | null
+          id: string
+          life_area?: string | null
+          metric_time_unit?: string | null
+          metric_type?: string | null
+          metric_unit?: string | null
+          name: string
+          reminder_time?: string | null
+          show_on_dashboard?: boolean
+          target_type?: string
+          target_value?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          daily_goal?: number | null
+          frequency?: string | null
+          frequency_days?: string[] | null
+          icon?: string | null
+          id?: string
+          life_area?: string | null
+          metric_time_unit?: string | null
+          metric_type?: string | null
+          metric_unit?: string | null
+          name?: string
+          reminder_time?: string | null
+          show_on_dashboard?: boolean
+          target_type?: string
+          target_value?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           challenges: string[] | null

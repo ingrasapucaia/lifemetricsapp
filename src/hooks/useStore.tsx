@@ -1,6 +1,8 @@
 // Store provider for app state
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const KEYS = {
   habits: "metrics-habits",
@@ -21,6 +23,101 @@ function load<T>(key: string, fallback: T): T {
 
 function save(key: string, data: unknown) {
   localStorage.setItem(key, JSON.stringify(data));
+}
+
+const DEFAULT_PROFILE: UserProfile = {
+  displayName: "",
+  mainGoal: "",
+  focusArea: "misto",
+  preferences: { weekStartsOn: "mon", insightsTone: "direto" },
+};
+
+type HabitRow = {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  category: Habit["category"] | null;
+  target_type: Habit["targetType"];
+  target_value: number | null;
+  active: boolean;
+  show_on_dashboard: boolean | null;
+  created_at: string;
+  life_area: string | null;
+  frequency: Habit["frequency"] | null;
+  frequency_days: string[] | null;
+  metric_type: Habit["metricType"] | null;
+  metric_unit: string | null;
+  metric_time_unit: Habit["metricTimeUnit"] | null;
+  daily_goal: number | null;
+  reminder_time: string | null;
+};
+
+function mapHabitRow(row: HabitRow): Habit {
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon || undefined,
+    color: row.color || undefined,
+    category: row.category || undefined,
+    targetType: row.target_type,
+    targetValue: row.target_value ?? undefined,
+    active: row.active,
+    showOnDashboard: row.show_on_dashboard ?? true,
+    createdAt: row.created_at,
+    lifeArea: row.life_area || undefined,
+    frequency: row.frequency || undefined,
+    frequencyDays: row.frequency_days || undefined,
+    metricType: row.metric_type || undefined,
+    metricUnit: row.metric_unit || undefined,
+    metricTimeUnit: row.metric_time_unit || undefined,
+    dailyGoal: row.daily_goal ?? undefined,
+    reminderTime: row.reminder_time || undefined,
+  };
+}
+
+function mapHabitInsert(userId: string, habit: Omit<Habit, "id" | "createdAt">, id: string) {
+  return {
+    id,
+    user_id: userId,
+    name: habit.name,
+    icon: habit.icon ?? null,
+    color: habit.color ?? null,
+    category: habit.category ?? null,
+    target_type: habit.targetType,
+    target_value: habit.targetValue ?? null,
+    active: habit.active,
+    show_on_dashboard: habit.showOnDashboard ?? true,
+    life_area: habit.lifeArea ?? null,
+    frequency: habit.frequency ?? null,
+    frequency_days: habit.frequencyDays ?? null,
+    metric_type: habit.metricType ?? null,
+    metric_unit: habit.metricUnit ?? null,
+    metric_time_unit: habit.metricTimeUnit ?? null,
+    daily_goal: habit.dailyGoal ?? null,
+    reminder_time: habit.reminderTime ?? null,
+  };
+}
+
+function mapHabitUpdate(updates: Partial<Habit>) {
+  return {
+    ...(updates.name !== undefined ? { name: updates.name } : {}),
+    ...(updates.icon !== undefined ? { icon: updates.icon ?? null } : {}),
+    ...(updates.color !== undefined ? { color: updates.color ?? null } : {}),
+    ...(updates.category !== undefined ? { category: updates.category ?? null } : {}),
+    ...(updates.targetType !== undefined ? { target_type: updates.targetType } : {}),
+    ...(updates.targetValue !== undefined ? { target_value: updates.targetValue ?? null } : {}),
+    ...(updates.active !== undefined ? { active: updates.active } : {}),
+    ...(updates.showOnDashboard !== undefined ? { show_on_dashboard: updates.showOnDashboard } : {}),
+    ...(updates.lifeArea !== undefined ? { life_area: updates.lifeArea ?? null } : {}),
+    ...(updates.frequency !== undefined ? { frequency: updates.frequency ?? null } : {}),
+    ...(updates.frequencyDays !== undefined ? { frequency_days: updates.frequencyDays ?? null } : {}),
+    ...(updates.metricType !== undefined ? { metric_type: updates.metricType ?? null } : {}),
+    ...(updates.metricUnit !== undefined ? { metric_unit: updates.metricUnit ?? null } : {}),
+    ...(updates.metricTimeUnit !== undefined ? { metric_time_unit: updates.metricTimeUnit ?? null } : {}),
+    ...(updates.dailyGoal !== undefined ? { daily_goal: updates.dailyGoal ?? null } : {}),
+    ...(updates.reminderTime !== undefined ? { reminder_time: updates.reminderTime ?? null } : {}),
+  };
 }
 
 // Migrate old numeric mood to string
@@ -65,18 +162,46 @@ interface StoreType {
 const StoreContext = createContext<StoreType | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [habits, setHabits] = useState<Habit[]>(() => load(KEYS.habits, []));
+  const { user } = useAuth();
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [records, setRecords] = useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, [])));
-  const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, {
-    displayName: "",
-    mainGoal: "",
-    focusArea: "misto",
-    preferences: { weekStartsOn: "mon", insightsTone: "direto" },
-  }));
+  const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, DEFAULT_PROFILE));
   const [achievements, setAchievements] = useState<Achievement[]>(() => load(KEYS.achievements, []));
   const [goals, setGoals] = useState<Goal[]>(() => load(KEYS.goals, []));
 
-  useEffect(() => { save(KEYS.habits, habits); }, [habits]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHabits = async () => {
+      if (!user) {
+        setHabits([]);
+        return;
+      }
+
+      const { data, error } = await (supabase as any)
+        .from("habits")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching habits:", error);
+        if (!cancelled) setHabits([]);
+        return;
+      }
+
+      if (!cancelled) {
+        setHabits(((data || []) as HabitRow[]).map(mapHabitRow));
+      }
+    };
+
+    void fetchHabits();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   useEffect(() => { save(KEYS.records, records); }, [records]);
   useEffect(() => { save(KEYS.profile, profile); }, [profile]);
   useEffect(() => { save(KEYS.achievements, achievements); }, [achievements]);
@@ -113,22 +238,70 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addHabit = useCallback((habit: Omit<Habit, "id" | "createdAt">) => {
-    setHabits((prev) => [...prev, { ...habit, id: `h-${Date.now()}`, createdAt: new Date().toISOString() }]);
-  }, []);
+    if (!user) return;
+
+    void (async () => {
+      const id = crypto.randomUUID();
+      const { data, error } = await (supabase as any)
+        .from("habits")
+        .insert(mapHabitInsert(user.id, habit, id))
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("Error creating habit:", error);
+        return;
+      }
+
+      setHabits((prev) => [...prev, mapHabitRow(data as HabitRow)]);
+    })();
+  }, [user]);
 
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates } : h)));
-  }, []);
+    if (!user) return;
+
+    void (async () => {
+      const { data, error } = await (supabase as any)
+        .from("habits")
+        .update(mapHabitUpdate(updates))
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("Error updating habit:", error);
+        return;
+      }
+
+      setHabits((prev) => prev.map((h) => (h.id === id ? mapHabitRow(data as HabitRow) : h)));
+    })();
+  }, [user]);
 
   const deleteHabit = useCallback((id: string) => {
-    setHabits((prev) => prev.filter((h) => h.id !== id));
-    setRecords((prev) =>
-      prev.map((r) => {
-        const { [id]: _, ...rest } = r.habitChecks;
-        return { ...r, habitChecks: rest };
-      })
-    );
-  }, []);
+    if (!user) return;
+
+    void (async () => {
+      const { error } = await (supabase as any)
+        .from("habits")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error deleting habit:", error);
+        return;
+      }
+
+      setHabits((prev) => prev.filter((h) => h.id !== id));
+      setRecords((prev) =>
+        prev.map((r) => {
+          const { [id]: _, ...rest } = r.habitChecks;
+          return { ...r, habitChecks: rest };
+        })
+      );
+    })();
+  }, [user]);
 
   const reorderHabit = useCallback((id: string, direction: "up" | "down") => {
     setHabits((prev) => {
@@ -249,12 +422,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setRecords([]);
     setAchievements([]);
     setGoals([]);
-    setProfile({
-      displayName: "",
-      mainGoal: "",
-      focusArea: "misto",
-      preferences: { weekStartsOn: "mon", insightsTone: "direto" },
-    });
+    setProfile(DEFAULT_PROFILE);
   }, []);
 
   const clearAll = useCallback(() => {
@@ -262,12 +430,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setRecords([]);
     setAchievements([]);
     setGoals([]);
-    setProfile({
-      displayName: "",
-      mainGoal: "",
-      focusArea: "misto",
-      preferences: { weekStartsOn: "mon", insightsTone: "direto" },
-    });
+    setProfile(DEFAULT_PROFILE);
   }, []);
 
   const importData = useCallback(

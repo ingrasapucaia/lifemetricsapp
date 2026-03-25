@@ -26,10 +26,10 @@ import Onboarding from "@/pages/Onboarding";
 
 const App = () => (
   <AuthProvider>
-    <StoreProvider>
-      <TooltipProvider>
-        <Sonner />
-        <BrowserRouter>
+    <TooltipProvider>
+      <Sonner />
+      <BrowserRouter>
+        <StoreProvider>
           <KeyboardShortcuts />
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -59,9 +59,9 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </StoreProvider>
+        </StoreProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </AuthProvider>
 );
 
