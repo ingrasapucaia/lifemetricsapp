@@ -49,22 +49,29 @@ Deno.serve(async (req) => {
       profileRes,
       goalsRes,
       tasksRes,
+      habitsRes,
       recordsRes,
     ] = await Promise.all([
       userClient.from("profiles").select("*").eq("user_id", userId).single(),
       userClient.from("goals").select("*, goal_actions(*)").eq("user_id", userId),
       userClient.from("tasks").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(100),
-      // Records come from localStorage on client — we'll receive them in the body
+      userClient.from("habits").select("*").eq("user_id", userId),
+      userClient.from("daily_records").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(60),
     ]);
 
     const profile = profileRes.data;
     const goals = goalsRes.data || [];
     const tasks = tasksRes.data || [];
-
-    // Get habits and records from request body (they're in localStorage)
-    const body = await req.json();
-    const habits: any[] = body.habits || [];
-    const records: any[] = body.records || [];
+    const habits: any[] = habitsRes.data || [];
+    const records: any[] = (recordsRes.data || []).map((r: any) => ({
+      date: r.date,
+      mood: r.mood,
+      sleepHours: Number(r.sleep_hours) || 0,
+      waterIntake: r.water_intake || 0,
+      exerciseMinutes: r.exercise_minutes || 0,
+      habitChecks: r.habit_checks || {},
+      noteFeeling: r.note_feeling,
+    }));
 
     // Build context
     const today = new Date().toISOString().slice(0, 10);
