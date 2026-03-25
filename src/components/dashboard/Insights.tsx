@@ -70,10 +70,7 @@ export default function Insights({ records, habits, todayRecord }: Props) {
     setLoading(true);
     try {
       const { data: fnData, error } = await supabase.functions.invoke("generate-insights", {
-        body: {
-          habits,
-          records: records.slice(0, 60),
-        },
+        body: {},
       });
 
       if (error) {
