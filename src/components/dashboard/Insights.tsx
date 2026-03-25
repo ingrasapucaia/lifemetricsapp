@@ -165,10 +165,18 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
   );
 }
 
+function truncateToWords(text: string, maxWords: number): string {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  // Cut roughly in the middle-to-end to create curiosity
+  const cutPoint = Math.min(maxWords, words.length);
+  return words.slice(0, cutPoint).join(" ") + "...";
+}
+
 function SummaryInsightCard({ title, items, theme }: { title: string; items: string[]; theme: { bg: string; accent: string } }) {
   const navigate = useNavigate();
-  const truncated = items.slice(0, 2);
-  const hasMore = items.length > 2;
+  const firstItem = items[0] || "";
+  const snippet = truncateToWords(firstItem, 15);
 
   return (
     <Card className="border-0" style={{ backgroundColor: theme.bg }}>
@@ -179,22 +187,13 @@ function SummaryInsightCard({ title, items, theme }: { title: string; items: str
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {truncated.map((s, i) => (
-            <li key={i} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
-              <span className="text-xs font-medium mt-0.5 shrink-0" style={{ color: theme.accent }}>{i + 1}.</span>
-              {s}
-            </li>
-          ))}
-        </ul>
-        {hasMore && (
-          <button
-            onClick={() => navigate("/insights")}
-            className="text-xs font-medium text-primary hover:underline mt-3 block"
-          >
-            Ver completo →
-          </button>
-        )}
+        <p className="text-sm text-muted-foreground leading-relaxed">{snippet}</p>
+        <button
+          onClick={() => navigate("/insights")}
+          className="text-xs font-medium text-primary hover:underline mt-3 block"
+        >
+          Ver completo →
+        </button>
       </CardContent>
     </Card>
   );
