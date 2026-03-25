@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const userId = user.id;
 
-    // Delete all user data from tables
+    // Delete all user data from tables (order matters for foreign keys)
     await adminClient.from("deadline_acknowledgments").delete().eq("user_id", userId);
     await adminClient.from("tasks").delete().eq("user_id", userId);
     await adminClient.from("goal_actions").delete().in(
@@ -63,6 +63,9 @@ Deno.serve(async (req) => {
     );
     await adminClient.from("achievements").delete().eq("user_id", userId);
     await adminClient.from("goals").delete().eq("user_id", userId);
+    await adminClient.from("daily_records").delete().eq("user_id", userId);
+    await adminClient.from("daily_insights").delete().eq("user_id", userId);
+    await adminClient.from("habits").delete().eq("user_id", userId);
     await adminClient.from("profiles").delete().eq("user_id", userId);
 
     // Delete the auth user
