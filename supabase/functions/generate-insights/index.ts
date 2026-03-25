@@ -46,13 +46,15 @@ Deno.serve(async (req) => {
 
     // Rate limiting: max 5 generations per user per day
     const today = new Date().toISOString().slice(0, 10);
-    const { count: insightCount, error: countError } = await userClient
+    const { data: existingInsight } = await userClient
       .from("daily_insights")
-      .select("*", { count: "exact", head: true })
+      .select("generation_count")
       .eq("user_id", userId)
-      .eq("date", today);
+      .eq("date", today)
+      .single();
 
-    if (!countError && (insightCount ?? 0) >= 5) {
+    const currentCount = existingInsight?.generation_count ?? 0;
+    if (currentCount >= 5) {
       return new Response(JSON.stringify({ error: "daily_limit", message: "Limite diário de insights atingido. Tente novamente amanhã." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
