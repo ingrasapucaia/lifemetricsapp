@@ -244,11 +244,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetToSeed = useCallback(() => {
-    setHabits(seedHabits);
-    setRecords(generateSeedRecords());
-    setProfile(seedProfile);
-    setAchievements([]);
-    setGoals([]);
+    // No longer resets to seed data — habits are user-owned and permanent
+    clearAll();
   }, []);
 
   const clearAll = useCallback(() => {
