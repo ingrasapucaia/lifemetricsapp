@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { isPasswordPwned } from "@/lib/password-check";
 
 export default function NewPassword() {
   const navigate = useNavigate();
@@ -32,6 +33,12 @@ export default function NewPassword() {
       return;
     }
     setLoading(true);
+    const { pwned, count } = await isPasswordPwned(password);
+    if (pwned) {
+      toast.error(`Esta senha já apareceu em ${count.toLocaleString("pt-BR")} vazamentos de dados. Escolha uma senha mais segura.`);
+      setLoading(false);
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       toast.error(error.message);
