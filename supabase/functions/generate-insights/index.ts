@@ -44,6 +44,23 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
+    // Rate limiting: max 5 generations per user per day
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: existingInsight } = await userClient
+      .from("daily_insights")
+      .select("generation_count")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .single();
+
+    const currentCount = existingInsight?.generation_count ?? 0;
+    if (currentCount >= 5) {
+      return new Response(JSON.stringify({ error: "daily_limit", message: "Limite diário de insights atingido. Tente novamente amanhã." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Gather all context data in parallel
     const [
       profileRes,
@@ -280,7 +297,7 @@ Onde:
       };
     }
 
-    // Save to daily_insights (upsert)
+    // Save to daily_insights (upsert) with generation count
     const { error: upsertError } = await userClient
       .from("daily_insights")
       .upsert(
@@ -291,6 +308,7 @@ Onde:
           orientations: parsed.orientations,
           patterns: parsed.patterns,
           generated_at: new Date().toISOString(),
+          generation_count: currentCount + 1,
         },
         { onConflict: "user_id,date" }
       );

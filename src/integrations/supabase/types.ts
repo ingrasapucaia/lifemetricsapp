@@ -65,6 +65,7 @@ export type Database = {
         Row: {
           date: string
           generated_at: string
+          generation_count: number
           id: string
           orientations: string[]
           patterns: string[]
@@ -74,6 +75,7 @@ export type Database = {
         Insert: {
           date?: string
           generated_at?: string
+          generation_count?: number
           id?: string
           orientations?: string[]
           patterns?: string[]
@@ -83,6 +85,7 @@ export type Database = {
         Update: {
           date?: string
           generated_at?: string
+          generation_count?: number
           id?: string
           orientations?: string[]
           patterns?: string[]
