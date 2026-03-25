@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { isPasswordPwned } from "@/lib/password-check";
 
 export default function NewPassword() {
   const navigate = useNavigate();
