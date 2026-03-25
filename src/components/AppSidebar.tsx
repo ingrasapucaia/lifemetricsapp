@@ -14,6 +14,7 @@ const mainLinks = [
   { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
+  { to: "/insights", label: "Insights", icon: Sparkles },
   { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
 
