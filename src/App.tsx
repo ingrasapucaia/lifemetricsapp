@@ -16,6 +16,7 @@ import ArchivedGoals from "@/pages/ArchivedGoals";
 import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
 import MetricsPage from "@/pages/MetricsPage";
+import InsightsPage from "@/pages/InsightsPage";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/metas/:id" element={<GoalDetail />} />
               <Route path="/prazos" element={<Deadlines />} />
               <Route path="/conquistas" element={<Achievements />} />
+              <Route path="/insights" element={<InsightsPage />} />
               <Route path="/arquivados" element={<ArchivedGoals />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>

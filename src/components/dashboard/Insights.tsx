@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { DailyRecord, Habit, UserProfile } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
   const [data, setData] = useState<InsightData | null>(null);
   const { user } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
+  const navigate = useNavigate();
 
   const loadCached = useCallback(async () => {
     if (!user) return false;
@@ -118,19 +120,26 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Sparkles size={18} className="text-metric-exercise" /> Insights
-        </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => generate(true)}
-          disabled={loading}
-          className="rounded-xl"
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Sparkles size={18} className="text-metric-exercise" /> Insights do dia
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => generate(true)}
+            disabled={loading}
+            className="h-7 w-7 rounded-lg"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          </Button>
+        </div>
+        <button
+          onClick={() => navigate("/insights")}
+          className="text-xs font-medium text-primary hover:underline"
         >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Gerar insights
-        </Button>
+          Ver tudo →
+        </button>
       </div>
 
       {loading ? (
@@ -141,23 +150,26 @@ export default function Insights({ records, habits, profile, todayRecord }: Prop
                 <Skeleton className="h-4 w-32 bg-foreground/5" />
                 <Skeleton className="h-3 w-full bg-foreground/5" />
                 <Skeleton className="h-3 w-3/4 bg-foreground/5" />
-                <Skeleton className="h-3 w-5/6 bg-foreground/5" />
               </CardContent>
             </Card>
           ))}
         </div>
       ) : data ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InsightCard title="Resumo do dia" items={data.summary} theme={INSIGHT_THEMES[0]} />
-          <InsightCard title="Micro-orientações" items={data.orientations} theme={INSIGHT_THEMES[1]} />
-          <InsightCard title="Padrões do período" items={data.patterns} theme={INSIGHT_THEMES[2]} />
+          <SummaryInsightCard title="Resumo do dia" items={data.summary} theme={INSIGHT_THEMES[0]} />
+          <SummaryInsightCard title="Micro-orientações" items={data.orientations} theme={INSIGHT_THEMES[1]} />
+          <SummaryInsightCard title="Padrões do período" items={data.patterns} theme={INSIGHT_THEMES[2]} />
         </div>
       ) : null}
     </section>
   );
 }
 
-function InsightCard({ title, items, theme }: { title: string; items: string[]; theme: { bg: string; accent: string } }) {
+function SummaryInsightCard({ title, items, theme }: { title: string; items: string[]; theme: { bg: string; accent: string } }) {
+  const navigate = useNavigate();
+  const truncated = items.slice(0, 2);
+  const hasMore = items.length > 2;
+
   return (
     <Card className="border-0" style={{ backgroundColor: theme.bg }}>
       <CardHeader className="pb-2">
@@ -168,13 +180,21 @@ function InsightCard({ title, items, theme }: { title: string; items: string[]; 
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {items.map((s, i) => (
+          {truncated.map((s, i) => (
             <li key={i} className="text-sm text-muted-foreground leading-relaxed flex gap-2">
               <span className="text-xs font-medium mt-0.5 shrink-0" style={{ color: theme.accent }}>{i + 1}.</span>
               {s}
             </li>
           ))}
         </ul>
+        {hasMore && (
+          <button
+            onClick={() => navigate("/insights")}
+            className="text-xs font-medium text-primary hover:underline mt-3 block"
+          >
+            Ver completo →
+          </button>
+        )}
       </CardContent>
     </Card>
   );
