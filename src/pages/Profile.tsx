@@ -200,8 +200,10 @@ export default function Profile() {
   const handleExport = async () => {
     if (!user) return;
     try {
-      const [profileRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes] = await Promise.all([
+      const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+        supabase.from("habits").select("*").eq("user_id", user.id),
+        supabase.from("daily_records").select("*").eq("user_id", user.id),
         supabase.from("goals").select("*").eq("user_id", user.id),
         supabase.from("goal_actions").select("*"),
         supabase.from("tasks").select("*").eq("user_id", user.id),
@@ -216,8 +218,8 @@ export default function Profile() {
       const exportData = {
         exportedAt: new Date().toISOString(),
         profile: profileRes.data,
-        habits,
-        records,
+        habits: habitsRes.data || [],
+        records: recordsRes.data || [],
         goals: goalsRes.data || [],
         goalActions: userActions,
         tasks: tasksRes.data || [],
@@ -253,14 +255,15 @@ export default function Profile() {
         supabase.from("deadline_acknowledgments").delete().eq("user_id", user.id),
         supabase.from("tasks").delete().eq("user_id", user.id),
         supabase.from("achievements").delete().eq("user_id", user.id),
+        supabase.from("daily_records").delete().eq("user_id", user.id),
+        supabase.from("daily_insights").delete().eq("user_id", user.id),
         ...(goalIds.length > 0 ? [supabase.from("goal_actions").delete().in("goal_id", goalIds)] : []),
       ]);
       await Promise.all([
         supabase.from("goals").delete().eq("user_id", user.id),
-        (supabase as any).from("habits").delete().eq("user_id", user.id),
+        supabase.from("habits").delete().eq("user_id", user.id),
       ]);
 
-      // Clear localStorage data
       clearAll();
 
       setResetOpen(false);
