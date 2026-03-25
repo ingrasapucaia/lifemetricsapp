@@ -103,7 +103,7 @@ export default function Dashboard() {
       <GoalsInProgress />
 
       <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
-      <Insights records={periodRecords} habits={habits} profile={profile} todayRecord={todayRecord} />
+      <Insights records={periodRecords} habits={habits} todayRecord={todayRecord} />
     </div>
   );
 }

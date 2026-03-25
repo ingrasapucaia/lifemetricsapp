@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { DailyRecord, Habit, UserProfile } from "@/types";
+import { DailyRecord, Habit } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,6 @@ const INSIGHT_THEMES = [
 interface Props {
   records: DailyRecord[];
   habits: Habit[];
-  profile: UserProfile;
   todayRecord: DailyRecord | undefined;
 }
 
@@ -29,7 +28,7 @@ interface InsightData {
   patterns: string[];
 }
 
-export default function Insights({ records, habits, profile, todayRecord }: Props) {
+export default function Insights({ records, habits, todayRecord }: Props) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<InsightData | null>(null);
   const { user } = useAuth();
