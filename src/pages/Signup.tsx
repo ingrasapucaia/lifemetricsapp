@@ -23,6 +23,12 @@ export default function Signup() {
     if (password !== confirmPw) { toast.error("As senhas não coincidem"); return; }
     if (password.length < 6) { toast.error("A senha deve ter pelo menos 6 caracteres"); return; }
     setLoading(true);
+    const { pwned, count } = await isPasswordPwned(password);
+    if (pwned) {
+      toast.error(`Esta senha já apareceu em ${count.toLocaleString("pt-BR")} vazamentos de dados. Escolha uma senha mais segura.`);
+      setLoading(false);
+      return;
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
