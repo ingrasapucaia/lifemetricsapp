@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -222,6 +223,49 @@ export default function Records() {
   );
 }
 
+function calculateSleepDuration(sleepTime: string, wakeTime: string): number {
+  if (!sleepTime || !wakeTime) return 0;
+  const [sh, sm] = sleepTime.split(":").map(Number);
+  const [wh, wm] = wakeTime.split(":").map(Number);
+  let sleepMins = sh * 60 + sm;
+  let wakeMins = wh * 60 + wm;
+  if (wakeMins <= sleepMins) wakeMins += 24 * 60;
+  const diff = wakeMins - sleepMins;
+  return +(diff / 60).toFixed(2);
+}
+
+function SleepTimeSelect({ hours, minutes, onChangeHours, onChangeMinutes }: {
+  hours: number;
+  minutes: number;
+  onChangeHours: (h: number) => void;
+  onChangeMinutes: (m: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Select value={String(hours)} onValueChange={(v) => onChangeHours(Number(v))}>
+        <SelectTrigger className="w-[72px] rounded-xl">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 24 }, (_, i) => (
+            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, "0")}h</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={String(minutes)} onValueChange={(v) => onChangeMinutes(Number(v))}>
+        <SelectTrigger className="w-[80px] rounded-xl">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 60 }, (_, i) => (
+            <SelectItem key={i} value={String(i)}>{String(i).padStart(2, "0")}min</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function DayPanel({ record, date, habits, onUpdate, onDelete }: {
   record: DailyRecord | undefined;
   date: string;
@@ -246,6 +290,26 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
 
   const adh = calculateDailyAdherence(record, habits as any);
   const moodTag = getMoodTag(record.mood);
+
+  const sleepTime = record.sleepTime || "";
+  const wakeUp = record.wakeUpTime || "";
+  const [sleepH, sleepM] = sleepTime ? sleepTime.split(":").map(Number) : [23, 0];
+  const [wakeH, wakeM] = wakeUp ? wakeUp.split(":").map(Number) : [7, 0];
+  const calculatedSleep = calculateSleepDuration(sleepTime, wakeUp);
+
+  const updateSleepTime = (h: number, m: number) => {
+    const newSleepTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const effectiveWake = wakeUp || "07:00";
+    const dur = calculateSleepDuration(newSleepTime, effectiveWake);
+    onUpdate({ sleepTime: newSleepTime, wakeUpTime: effectiveWake, sleepHours: dur });
+  };
+
+  const updateWakeTime = (h: number, m: number) => {
+    const newWakeTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const effectiveSleep = sleepTime || "23:00";
+    const dur = calculateSleepDuration(effectiveSleep, newWakeTime);
+    onUpdate({ sleepTime: effectiveSleep, wakeUpTime: newWakeTime, sleepHours: dur });
+  };
 
   return (
     <Card>
@@ -290,9 +354,9 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
               ))}
             </SelectContent>
           </Select>
-          {record.sleepHours > 0 && (
+          {(sleepTime || wakeUp) && calculatedSleep > 0 && (
             <Badge variant="outline" className="gap-1 rounded-full">
-              <Moon size={12} /> {formatSleepHours(record.sleepHours)}
+              <Moon size={12} /> {formatSleepHours(calculatedSleep)}
             </Badge>
           )}
           {record.exerciseMinutes > 0 && (
@@ -306,6 +370,41 @@ function DayPanel({ record, date, habits, onUpdate, onDelete }: {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Sleep */}
+        <div>
+          <p className="text-sm font-medium mb-2 flex items-center gap-2">
+            <Moon size={14} className="text-muted-foreground" /> Sono
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Dormi às</p>
+              <SleepTimeSelect
+                hours={sleepH}
+                minutes={sleepM}
+                onChangeHours={(h) => updateSleepTime(h, sleepM)}
+                onChangeMinutes={(m) => updateSleepTime(sleepH, m)}
+              />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Acordei às</p>
+              <SleepTimeSelect
+                hours={wakeH}
+                minutes={wakeM}
+                onChangeHours={(h) => updateWakeTime(h, wakeM)}
+                onChangeMinutes={(m) => updateWakeTime(wakeH, m)}
+              />
+            </div>
+          </div>
+          {(sleepTime || wakeUp) && (
+            <p className="text-sm font-semibold text-primary mt-2">
+              Dormiu {formatSleepHours(calculatedSleep)}
+            </p>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Habits */}
         <div>
           <p className="text-sm font-medium mb-2">Hábitos</p>
           <div className="space-y-2">
