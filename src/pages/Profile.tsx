@@ -520,20 +520,32 @@ export default function Profile() {
             <DialogDescription>
               Isso vai apagar todos os seus registros, hábitos, metas e tarefas.
               Seu acesso e perfil serão mantidos, mas você começará do zero.
+              Um backup será baixado automaticamente antes da exclusão.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2 mt-2">
+          <div className="flex flex-col gap-3 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm text-muted-foreground">
+                Digite <span className="font-bold text-destructive">RESETAR</span> para confirmar:
+              </Label>
+              <Input
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="RESETAR"
+                className="text-center font-mono"
+              />
+            </div>
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => setResetOpen(false)}
+              onClick={() => { setResetOpen(false); setResetConfirmText(""); }}
             >
               Cancelar
             </Button>
             <Button
               className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleReset}
-              disabled={resetting}
+              disabled={resetting || resetConfirmText !== "RESETAR"}
             >
               {resetting ? "Resetando..." : "Sim, resetar tudo"}
             </Button>
