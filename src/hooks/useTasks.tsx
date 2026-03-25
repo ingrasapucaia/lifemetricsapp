@@ -36,20 +36,30 @@ export type TaskUpdate = Partial<TaskInsert> & {
 };
 
 export function useTasks() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTasks = useCallback(async () => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
     if (!user) { setTasks([]); setLoading(false); return; }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("tasks")
       .select("*")
       .eq("user_id", user.id)
       .order("date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching tasks:", error);
+    }
+
     setTasks((data as Task[]) || []);
     setLoading(false);
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
