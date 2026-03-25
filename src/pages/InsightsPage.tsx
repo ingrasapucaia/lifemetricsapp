@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useStore } from "@/hooks/useStore";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { getRecordsForPeriod } from "@/lib/metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,12 +22,10 @@ interface InsightData {
 }
 
 export default function InsightsPage() {
-  const { records, habits } = useStore();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<InsightData | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
-  const periodRecords = useMemo(() => getRecordsForPeriod(records, "7d"), [records]);
 
   const loadCached = useCallback(async () => {
     if (!user) return false;
@@ -65,7 +61,7 @@ export default function InsightsPage() {
     setLoading(true);
     try {
       const { data: fnData, error } = await supabase.functions.invoke("generate-insights", {
-        body: { habits, records: periodRecords.slice(0, 60) },
+        body: {},
       });
       if (error) { toast.error("Erro ao gerar insights."); setLoading(false); return; }
       if (fnData?.error === "rate_limited") { toast.error("Limite atingido. Tente em alguns minutos."); setLoading(false); return; }
@@ -80,7 +76,7 @@ export default function InsightsPage() {
       }
     } catch { toast.error("Erro ao gerar insights."); }
     setLoading(false);
-  }, [user, habits, periodRecords, loadCached]);
+  }, [user, loadCached]);
 
   useEffect(() => { generate(false); }, [user]);
 

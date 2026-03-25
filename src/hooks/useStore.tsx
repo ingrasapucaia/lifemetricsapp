@@ -1,54 +1,28 @@
-// Store provider for app state
+// Store provider — all data from Supabase, zero localStorage
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, UserProfile, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
+import { Habit, DailyRecord, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-const KEYS = {
-  habits: "metrics-habits",
-  records: "metrics-records",
-  profile: "metrics-profile",
-  achievements: "metrics-achievements",
-  goals: "metrics-goals",
-};
-
-function load<T>(key: string, fallback: T): T {
-  try {
-    const s = localStorage.getItem(key);
-    return s ? JSON.parse(s) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function save(key: string, data: unknown) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
-const DEFAULT_PROFILE: UserProfile = {
-  displayName: "",
-  mainGoal: "",
-  focusArea: "misto",
-  preferences: { weekStartsOn: "mon", insightsTone: "direto" },
-};
+// ── Row mappers ──────────────────────────────────
 
 type HabitRow = {
   id: string;
   name: string;
   icon: string | null;
   color: string | null;
-  category: Habit["category"] | null;
-  target_type: Habit["targetType"];
+  category: string | null;
+  target_type: string;
   target_value: number | null;
   active: boolean;
-  show_on_dashboard: boolean | null;
+  show_on_dashboard: boolean;
   created_at: string;
   life_area: string | null;
-  frequency: Habit["frequency"] | null;
+  frequency: string | null;
   frequency_days: string[] | null;
-  metric_type: Habit["metricType"] | null;
+  metric_type: string | null;
   metric_unit: string | null;
-  metric_time_unit: Habit["metricTimeUnit"] | null;
+  metric_time_unit: string | null;
   daily_goal: number | null;
   reminder_time: string | null;
 };
@@ -59,18 +33,18 @@ function mapHabitRow(row: HabitRow): Habit {
     name: row.name,
     icon: row.icon || undefined,
     color: row.color || undefined,
-    category: row.category || undefined,
-    targetType: row.target_type,
+    category: (row.category as Habit["category"]) || undefined,
+    targetType: row.target_type as Habit["targetType"],
     targetValue: row.target_value ?? undefined,
     active: row.active,
     showOnDashboard: row.show_on_dashboard ?? true,
     createdAt: row.created_at,
     lifeArea: row.life_area || undefined,
-    frequency: row.frequency || undefined,
+    frequency: (row.frequency as Habit["frequency"]) || undefined,
     frequencyDays: row.frequency_days || undefined,
-    metricType: row.metric_type || undefined,
+    metricType: (row.metric_type as Habit["metricType"]) || undefined,
     metricUnit: row.metric_unit || undefined,
-    metricTimeUnit: row.metric_time_unit || undefined,
+    metricTimeUnit: (row.metric_time_unit as Habit["metricTimeUnit"]) || undefined,
     dailyGoal: row.daily_goal ?? undefined,
     reminderTime: row.reminder_time || undefined,
   };
@@ -120,22 +94,60 @@ function mapHabitUpdate(updates: Partial<Habit>) {
   };
 }
 
-// Migrate old numeric mood to string
-function migrateRecords(records: DailyRecord[]): DailyRecord[] {
-  const legacy = ["", "triste", "ansiosa", "normal", "produtiva", "feliz"];
-  return records.map((r) => {
-    if (typeof r.mood === "number") {
-      return { ...r, mood: legacy[r.mood as number] || "", waterIntake: r.waterIntake || 0 };
-    }
-    return { ...r, waterIntake: r.waterIntake || 0 };
-  });
+// Record mappers
+function mapRecordRow(row: any): DailyRecord {
+  return {
+    id: row.id,
+    date: row.date,
+    mood: row.mood || "",
+    wakeUpTime: row.wake_up_time || undefined,
+    sleepTime: row.sleep_time || undefined,
+    sleepHours: Number(row.sleep_hours) || 0,
+    waterIntake: row.water_intake || 0,
+    exerciseMinutes: row.exercise_minutes || 0,
+    habitChecks: row.habit_checks || {},
+    noteFeeling: row.note_feeling || undefined,
+    noteProcrastination: row.note_procrastination || undefined,
+    noteGratitude: row.note_gratitude || undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
+
+// Goal mappers
+function mapGoalRow(row: any, actions: GoalAction[]): Goal {
+  return {
+    id: row.id,
+    title: row.title,
+    type: row.type || "meta",
+    status: row.status || "nao_comecei",
+    lifeArea: row.life_area || undefined,
+    reward: row.reward || undefined,
+    rewarded: row.rewarded || false,
+    rewardedAt: row.rewarded_at || undefined,
+    alignedWithGoal: row.aligned_with_goal ?? true,
+    completedAt: row.completed_at || undefined,
+    deadline: row.deadline || undefined,
+    createdAt: row.created_at,
+    actions,
+  };
+}
+
+function mapGoalActionRow(row: any): GoalAction {
+  return {
+    id: row.id,
+    title: row.title,
+    completed: row.completed,
+    priority: row.priority || undefined,
+    createdAt: row.created_at,
+  };
+}
+
+// ── Store interface ──────────────────────────────
 
 interface StoreType {
   habits: Habit[];
   records: DailyRecord[];
-  profile: UserProfile;
-  achievements: Achievement[];
   goals: Goal[];
   upsertRecord: (updates: Partial<DailyRecord> & { date: string }) => void;
   deleteRecord: (id: string) => void;
@@ -143,10 +155,6 @@ interface StoreType {
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   reorderHabit: (id: string, direction: "up" | "down") => void;
-  updateProfile: (updates: Partial<UserProfile>) => void;
-  addAchievement: (a: Omit<Achievement, "id" | "createdAt">) => void;
-  updateAchievement: (id: string, updates: Partial<Achievement>) => void;
-  deleteAchievement: (id: string) => void;
   addGoal: (g: Omit<Goal, "id" | "createdAt" | "actions">) => void;
   updateGoal: (id: string, updates: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
@@ -154,9 +162,7 @@ interface StoreType {
   updateGoalAction: (goalId: string, actionId: string, updates: Partial<GoalAction>) => void;
   deleteGoalAction: (goalId: string, actionId: string) => void;
   toggleGoalAction: (goalId: string, actionId: string) => void;
-  resetToSeed: () => void;
   clearAll: () => void;
-  importData: (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile }) => void;
 }
 
 const StoreContext = createContext<StoreType | null>(null);
@@ -164,50 +170,66 @@ const StoreContext = createContext<StoreType | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [records, setRecords] = useState<DailyRecord[]>(() => migrateRecords(load(KEYS.records, [])));
-  const [profile, setProfile] = useState<UserProfile>(() => load(KEYS.profile, DEFAULT_PROFILE));
-  const [achievements, setAchievements] = useState<Achievement[]>(() => load(KEYS.achievements, []));
-  const [goals, setGoals] = useState<Goal[]>(() => load(KEYS.goals, []));
+  const [records, setRecords] = useState<DailyRecord[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
 
+  // ── Fetch all data on login ──────────────────
   useEffect(() => {
     let cancelled = false;
 
-    const fetchHabits = async () => {
+    const fetchAll = async () => {
       if (!user) {
         setHabits([]);
+        setRecords([]);
+        setGoals([]);
         return;
       }
 
-      const { data, error } = await (supabase as any)
-        .from("habits")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
+      const [habitsRes, recordsRes, goalsRes, actionsRes] = await Promise.all([
+        supabase.from("habits").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("daily_records").select("*").eq("user_id", user.id).order("date", { ascending: true }),
+        supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("goal_actions").select("*"),
+      ]);
 
-      if (error) {
-        console.error("Error fetching habits:", error);
-        if (!cancelled) setHabits([]);
-        return;
-      }
+      if (cancelled) return;
 
-      if (!cancelled) {
-        setHabits(((data || []) as HabitRow[]).map(mapHabitRow));
-      }
+      setHabits(((habitsRes.data || []) as HabitRow[]).map(mapHabitRow));
+      setRecords((recordsRes.data || []).map(mapRecordRow));
+
+      // Map goals with their actions
+      const allActions = (actionsRes.data || []).map(mapGoalActionRow);
+      const goalRows = goalsRes.data || [];
+      // Filter actions by user's goals
+      const goalIds = new Set(goalRows.map((g: any) => g.id));
+      const userActions = allActions.filter((a: any) => {
+        const raw = actionsRes.data?.find((r: any) => r.id === a.id);
+        return raw && goalIds.has(raw.goal_id);
+      });
+
+      setGoals(goalRows.map((g: any) => {
+        const gActions = (actionsRes.data || [])
+          .filter((a: any) => a.goal_id === g.id)
+          .map(mapGoalActionRow);
+        return mapGoalRow(g, gActions);
+      }));
+
+      // Clean up any residual localStorage data
+      ["metrics-habits", "metrics-records", "metrics-profile", "metrics-achievements", "metrics-goals"].forEach(
+        (key) => localStorage.removeItem(key)
+      );
     };
 
-    void fetchHabits();
-
-    return () => {
-      cancelled = true;
-    };
+    void fetchAll();
+    return () => { cancelled = true; };
   }, [user]);
 
-  useEffect(() => { save(KEYS.records, records); }, [records]);
-  useEffect(() => { save(KEYS.profile, profile); }, [profile]);
-  useEffect(() => { save(KEYS.achievements, achievements); }, [achievements]);
-  useEffect(() => { save(KEYS.goals, goals); }, [goals]);
+  // ── Records CRUD ──────────────────────────────
 
   const upsertRecord = useCallback((updates: Partial<DailyRecord> & { date: string }) => {
+    if (!user) return;
+
+    // Optimistic local update
     setRecords((prev) => {
       const existing = prev.find((r) => r.date === updates.date);
       if (existing) {
@@ -218,7 +240,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return [
         ...prev,
         {
-          id: `r-${updates.date}`,
+          id: crypto.randomUUID(),
           date: updates.date,
           mood: "",
           sleepHours: 0,
@@ -231,75 +253,74 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       ];
     });
-  }, []);
+
+    // Persist to Supabase
+    void (async () => {
+      const dbPayload: any = {
+        user_id: user.id,
+        date: updates.date,
+      };
+      if (updates.mood !== undefined) dbPayload.mood = updates.mood;
+      if (updates.wakeUpTime !== undefined) dbPayload.wake_up_time = updates.wakeUpTime || null;
+      if (updates.sleepTime !== undefined) dbPayload.sleep_time = updates.sleepTime || null;
+      if (updates.sleepHours !== undefined) dbPayload.sleep_hours = updates.sleepHours;
+      if (updates.waterIntake !== undefined) dbPayload.water_intake = updates.waterIntake;
+      if (updates.exerciseMinutes !== undefined) dbPayload.exercise_minutes = updates.exerciseMinutes;
+      if (updates.habitChecks !== undefined) dbPayload.habit_checks = updates.habitChecks;
+      if (updates.noteFeeling !== undefined) dbPayload.note_feeling = updates.noteFeeling || null;
+      if (updates.noteProcrastination !== undefined) dbPayload.note_procrastination = updates.noteProcrastination || null;
+      if (updates.noteGratitude !== undefined) dbPayload.note_gratitude = updates.noteGratitude || null;
+
+      const { error } = await supabase
+        .from("daily_records")
+        .upsert(dbPayload, { onConflict: "user_id,date" });
+
+      if (error) console.error("Error upserting record:", error);
+    })();
+  }, [user]);
 
   const deleteRecord = useCallback((id: string) => {
     setRecords((prev) => prev.filter((r) => r.id !== id));
+    void supabase.from("daily_records").delete().eq("id", id);
   }, []);
+
+  // ── Habits CRUD ──────────────────────────────
 
   const addHabit = useCallback((habit: Omit<Habit, "id" | "createdAt">) => {
     if (!user) return;
-
     void (async () => {
       const id = crypto.randomUUID();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("habits")
         .insert(mapHabitInsert(user.id, habit, id))
         .select("*")
         .single();
-
-      if (error) {
-        console.error("Error creating habit:", error);
-        return;
-      }
-
+      if (error) { console.error("Error creating habit:", error); return; }
       setHabits((prev) => [...prev, mapHabitRow(data as HabitRow)]);
     })();
   }, [user]);
 
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
     if (!user) return;
-
     void (async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("habits")
         .update(mapHabitUpdate(updates))
         .eq("id", id)
         .eq("user_id", user.id)
         .select("*")
         .single();
-
-      if (error) {
-        console.error("Error updating habit:", error);
-        return;
-      }
-
+      if (error) { console.error("Error updating habit:", error); return; }
       setHabits((prev) => prev.map((h) => (h.id === id ? mapHabitRow(data as HabitRow) : h)));
     })();
   }, [user]);
 
   const deleteHabit = useCallback((id: string) => {
     if (!user) return;
-
     void (async () => {
-      const { error } = await (supabase as any)
-        .from("habits")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error deleting habit:", error);
-        return;
-      }
-
+      const { error } = await supabase.from("habits").delete().eq("id", id).eq("user_id", user.id);
+      if (error) { console.error("Error deleting habit:", error); return; }
       setHabits((prev) => prev.filter((h) => h.id !== id));
-      setRecords((prev) =>
-        prev.map((r) => {
-          const { [id]: _, ...rest } = r.habitChecks;
-          return { ...r, habitChecks: rest };
-        })
-      );
     })();
   }, [user]);
 
@@ -315,80 +336,134 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
-    setProfile((prev) => ({ ...prev, ...updates }));
-  }, []);
+  // ── Goals CRUD ──────────────────────────────
 
-  const addAchievement = useCallback((a: Omit<Achievement, "id" | "createdAt">) => {
-    setAchievements((prev) => [...prev, { ...a, id: `a-${Date.now()}`, createdAt: new Date().toISOString() }]);
-  }, []);
-
-  const updateAchievement = useCallback((id: string, updates: Partial<Achievement>) => {
-    setAchievements((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
-  }, []);
-
-  const deleteAchievement = useCallback((id: string) => {
-    setAchievements((prev) => prev.filter((a) => a.id !== id));
-  }, []);
-
-  // Goals CRUD
   const addGoal = useCallback((g: Omit<Goal, "id" | "createdAt" | "actions">) => {
-    setGoals((prev) => [...prev, { ...g, id: `g-${Date.now()}`, actions: [], createdAt: new Date().toISOString() }]);
-  }, []);
+    if (!user) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("goals")
+        .insert({
+          user_id: user.id,
+          title: g.title,
+          type: g.type || "meta",
+          status: g.status || "nao_comecei",
+          life_area: g.lifeArea ?? null,
+          reward: g.reward ?? null,
+          aligned_with_goal: g.alignedWithGoal ?? true,
+          deadline: g.deadline ?? null,
+        })
+        .select("*")
+        .single();
+      if (error) { console.error("Error creating goal:", error); return; }
+      setGoals((prev) => [...prev, mapGoalRow(data, [])]);
+    })();
+  }, [user]);
 
   const updateGoal = useCallback((id: string, updates: Partial<Goal>) => {
+    if (!user) return;
+
+    // Build DB updates
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
+    if (updates.reward !== undefined) dbUpdates.reward = updates.reward ?? null;
+    if (updates.rewarded !== undefined) dbUpdates.rewarded = updates.rewarded;
+    if (updates.rewardedAt !== undefined) dbUpdates.rewarded_at = updates.rewardedAt ?? null;
+    if (updates.alignedWithGoal !== undefined) dbUpdates.aligned_with_goal = updates.alignedWithGoal;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline ?? null;
+
+    // Handle completion
     setGoals((prev) => {
-      const old = prev.find((g) => g.id === id);
-      const next = prev.map((g) => (g.id === id ? { ...g, ...updates } : g));
-      // Auto-create achievement when completed for the FIRST TIME (idempotent)
-      if (old && old.status !== "concluido" && updates.status === "concluido") {
-        const goal = next.find((g) => g.id === id)!;
-        // Check if achievement already exists for this goal
-        setAchievements((a) => {
-          const existing = a.find((ach) => ach.goalId === id);
-          if (existing) return a; // Already created, skip
-          const lifeArea = goal.lifeArea ? (LIFE_AREAS.find(la => la.value === goal.lifeArea)?.label || "Pessoal") : "Pessoal";
-          return [
-            ...a,
-            {
-              id: `a-${Date.now()}`,
-              title: goal.title,
-              area: lifeArea,
-              feeling: "Meta concluída! 🎉",
-              icon: "Trophy",
-              date: new Date().toISOString().slice(0, 10),
-              createdAt: new Date().toISOString(),
-              goalId: id,
-              origin: "meta" as const,
-            },
-          ];
-        });
-      }
-      // Set completedAt on first completion
+      const old = prev.find((goal) => goal.id === id);
+      const next = prev.map((goal) => (goal.id === id ? { ...goal, ...updates } : goal));
+
+      // Auto-set completedAt on first completion
       if (old && !old.completedAt && updates.status === "concluido") {
-        return next.map((g) => g.id === id ? { ...g, completedAt: new Date().toISOString() } : g);
+        dbUpdates.completed_at = new Date().toISOString();
+        return next.map((goal) => goal.id === id ? { ...goal, completedAt: dbUpdates.completed_at } : goal);
       }
       return next;
     });
-  }, []);
+
+    // Auto-create achievement when completed
+    void (async () => {
+      const goal = goals.find((g) => g.id === id);
+      if (goal && goal.status !== "concluido" && updates.status === "concluido") {
+        const lifeArea = goal.lifeArea
+          ? (LIFE_AREAS.find(la => la.value === goal.lifeArea)?.label || "Pessoal")
+          : "Pessoal";
+        // Check if achievement already exists
+        const { data: existing } = await supabase
+          .from("achievements")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("goal_id", id)
+          .maybeSingle();
+        if (!existing) {
+          await supabase.from("achievements").insert({
+            user_id: user.id,
+            title: goal.title,
+            area: lifeArea,
+            feeling: "Meta concluída! 🎉",
+            icon: "Trophy",
+            date: new Date().toISOString().slice(0, 10),
+            goal_id: id,
+            origin: "meta",
+          });
+        }
+      }
+
+      const { error } = await supabase
+        .from("goals")
+        .update(dbUpdates)
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) console.error("Error updating goal:", error);
+    })();
+  }, [user, goals]);
 
   const deleteGoal = useCallback((id: string) => {
+    if (!user) return;
     setGoals((prev) => prev.filter((g) => g.id !== id));
-  }, []);
+    void (async () => {
+      await supabase.from("goal_actions").delete().eq("goal_id", id);
+      await supabase.from("achievements").delete().eq("goal_id", id).eq("user_id", user.id);
+      await supabase.from("goals").delete().eq("id", id).eq("user_id", user.id);
+    })();
+  }, [user]);
+
+  // ── Goal Actions CRUD ──────────────────────
 
   const addGoalAction = useCallback((goalId: string, action: Omit<GoalAction, "id" | "createdAt" | "completed">) => {
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.id !== goalId) return g;
-        return {
-          ...g,
-          actions: [...g.actions, { ...action, id: `ga-${Date.now()}`, completed: false, createdAt: new Date().toISOString() }],
-        };
-      })
-    );
-  }, []);
+    if (!user) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("goal_actions")
+        .insert({
+          goal_id: goalId,
+          title: action.title,
+          priority: action.priority ?? null,
+        })
+        .select("*")
+        .single();
+      if (error) { console.error("Error creating goal action:", error); return; }
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === goalId ? { ...g, actions: [...g.actions, mapGoalActionRow(data)] } : g
+        )
+      );
+    })();
+  }, [user]);
 
   const updateGoalAction = useCallback((goalId: string, actionId: string, updates: Partial<GoalAction>) => {
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority ?? null;
+
     setGoals((prev) =>
       prev.map((g) =>
         g.id === goalId
@@ -396,6 +471,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           : g
       )
     );
+    void supabase.from("goal_actions").update(dbUpdates).eq("id", actionId);
   }, []);
 
   const deleteGoalAction = useCallback((goalId: string, actionId: string) => {
@@ -404,54 +480,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         g.id === goalId ? { ...g, actions: g.actions.filter((a) => a.id !== actionId) } : g
       )
     );
+    void supabase.from("goal_actions").delete().eq("id", actionId);
   }, []);
 
   const toggleGoalAction = useCallback((goalId: string, actionId: string) => {
+    let newCompleted = false;
     setGoals((prev) =>
-      prev.map((g) =>
-        g.id === goalId
-          ? { ...g, actions: g.actions.map((a) => (a.id === actionId ? { ...a, completed: !a.completed } : a)) }
-          : g
-      )
+      prev.map((g) => {
+        if (g.id !== goalId) return g;
+        return {
+          ...g,
+          actions: g.actions.map((a) => {
+            if (a.id !== actionId) return a;
+            newCompleted = !a.completed;
+            return { ...a, completed: newCompleted };
+          }),
+        };
+      })
     );
-  }, []);
-
-  const resetToSeed = useCallback(() => {
-    // No longer resets to seed data — habits are user-owned and permanent
-    setHabits([]);
-    setRecords([]);
-    setAchievements([]);
-    setGoals([]);
-    setProfile(DEFAULT_PROFILE);
+    // We need to defer the supabase call
+    setTimeout(() => {
+      void supabase.from("goal_actions").update({ completed: newCompleted }).eq("id", actionId);
+    }, 0);
   }, []);
 
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
-    setAchievements([]);
     setGoals([]);
-    setProfile(DEFAULT_PROFILE);
   }, []);
-
-  const importData = useCallback(
-    (data: { habits: Habit[]; records: DailyRecord[]; profile: UserProfile }) => {
-      setHabits(data.habits);
-      setRecords(migrateRecords(data.records));
-      setProfile(data.profile);
-    },
-    []
-  );
 
   return (
     <StoreContext.Provider
       value={{
-        habits, records, profile, achievements, goals,
+        habits, records, goals,
         upsertRecord, deleteRecord,
         addHabit, updateHabit, deleteHabit, reorderHabit,
-        updateProfile, addAchievement, updateAchievement, deleteAchievement,
         addGoal, updateGoal, deleteGoal,
         addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction,
-        resetToSeed, clearAll, importData,
+        clearAll,
       }}
     >
       {children}
