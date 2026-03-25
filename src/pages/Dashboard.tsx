@@ -43,9 +43,9 @@ function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; si
 }
 
 export default function Dashboard() {
-  const { records, habits, profile } = useStore();
+  const { records, habits } = useStore();
   const { profile: authProfile } = useAuth();
-  const displayName = authProfile?.name || profile.displayName;
+  const displayName = authProfile?.name;
   const [period, setPeriod] = useState<Period>("7d");
 
   const today = format(new Date(), "yyyy-MM-dd");
