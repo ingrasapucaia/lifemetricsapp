@@ -297,7 +297,7 @@ Onde:
       };
     }
 
-    // Save to daily_insights (upsert)
+    // Save to daily_insights (upsert) with generation count
     const { error: upsertError } = await userClient
       .from("daily_insights")
       .upsert(
@@ -308,6 +308,7 @@ Onde:
           orientations: parsed.orientations,
           patterns: parsed.patterns,
           generated_at: new Date().toISOString(),
+          generation_count: currentCount + 1,
         },
         { onConflict: "user_id,date" }
       );
