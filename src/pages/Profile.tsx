@@ -127,6 +127,7 @@ export default function Profile() {
   // Reset modal
   const [resetOpen, setResetOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
 
   // Delete modal
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=step1, 2=step2
@@ -244,8 +245,42 @@ export default function Profile() {
 
   const handleReset = async () => {
     if (!user) return;
+    if (resetConfirmText !== "RESETAR") return;
     setResetting(true);
     try {
+      // Auto-export backup before destructive operation
+      try {
+        const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("user_id", user.id).single(),
+          supabase.from("habits").select("*").eq("user_id", user.id),
+          supabase.from("daily_records").select("*").eq("user_id", user.id),
+          supabase.from("goals").select("*").eq("user_id", user.id),
+          supabase.from("goal_actions").select("*"),
+          supabase.from("tasks").select("*").eq("user_id", user.id),
+          supabase.from("achievements").select("*").eq("user_id", user.id),
+        ]);
+        const backupData = {
+          exported_at: new Date().toISOString(),
+          reason: "auto_backup_before_reset",
+          profile: profileRes.data,
+          habits: habitsRes.data,
+          records: recordsRes.data,
+          goals: goalsRes.data,
+          goal_actions: actionsRes.data,
+          tasks: tasksRes.data,
+          achievements: achievementsRes.data,
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `backup-antes-reset-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (backupErr) {
+        console.warn("Backup before reset failed, proceeding anyway:", backupErr);
+      }
+
       // Get user's goal IDs first for goal_actions
       const { data: userGoals } = await supabase.from("goals").select("id").eq("user_id", user.id);
       const goalIds = (userGoals || []).map((g) => g.id);
@@ -267,6 +302,7 @@ export default function Profile() {
       clearAll();
 
       setResetOpen(false);
+      setResetConfirmText("");
       toast("App resetado. Comece do zero!");
       navigate("/dashboard");
     } catch {
@@ -484,20 +520,32 @@ export default function Profile() {
             <DialogDescription>
               Isso vai apagar todos os seus registros, hábitos, metas e tarefas.
               Seu acesso e perfil serão mantidos, mas você começará do zero.
+              Um backup será baixado automaticamente antes da exclusão.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2 mt-2">
+          <div className="flex flex-col gap-3 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm text-muted-foreground">
+                Digite <span className="font-bold text-destructive">RESETAR</span> para confirmar:
+              </Label>
+              <Input
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="RESETAR"
+                className="text-center font-mono"
+              />
+            </div>
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => setResetOpen(false)}
+              onClick={() => { setResetOpen(false); setResetConfirmText(""); }}
             >
               Cancelar
             </Button>
             <Button
               className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleReset}
-              disabled={resetting}
+              disabled={resetting || resetConfirmText !== "RESETAR"}
             >
               {resetting ? "Resetando..." : "Sim, resetar tudo"}
             </Button>
