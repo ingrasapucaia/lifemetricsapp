@@ -534,7 +534,7 @@ function SummaryCard({ icon, label, value, bgColor, iconColor }: {
   return (
     <Card className="overflow-hidden border-0" style={{ backgroundColor: bgColor }}>
       <CardContent className="p-5">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${iconColor}18`, color: iconColor }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${iconColor}20`, color: iconColor }}>
           {icon}
         </div>
         <p className="text-2xl font-bold tracking-tight">{value}</p>
