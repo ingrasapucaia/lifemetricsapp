@@ -439,6 +439,7 @@ export default function Onboarding() {
   const handleSkipStep4 = async () => {
     setSaving(true);
     if (user) {
+      await checkPendingPremium(user);
       await supabase
         .from("profiles")
         .update({ onboarding_completed: true })
