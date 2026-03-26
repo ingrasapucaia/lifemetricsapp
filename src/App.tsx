@@ -12,7 +12,7 @@ import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
 import Goals from "@/pages/Goals";
 import GoalDetail from "@/pages/GoalDetail";
-import ArchivedGoals from "@/pages/ArchivedGoals";
+
 import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
 import MetricsPage from "@/pages/MetricsPage";
@@ -62,7 +62,7 @@ const App = () => (
               <Route path="/roda-da-vida/nova" element={<LifeWheelNew />} />
               <Route path="/roda-da-vida/:id" element={<LifeWheelDetail />} />
               <Route path="/roda-da-vida/:id/editar" element={<LifeWheelEdit />} />
-              <Route path="/arquivados" element={<ArchivedGoals />} />
+              
               <Route path="/perfil" element={<Profile />} />
             </Route>
             <Route path="*" element={<NotFound />} />
