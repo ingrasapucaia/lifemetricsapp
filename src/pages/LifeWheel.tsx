@@ -74,7 +74,7 @@ export default function LifeWheel() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Roda da Vida</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Avalie cada área da sua vida</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Avalie cada área da sua vida de 1-10.</p>
         </div>
         {assessments.length > 0 && (
           <Button size="sm" onClick={() => navigate("/roda-da-vida/nova")}>
