@@ -341,7 +341,7 @@ export default function LifeWheelDetail() {
         ) : (
           /* Free: locked card */
           <Card
-            className="border-0 relative overflow-hidden cursor-pointer"
+            className="border-0 overflow-hidden cursor-pointer"
             style={{ backgroundColor: "hsl(270, 60%, 96%)" }}
             onClick={() => setShowUpgrade(true)}
           >
@@ -352,19 +352,24 @@ export default function LifeWheelDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Blurred preview */}
-              <div className="relative">
-                <p className="text-sm text-muted-foreground leading-relaxed blur-[6px] select-none">
-                  {truncatedAnalysis}
-                </p>
-                {/* Lock overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                    <Lock size={18} className="text-muted-foreground" />
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground">Disponível no plano Premium</span>
+              {/* Truncated preview with gradient blur on last words */}
+              <p className="text-sm text-muted-foreground leading-relaxed select-none"
+                style={{
+                  maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+                  WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+                }}
+              >
+                {truncatedAnalysis}
+              </p>
+
+              {/* Lock icon + label */}
+              <div className="flex flex-col items-center gap-2 py-1">
+                <div className="w-10 h-10 rounded-full bg-background/80 flex items-center justify-center">
+                  <Lock size={18} className="text-muted-foreground" />
                 </div>
+                <span className="text-xs font-medium text-muted-foreground">Disponível no plano Premium</span>
               </div>
+
               <Button
                 className="w-full rounded-xl"
                 onClick={(e) => { e.stopPropagation(); setShowUpgrade(true); }}
