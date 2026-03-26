@@ -12,7 +12,7 @@ import Profile from "@/pages/Profile";
 import Achievements from "@/pages/Achievements";
 import Goals from "@/pages/Goals";
 import GoalDetail from "@/pages/GoalDetail";
-import ArchivedGoals from "@/pages/ArchivedGoals";
+
 import Habits from "@/pages/Habits";
 import Deadlines from "@/pages/Deadlines";
 import MetricsPage from "@/pages/MetricsPage";
