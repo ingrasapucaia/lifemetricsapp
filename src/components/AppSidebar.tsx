@@ -16,7 +16,7 @@ const mainLinks = [
   { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
-  { to: "/arquivados", label: "Arquivados", icon: Archive },
+  
 ];
 
 function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => void }) {

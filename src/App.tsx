@@ -62,7 +62,7 @@ const App = () => (
               <Route path="/roda-da-vida/nova" element={<LifeWheelNew />} />
               <Route path="/roda-da-vida/:id" element={<LifeWheelDetail />} />
               <Route path="/roda-da-vida/:id/editar" element={<LifeWheelEdit />} />
-              <Route path="/arquivados" element={<ArchivedGoals />} />
+              
               <Route path="/perfil" element={<Profile />} />
             </Route>
             <Route path="*" element={<NotFound />} />
