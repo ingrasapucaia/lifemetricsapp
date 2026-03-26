@@ -113,9 +113,6 @@ export default function LifeWheel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${getScoreColor(a.average_score)}`}>
-                    {Number(a.average_score).toFixed(1)}
-                  </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
