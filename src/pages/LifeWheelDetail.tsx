@@ -158,6 +158,9 @@ export default function LifeWheelDetail() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate(`/roda-da-vida/${id}/editar`)}>
+              <ArrowLeft size={14} className="mr-2 rotate-180" /> Editar
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowDelete(true)} className="text-destructive">
               <Trash2 size={14} className="mr-2" /> Excluir avaliação
             </DropdownMenuItem>
