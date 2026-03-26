@@ -301,6 +301,37 @@ export default function Onboarding() {
   const { user, refreshProfile } = useAuth();
   const { addGoal, addHabit } = useStore();
 
+  const checkPendingPremium = async (currentUser: { id: string; email?: string }) => {
+    if (!currentUser.email) return;
+    const { data: pending } = await supabase
+      .from("pending_premium")
+      .select("*")
+      .eq("email", currentUser.email.toLowerCase())
+      .eq("processed", false)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (pending && pending.length > 0) {
+      const latest = pending[0];
+      if (latest.status === "paid" || latest.status === "approved") {
+        await supabase
+          .from("profiles")
+          .update({
+            is_premium: true,
+            premium_plan: "trimestral",
+            premium_since: new Date().toISOString(),
+            premium_expires_at: new Date(Date.now() + 93 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .eq("user_id", currentUser.id);
+
+        await supabase
+          .from("pending_premium")
+          .update({ processed: true })
+          .eq("id", latest.id);
+      }
+    }
+  };
+
   // Step tracking: 0 = welcome, 1-4 = original steps
   const [step, setStep] = useState(0);
   const [diagStep, setDiagStep] = useState(0); // 0-2 within step 2
