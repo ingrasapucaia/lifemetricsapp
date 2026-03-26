@@ -327,6 +327,36 @@ export type Database = {
         }
         Relationships: []
       }
+      life_wheel_assessments: {
+        Row: {
+          average_score: number
+          created_at: string
+          id: string
+          name: string
+          scores: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_score?: number
+          created_at?: string
+          id?: string
+          name: string
+          scores?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_score?: number
+          created_at?: string
+          id?: string
+          name?: string
+          scores?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           challenges: string[] | null
