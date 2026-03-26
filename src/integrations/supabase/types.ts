@@ -357,6 +357,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_premium: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          kiwify_payload: Json | null
+          premium_plan: string | null
+          processed: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          kiwify_payload?: Json | null
+          premium_plan?: string | null
+          processed?: boolean
+          status: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          kiwify_payload?: Json | null
+          premium_plan?: string | null
+          processed?: boolean
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           challenges: string[] | null
@@ -371,6 +401,9 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean
           opportunities: string[] | null
+          premium_expires_at: string | null
+          premium_plan: string | null
+          premium_since: string | null
           strengths: string[] | null
           updated_at: string
           user_id: string
@@ -389,6 +422,9 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean
           opportunities?: string[] | null
+          premium_expires_at?: string | null
+          premium_plan?: string | null
+          premium_since?: string | null
           strengths?: string[] | null
           updated_at?: string
           user_id: string
@@ -407,6 +443,9 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean
           opportunities?: string[] | null
+          premium_expires_at?: string | null
+          premium_plan?: string | null
+          premium_since?: string | null
           strengths?: string[] | null
           updated_at?: string
           user_id?: string
