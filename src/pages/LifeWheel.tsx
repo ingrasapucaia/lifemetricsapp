@@ -91,7 +91,7 @@ export default function LifeWheel() {
             <div>
               <p className="font-medium text-foreground">Nenhuma avaliação ainda</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Crie sua primeira Roda da Vida para entender onde você está agora.
+                Crie sua primeira Roda da Vida para fazer uma análise 360º da sua vida e descobrir como você pode evoluir.
               </p>
             </div>
             <Button className="w-full" onClick={() => navigate("/roda-da-vida/nova")}>
