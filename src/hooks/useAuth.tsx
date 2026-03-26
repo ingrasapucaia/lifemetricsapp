@@ -48,6 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("*")
       .eq("user_id", userId)
       .single();
+
+    // Check premium expiration
+    if (data && data.is_premium && data.premium_expires_at) {
+      const expiresAt = new Date(data.premium_expires_at);
+      if (expiresAt < new Date()) {
+        await supabase
+          .from("profiles")
+          .update({ is_premium: false })
+          .eq("user_id", userId);
+        data.is_premium = false;
+      }
+    }
+
     setProfile(data as ProfileData | null);
     setProfileLoading(false);
   };
