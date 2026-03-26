@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive, LogOut, Bell, CheckSquare, BarChart3, Sparkles } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, Archive, LogOut, Bell, CheckSquare, BarChart3, Sparkles, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,12 +9,13 @@ import { useAuth } from "@/hooks/useAuth";
 const mainLinks = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/metricas", label: "Métricas", icon: BarChart3 },
+  { to: "/insights", label: "Insights", icon: Sparkles },
+  { to: "/roda-da-vida", label: "Roda da Vida", icon: CircleDot },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
   { to: "/habitos", label: "Controle de hábitos", icon: CheckSquare },
   { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
-  { to: "/insights", label: "Insights", icon: Sparkles },
   { to: "/arquivados", label: "Arquivados", icon: Archive },
 ];
 

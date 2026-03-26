@@ -23,6 +23,9 @@ import Signup from "@/pages/Signup";
 import ResetPassword from "@/pages/ResetPassword";
 import NewPassword from "@/pages/NewPassword";
 import Onboarding from "@/pages/Onboarding";
+import LifeWheel from "@/pages/LifeWheel";
+import LifeWheelNew from "@/pages/LifeWheelNew";
+import LifeWheelDetail from "@/pages/LifeWheelDetail";
 
 const App = () => (
   <AuthProvider>
@@ -54,6 +57,9 @@ const App = () => (
               <Route path="/prazos" element={<Deadlines />} />
               <Route path="/conquistas" element={<Achievements />} />
               <Route path="/insights" element={<InsightsPage />} />
+              <Route path="/roda-da-vida" element={<LifeWheel />} />
+              <Route path="/roda-da-vida/nova" element={<LifeWheelNew />} />
+              <Route path="/roda-da-vida/:id" element={<LifeWheelDetail />} />
               <Route path="/arquivados" element={<ArchivedGoals />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>
