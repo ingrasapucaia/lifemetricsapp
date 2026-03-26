@@ -294,11 +294,11 @@ export default function MetricsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <SummaryCard icon={<TrendingUp size={18} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
-        <SummaryCard icon={<Target size={18} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
-        <SummaryCard icon={<CheckSquare size={18} />} label="Tarefas concluídas" value={String(completedTasks.length)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
-        <SummaryCard icon={<Flame size={18} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
-        <SummaryCard icon={<Moon size={18} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
+        <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
+        <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
+        <SummaryCard icon={<CheckSquare size={24} />} label="Tarefas concluídas" value={String(completedTasks.length)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
+        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
+        <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
       </div>
 
       {/* Habits section */}
@@ -534,7 +534,7 @@ function SummaryCard({ icon, label, value, bgColor, iconColor }: {
   return (
     <Card className="overflow-hidden border-0" style={{ backgroundColor: bgColor }}>
       <CardContent className="p-5">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${iconColor}18`, color: iconColor }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 opacity-90" style={{ color: iconColor }}>
           {icon}
         </div>
         <p className="text-2xl font-bold tracking-tight">{value}</p>

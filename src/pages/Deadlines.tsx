@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Bell, CheckCircle2 } from "lucide-react";
+import { Bell, CheckCircle2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getLifeArea } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { format, addDays, differenceInCalendarDays, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -47,6 +58,7 @@ export default function Deadlines() {
   const [filter, setFilter] = useState<FilterDays>(7);
   const [items, setItems] = useState<DeadlineItem[]>([]);
   const [acknowledged, setAcknowledged] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -117,10 +129,10 @@ export default function Deadlines() {
     }));
 
     const all = [...goalItems, ...taskItems]
-      .filter((i) => !ackSet.has(`${i.type === "meta" ? "meta" : "tarefa"}:${i.id}`))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     setItems(all);
+    setDismissed(new Set());
     setLoading(false);
   }, [user, filter]);
 
@@ -128,17 +140,70 @@ export default function Deadlines() {
     fetchData();
   }, [fetchData]);
 
+  const getItemKey = (item: DeadlineItem) => `${item.type === "meta" ? "meta" : "tarefa"}:${item.id}`;
+
   const handleAcknowledge = async (item: DeadlineItem) => {
     if (!user) return;
+    const key = getItemKey(item);
+    if (acknowledged.has(key)) return;
+
     const itemType = item.type === "meta" ? "meta" : "tarefa";
     await supabase.from("deadline_acknowledgments").insert({
       user_id: user.id,
       item_id: item.id,
       item_type: itemType,
     });
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    setAcknowledged((prev) => new Set(prev).add(key));
     toast.success("Marcado como ciente");
   };
+
+  const handleDismiss = async (item: DeadlineItem) => {
+    if (!user) return;
+    const key = getItemKey(item);
+    // Save acknowledgment if not already saved
+    if (!acknowledged.has(key)) {
+      const itemType = item.type === "meta" ? "meta" : "tarefa";
+      await supabase.from("deadline_acknowledgments").insert({
+        user_id: user.id,
+        item_id: item.id,
+        item_type: itemType,
+      });
+      setAcknowledged((prev) => new Set(prev).add(key));
+    }
+    setDismissed((prev) => new Set(prev).add(item.id));
+  };
+
+  const handleClearAll = async () => {
+    if (!user) return;
+    const toAcknowledge = visibleItems.filter((item) => !acknowledged.has(getItemKey(item)));
+
+    if (toAcknowledge.length > 0) {
+      const inserts = toAcknowledge.map((item) => ({
+        user_id: user.id,
+        item_id: item.id,
+        item_type: item.type === "meta" ? "meta" : "tarefa",
+      }));
+      await supabase.from("deadline_acknowledgments").insert(inserts);
+      setAcknowledged((prev) => {
+        const next = new Set(prev);
+        toAcknowledge.forEach((item) => next.add(getItemKey(item)));
+        return next;
+      });
+    }
+
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      visibleItems.forEach((item) => next.add(item.id));
+      return next;
+    });
+    toast.success("Todos os lembretes foram limpos");
+  };
+
+  // Items visible on screen (not dismissed)
+  const visibleItems = useMemo(
+    () => items.filter((i) => !dismissed.has(i.id)),
+    [items, dismissed]
+  );
 
   const renderDeadlineLabel = (deadline: string) => {
     const d = new Date(deadline + "T00:00:00");
@@ -151,13 +216,15 @@ export default function Deadlines() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Prazos e lembretes</h1>
-        <p className="text-xs text-muted-foreground mt-1">Acompanhe o que está se aproximando</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Prazos e lembretes</h1>
+          <p className="text-xs text-muted-foreground mt-1">Acompanhe o que está se aproximando</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {FILTERS.map((f) => (
           <button
             key={f.value}
@@ -174,11 +241,32 @@ export default function Deadlines() {
         ))}
       </div>
 
-      {/* Counter */}
-      {!loading && items.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {items.length} {items.length === 1 ? "item" : "itens"} com prazo nos próximos {filter} dias
-        </p>
+      {/* Counter + clear button */}
+      {!loading && visibleItems.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {visibleItems.length} {visibleItems.length === 1 ? "item" : "itens"} com prazo nos próximos {filter} dias
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Limpar lembretes
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Limpar lembretes</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Limpar todos os {visibleItems.length} lembretes desta lista?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearAll}>Limpar tudo</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       )}
 
       {/* Loading */}
@@ -194,7 +282,7 @@ export default function Deadlines() {
       )}
 
       {/* Empty */}
-      {!loading && items.length === 0 && (
+      {!loading && visibleItems.length === 0 && (
         <Card className="p-8 flex flex-col items-center justify-center text-center">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
             <CheckCircle2 size={24} className="text-primary" />
@@ -207,82 +295,100 @@ export default function Deadlines() {
       )}
 
       {/* Items */}
-      {!loading && items.length > 0 && (
+      {!loading && visibleItems.length > 0 && (
         <div className="space-y-3">
-          {items.map((item) => (
-            <Card key={item.id} className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-2 flex-1 min-w-0">
-                  {/* Type badge */}
-                  <span
-                    className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                    style={{
-                      backgroundColor: item.type === "meta" ? "#D6E8FA" : "#E8E4FB",
-                      color: item.type === "meta" ? "#185FA5" : "#4A3F9F",
-                    }}
-                  >
-                    {item.type === "meta" ? "Meta" : "Tarefa"}
-                  </span>
-
-                  {/* Title */}
-                  <p className="text-sm font-medium leading-snug">{item.title}</p>
-
-                  {/* Life areas */}
-                  {item.lifeAreas.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {item.lifeAreas.map((a) => {
-                        const area = getLifeArea(a);
-                        if (!area) return null;
-                        return (
-                          <span
-                            key={a}
-                            className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                            style={{ backgroundColor: area.bgColor, color: area.textColor }}
-                          >
-                            {area.label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Progress for goals */}
-                  {item.type === "meta" && item.progress !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <Progress value={item.progress} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground font-medium">{item.progress}%</span>
-                    </div>
-                  )}
-
-                  {/* Priority for tasks */}
-                  {item.type === "tarefa" && item.priority && (
+          {visibleItems.map((item) => {
+            const isAcked = acknowledged.has(getItemKey(item));
+            return (
+              <Card key={item.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {/* Type badge */}
                     <span
                       className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
                       style={{
-                        backgroundColor: PRIORITY_COLORS[item.priority]?.bg,
-                        color: PRIORITY_COLORS[item.priority]?.text,
+                        backgroundColor: item.type === "meta" ? "#D6E8FA" : "#E8E4FB",
+                        color: item.type === "meta" ? "#185FA5" : "#4A3F9F",
                       }}
                     >
-                      {PRIORITY_LABELS[item.priority] || item.priority}
+                      {item.type === "meta" ? "Meta" : "Tarefa"}
                     </span>
-                  )}
-                </div>
 
-                {/* Right side: deadline + action */}
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  {renderDeadlineLabel(item.deadline)}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-7 px-3"
-                    onClick={() => handleAcknowledge(item)}
-                  >
-                    Estou ciente
-                  </Button>
+                    {/* Title */}
+                    <p className="text-sm font-medium leading-snug">{item.title}</p>
+
+                    {/* Life areas */}
+                    {item.lifeAreas.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {item.lifeAreas.map((a) => {
+                          const area = getLifeArea(a);
+                          if (!area) return null;
+                          return (
+                            <span
+                              key={a}
+                              className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                              style={{ backgroundColor: area.bgColor, color: area.textColor }}
+                            >
+                              {area.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Progress for goals */}
+                    {item.type === "meta" && item.progress !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <Progress value={item.progress} className="h-1.5 flex-1" />
+                        <span className="text-[10px] text-muted-foreground font-medium">{item.progress}%</span>
+                      </div>
+                    )}
+
+                    {/* Priority for tasks */}
+                    {item.type === "tarefa" && item.priority && (
+                      <span
+                        className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={{
+                          backgroundColor: PRIORITY_COLORS[item.priority]?.bg,
+                          color: PRIORITY_COLORS[item.priority]?.text,
+                        }}
+                      >
+                        {PRIORITY_LABELS[item.priority] || item.priority}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Right side: deadline + actions */}
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    {renderDeadlineLabel(item.deadline)}
+                    <div className="flex items-center gap-1.5">
+                      {isAcked ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Ciente ✓
+                        </span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 px-3"
+                          onClick={() => handleAcknowledge(item)}
+                        >
+                          Estou ciente
+                        </Button>
+                      )}
+                      <button
+                        onClick={() => handleDismiss(item)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                        title="Remover da lista"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
