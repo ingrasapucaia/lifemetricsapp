@@ -422,8 +422,9 @@ export default function Onboarding() {
       });
     });
 
-    // Mark onboarding complete
+    // Check pending premium and mark onboarding complete
     if (user) {
+      await checkPendingPremium(user);
       await supabase
         .from("profiles")
         .update({ onboarding_completed: true })
