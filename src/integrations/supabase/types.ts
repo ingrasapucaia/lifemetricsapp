@@ -364,6 +364,7 @@ export type Database = {
           gender: string | null
           id: string
           insights_tone: string | null
+          is_premium: boolean
           life_areas: string[] | null
           life_goals: string | null
           main_objective: string[] | null
@@ -381,6 +382,7 @@ export type Database = {
           gender?: string | null
           id?: string
           insights_tone?: string | null
+          is_premium?: boolean
           life_areas?: string[] | null
           life_goals?: string | null
           main_objective?: string[] | null
@@ -398,6 +400,7 @@ export type Database = {
           gender?: string | null
           id?: string
           insights_tone?: string | null
+          is_premium?: boolean
           life_areas?: string[] | null
           life_goals?: string | null
           main_objective?: string[] | null
