@@ -26,6 +26,7 @@ import Onboarding from "@/pages/Onboarding";
 import LifeWheel from "@/pages/LifeWheel";
 import LifeWheelNew from "@/pages/LifeWheelNew";
 import LifeWheelDetail from "@/pages/LifeWheelDetail";
+import LifeWheelEdit from "@/pages/LifeWheelEdit";
 
 const App = () => (
   <AuthProvider>
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/roda-da-vida" element={<LifeWheel />} />
               <Route path="/roda-da-vida/nova" element={<LifeWheelNew />} />
               <Route path="/roda-da-vida/:id" element={<LifeWheelDetail />} />
+              <Route path="/roda-da-vida/:id/editar" element={<LifeWheelEdit />} />
               <Route path="/arquivados" element={<ArchivedGoals />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>

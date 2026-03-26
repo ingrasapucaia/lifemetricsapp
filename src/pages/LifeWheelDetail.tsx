@@ -4,7 +4,7 @@ import { ArrowLeft, MoreVertical, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -158,6 +158,9 @@ export default function LifeWheelDetail() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate(`/roda-da-vida/${id}/editar`)}>
+              <ArrowLeft size={14} className="mr-2 rotate-180" /> Editar
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowDelete(true)} className="text-destructive">
               <Trash2 size={14} className="mr-2" /> Excluir avaliação
             </DropdownMenuItem>
@@ -225,18 +228,6 @@ export default function LifeWheelDetail() {
         );
       })}
 
-      {/* General average */}
-      <Card className="border-primary/30">
-        <CardContent className="pt-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Média geral</span>
-            <span className="text-2xl font-bold text-primary">
-              {Number(assessment.average_score).toFixed(1)}
-            </span>
-          </div>
-          <Progress value={Number(assessment.average_score) * 10} />
-        </CardContent>
-      </Card>
 
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
