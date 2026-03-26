@@ -90,8 +90,7 @@ Deno.serve(async (req) => {
       noteFeeling: r.note_feeling,
     }));
 
-    // Build context
-    const today = new Date().toISOString().slice(0, 10);
+    // Build context (today already declared above for rate limiting)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
 
