@@ -228,18 +228,6 @@ export default function LifeWheelDetail() {
         );
       })}
 
-      {/* General average */}
-      <Card className="border-primary/30">
-        <CardContent className="pt-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Média geral</span>
-            <span className="text-2xl font-bold text-primary">
-              {Number(assessment.average_score).toFixed(1)}
-            </span>
-          </div>
-          <Progress value={Number(assessment.average_score) * 10} />
-        </CardContent>
-      </Card>
 
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
