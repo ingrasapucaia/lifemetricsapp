@@ -26,6 +26,10 @@ export interface ProfileData {
   onboarding_completed: boolean;
   insights_tone: string | null;
   week_starts_monday: boolean | null;
+  is_premium: boolean;
+  premium_since: string | null;
+  premium_expires_at: string | null;
+  premium_plan: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
