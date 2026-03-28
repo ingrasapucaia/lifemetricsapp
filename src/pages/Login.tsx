@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,21 +15,65 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { user, profile, profileLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Check for OAuth error params in URL hash after redirect
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const error = params.get("error");
+      const errorDescription = params.get("error_description");
+      if (error) {
+        toast.error(errorDescription || `Erro no login: ${error}`);
+        // Clean up URL hash
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, []);
+
+  // Redirect authenticated users (handles post-OAuth redirect)
+  useEffect(() => {
+    if (user && !profileLoading) {
+      if (profile && !profile.onboarding_completed) {
+        navigate("/onboarding", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [user, profile, profileLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message);
+    if (error) {
+      if (error.message === "Email not confirmed") {
+        toast.error("Verifique seu e-mail antes de fazer login. Enviamos um link de confirmação quando você se cadastrou.");
+      } else if (error.message === "Invalid login credentials") {
+        toast.error("E-mail ou senha incorretos. Verifique e tente novamente.");
+      } else {
+        toast.error(error.message);
+      }
+    }
     setLoading(false);
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (result?.error) toast.error(String(result.error));
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (result?.error) {
+        toast.error(`Falha no login com ${provider === "google" ? "Google" : "Apple"}. Tente novamente.`);
+        console.error("OAuth error:", result.error);
+      }
+    } catch (err) {
+      toast.error("Erro inesperado no login. Tente novamente.");
+      console.error("OAuth exception:", err);
+    }
     setLoading(false);
   };
 
