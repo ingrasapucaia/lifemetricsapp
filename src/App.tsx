@@ -39,8 +39,8 @@ const App = () => (
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Public only */}
-            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-            <Route path="/cadastro" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Signup />} />
             <Route path="/recuperar-senha" element={<ResetPassword />} />
             <Route path="/reset-password" element={<NewPassword />} />
 

@@ -37,17 +37,32 @@ export default function Signup() {
         emailRedirectTo: window.location.origin,
       },
     });
-    if (error) toast.error(error.message);
-    else toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+    if (error) {
+      if (error.message.includes("already registered")) {
+        toast.error("Este e-mail já está cadastrado. Tente fazer login.");
+      } else {
+        toast.error(error.message);
+      }
+    } else {
+      toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+    }
     setLoading(false);
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (result?.error) toast.error(String(result.error));
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (result?.error) {
+        toast.error(`Falha no cadastro com ${provider === "google" ? "Google" : "Apple"}. Tente novamente.`);
+        console.error("OAuth error:", result.error);
+      }
+    } catch (err) {
+      toast.error("Erro inesperado. Tente novamente.");
+      console.error("OAuth exception:", err);
+    }
     setLoading(false);
   };
 
