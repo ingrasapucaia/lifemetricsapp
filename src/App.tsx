@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/hooks/useStore";
 import { AuthProvider } from "@/hooks/useAuth";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
-import { ProtectedRoute, PublicOnlyRoute, OnboardingRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute, OnboardingRoute } from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Records from "@/pages/Records";
@@ -39,8 +39,8 @@ const App = () => (
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Public only */}
-            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-            <Route path="/cadastro" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Signup />} />
             <Route path="/recuperar-senha" element={<ResetPassword />} />
             <Route path="/reset-password" element={<NewPassword />} />
 
