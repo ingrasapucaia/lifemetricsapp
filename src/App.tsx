@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/hooks/useStore";
 import { AuthProvider } from "@/hooks/useAuth";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
-import { ProtectedRoute, PublicOnlyRoute, OnboardingRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute, OnboardingRoute } from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Records from "@/pages/Records";
