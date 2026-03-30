@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale";
 import { useTasks, Task, TaskInsert, TaskUpdate } from "@/hooks/useTasks";
 import TaskModal from "@/components/tasks/TaskModal";
-import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -80,7 +81,12 @@ export default function Agenda() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Agenda</h2>
+        <div>
+          <h2 className="text-base font-medium text-foreground" style={{ fontSize: 16 }}>Agenda</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: pt })}
+          </p>
+        </div>
         <button
           onClick={() => { setEditTask(null); setModalOpen(true); }}
           className="text-xs text-primary hover:text-primary/80 transition-colors font-medium flex items-center gap-1"
@@ -92,25 +98,27 @@ export default function Agenda() {
       {todayTasks.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">Nenhuma tarefa para hoje</p>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {todayTasks.map((task) => (
             <Card key={task.id} className={cn("transition-all duration-200", task.completed && "opacity-50")}>
-              <CardContent className="p-3 flex items-center gap-3">
+              <CardContent className="py-3 px-4 flex items-center gap-3">
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={() => toggleTask(task.id)}
-                  className="rounded-full"
+                  className="rounded-full h-5 w-5"
                 />
                 <span className={cn(
-                  "flex-1 text-sm font-medium truncate",
+                  "flex-1 font-medium truncate",
                   task.completed && "line-through text-muted-foreground"
-                )}>
+                )} style={{ fontSize: 14 }}>
                   {task.title}
                 </span>
                 {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
                 <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                  className="rounded-full font-medium shrink-0"
                   style={{
+                    fontSize: 11,
+                    padding: "3px 8px",
                     backgroundColor: PRIORITY_COLORS[task.priority].bg,
                     color: PRIORITY_COLORS[task.priority].text,
                   }}
