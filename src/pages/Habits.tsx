@@ -195,7 +195,7 @@ function HabitCard({ habit: h, onEdit, onToggle, onDelete }: {
   return (
     <Card className={cn("transition-opacity duration-200", !h.active && "opacity-50")}>
       <CardContent className="p-4 flex items-center gap-3">
-        <span className="text-[28px] leading-none shrink-0">{h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"}</span>
+        {h.icon && /[^\x00-\x7F]/.test(h.icon) && <span className="text-[28px] leading-none shrink-0">{h.icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[15px] font-medium truncate">{h.name}</span>
@@ -247,7 +247,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
   editing: Habit | null;
   onSave: (data: Omit<Habit, "id" | "createdAt">) => void;
 }) {
-  const [icon, setIcon] = useState("✅");
+  const [icon, setIcon] = useState("");
   const [name, setName] = useState("");
   const [metricType, setMetricType] = useState<HabitMetricType>("check");
   const [metricUnit, setMetricUnit] = useState("");
@@ -271,7 +271,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
   // Reset on open
   const resetForm = () => {
     if (editing) {
-      setIcon(editing.icon || "✅");
+      setIcon(editing.icon || "");
       setName(editing.name);
       setMetricType(mapOldType(editing));
       setMetricUnit(editing.metricUnit || "");
@@ -282,7 +282,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
       setFrequencyDays(editing.frequencyDays || []);
       setReminderTime(editing.reminderTime || "");
     } else {
-      setIcon("✅");
+      setIcon("");
       setName("");
       setMetricType("check");
       setMetricUnit("");

@@ -213,6 +213,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           deadline: string | null
+          icon: string | null
           id: string
           life_area: string | null
           reward: string | null
@@ -229,6 +230,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deadline?: string | null
+          icon?: string | null
           id?: string
           life_area?: string | null
           reward?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deadline?: string | null
+          icon?: string | null
           id?: string
           life_area?: string | null
           reward?: string | null

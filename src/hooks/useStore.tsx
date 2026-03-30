@@ -119,6 +119,7 @@ function mapGoalRow(row: any, actions: GoalAction[]): Goal {
   return {
     id: row.id,
     title: row.title,
+    icon: row.icon || undefined,
     type: row.type || "meta",
     status: row.status || "nao_comecei",
     lifeArea: row.life_area || undefined,
@@ -348,6 +349,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .insert({
           user_id: user.id,
           title: g.title,
+          icon: (g as any).icon ?? null,
           type: g.type || "meta",
           status: g.status || "nao_comecei",
           life_area: g.lifeArea ?? null,
@@ -368,6 +370,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Build DB updates
     const dbUpdates: any = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.icon !== undefined) dbUpdates.icon = updates.icon ?? null;
     if (updates.type !== undefined) dbUpdates.type = updates.type;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
@@ -500,10 +503,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         };
       })
     );
-    // We need to defer the supabase call
-    setTimeout(() => {
-      void supabase.from("goal_actions").update({ completed: newCompleted }).eq("id", actionId);
-    }, 0);
+    void (async () => {
+      const { error } = await supabase.from("goal_actions").update({ completed: newCompleted }).eq("id", actionId);
+      if (error) console.error("Error toggling goal action:", error);
+    })();
   }, []);
 
   const clearAll = useCallback(() => {

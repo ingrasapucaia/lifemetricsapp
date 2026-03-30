@@ -394,9 +394,9 @@ function HabitCard({
     )}>
       <CardContent className="flex items-center gap-3 py-3 px-4">
         {/* Emoji icon */}
-        <span className="text-2xl shrink-0 w-8 text-center">
-          {h.icon && /[^\x00-\x7F]/.test(h.icon) ? h.icon : "✅"}
-        </span>
+        {h.icon && /[^\x00-\x7F]/.test(h.icon) && (
+          <span className="text-2xl shrink-0 w-8 text-center">{h.icon}</span>
+        )}
 
         {/* Name + area badge */}
         <div className="flex-1 min-w-0">
