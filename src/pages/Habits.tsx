@@ -271,7 +271,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
   // Reset on open
   const resetForm = () => {
     if (editing) {
-      setIcon(editing.icon || "✅");
+      setIcon(editing.icon || "");
       setName(editing.name);
       setMetricType(mapOldType(editing));
       setMetricUnit(editing.metricUnit || "");
