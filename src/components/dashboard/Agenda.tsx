@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useTasks, Task, TaskInsert, TaskUpdate } from "@/hooks/useTasks";
 import TaskModal from "@/components/tasks/TaskModal";
-import { format } from "date-fns";
+import TaskModal from "@/components/tasks/TaskModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
