@@ -283,87 +283,14 @@ export default function CheckIn({ today, record, habits }: Props) {
 
       </div>
 
-      {/* Habits - new card-based layout */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            HÁBITOS
-            <span className="font-normal ml-1.5">({done}/{active.length})</span>
-          </p>
-          <Button
-            size="icon"
-            className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate("/habitos")}
-          >
-            <Plus size={16} />
-          </Button>
-        </div>
-
-        {active.length === 0 && (
-          <Card className="border-border/60">
-            <CardContent className="py-8 text-center">
-              <p className="text-sm text-muted-foreground mb-3">Nenhum hábito ativo</p>
-              <Button variant="outline" className="rounded-xl" onClick={() => navigate("/habitos")}>
-                + Criar meu primeiro hábito
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {(() => {
-          const sortedHabits = [...active].sort((a, b) => {
-            const aDone = isHabitCompleted(a, checks[a.id]);
-            const bDone = isHabitCompleted(b, checks[b.id]);
-            if (aDone !== bDone) return aDone ? 1 : -1;
-            return 0;
-          });
-          return sortedHabits.map((h) => (
-            <HabitCard
-              key={h.id}
-              habit={h}
-              checks={checks}
-              onUpdate={(newChecks) => up({ habitChecks: newChecks })}
-            />
-          ));
-        })()}
-      </div>
-
-      {/* Journal */}
-      <Collapsible open={journalOpen} onOpenChange={setJournalOpen}>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between rounded-xl">
-            <span className="flex items-center gap-2">
-              <BookOpen size={16} /> Diário (opcional)
-            </span>
-            <ChevronDown
-              size={16}
-              className={cn("transition-transform duration-200", journalOpen && "rotate-180")}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <JournalBtn
-              title="Como se sentiu?"
-              value={record?.noteFeeling}
-              placeholder="Descreva como foi seu dia..."
-              onSave={(v) => up({ noteFeeling: v })}
-            />
-            <JournalBtn
-              title="Procrastinação"
-              value={record?.noteProcrastination}
-              placeholder="Procrastinou algo? O que e por quê?"
-              onSave={(v) => up({ noteProcrastination: v })}
-            />
-            <JournalBtn
-              title="Gratidão"
-              value={record?.noteGratitude}
-              placeholder="Liste coisas pelas quais é grato..."
-              onSave={(v) => up({ noteGratitude: v })}
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Habits - collapsible compact layout */}
+      <HabitsSection
+        active={active}
+        checks={checks}
+        done={done}
+        onUpdate={(newChecks) => up({ habitChecks: newChecks })}
+        onNavigate={() => navigate("/habitos")}
+      />
     </section>
   );
 }
