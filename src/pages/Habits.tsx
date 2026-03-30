@@ -247,7 +247,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
   editing: Habit | null;
   onSave: (data: Omit<Habit, "id" | "createdAt">) => void;
 }) {
-  const [icon, setIcon] = useState("✅");
+  const [icon, setIcon] = useState("");
   const [name, setName] = useState("");
   const [metricType, setMetricType] = useState<HabitMetricType>("check");
   const [metricUnit, setMetricUnit] = useState("");
