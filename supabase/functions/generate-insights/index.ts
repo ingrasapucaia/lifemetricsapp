@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       const rate = monthRecords.length > 0 ? Math.round((daysCompleted / monthRecords.length) * 100) : 0;
       return {
         name: h.name,
-        area: h.lifeArea || "geral",
+        area: h.life_area || "geral",
         rate,
         icon: h.icon,
       };

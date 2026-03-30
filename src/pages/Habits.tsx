@@ -282,7 +282,7 @@ function HabitModal({ open, onClose, editing, onSave }: {
       setFrequencyDays(editing.frequencyDays || []);
       setReminderTime(editing.reminderTime || "");
     } else {
-      setIcon("✅");
+      setIcon("");
       setName("");
       setMetricType("check");
       setMetricUnit("");

@@ -503,10 +503,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         };
       })
     );
-    // We need to defer the supabase call
-    setTimeout(() => {
-      void supabase.from("goal_actions").update({ completed: newCompleted }).eq("id", actionId);
-    }, 0);
+    void (async () => {
+      const { error } = await supabase.from("goal_actions").update({ completed: newCompleted }).eq("id", actionId);
+      if (error) console.error("Error toggling goal action:", error);
+    })();
   }, []);
 
   const clearAll = useCallback(() => {

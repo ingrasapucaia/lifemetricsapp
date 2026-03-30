@@ -481,7 +481,7 @@ export default function MetricsPage() {
                     <div key={habit.id} className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-base shrink-0">{habit.icon || "✅"}</span>
+                          {habit.icon && /[^\x00-\x7F]/.test(habit.icon) && <span className="text-base shrink-0">{habit.icon}</span>}
                           <span className="text-xs font-medium truncate max-w-[140px]">{habit.name}</span>
                         </div>
                         <span className={cn("text-xs font-semibold", rate >= 70 ? "text-primary" : "text-muted-foreground")}>{rate}%</span>
