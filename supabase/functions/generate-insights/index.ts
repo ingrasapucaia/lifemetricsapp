@@ -104,8 +104,8 @@ Deno.serve(async (req) => {
       const daysCompleted = monthRecords.filter((r: any) => {
         const val = r.habitChecks?.[h.id];
         if (val === undefined) return false;
-        if (h.targetType === "check") return val === true;
-        if (typeof val === "number") return h.targetValue ? val >= h.targetValue : val > 0;
+        if (h.target_type === "check") return val === true;
+        if (typeof val === "number") return h.target_value ? val >= h.target_value : val > 0;
         return false;
       }).length;
       const rate = monthRecords.length > 0 ? Math.round((daysCompleted / monthRecords.length) * 100) : 0;
