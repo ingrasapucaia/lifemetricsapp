@@ -113,7 +113,6 @@ export default function CheckIn({ today, record, habits }: Props) {
   const { upsertRecord } = useStore();
   const [saved, setSaved] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout>>();
-  const [journalOpen, setJournalOpen] = useState(false);
   const navigate = useNavigate();
 
   const active = habits.filter((h) => h.active);
