@@ -80,9 +80,9 @@ export default function Signup() {
         <Card className="border-0 shadow-card">
           <CardContent className="p-6 space-y-5">
             {/* Aviso sobre e-mail da compra */}
-            <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
-              <AlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-amber-800 leading-relaxed">
+            <div className="flex items-start gap-2 rounded-lg bg-accent border border-border p-3">
+              <AlertTriangle size={18} className="text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-foreground leading-relaxed">
                 <strong>Importante:</strong> Use o mesmo e-mail da sua compra para ativar seu acesso premium.
               </p>
             </div>
