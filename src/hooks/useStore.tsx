@@ -119,6 +119,7 @@ function mapGoalRow(row: any, actions: GoalAction[]): Goal {
   return {
     id: row.id,
     title: row.title,
+    icon: row.icon || undefined,
     type: row.type || "meta",
     status: row.status || "nao_comecei",
     lifeArea: row.life_area || undefined,
