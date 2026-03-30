@@ -99,25 +99,27 @@ export default function Agenda() {
       {todayTasks.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">Nenhuma tarefa para hoje</p>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {todayTasks.map((task) => (
             <Card key={task.id} className={cn("transition-all duration-200", task.completed && "opacity-50")}>
-              <CardContent className="p-3 flex items-center gap-3">
+              <CardContent className="py-3 px-4 flex items-center gap-3">
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={() => toggleTask(task.id)}
-                  className="rounded-full"
+                  className="rounded-full h-5 w-5"
                 />
                 <span className={cn(
-                  "flex-1 text-sm font-medium truncate",
+                  "flex-1 font-medium truncate",
                   task.completed && "line-through text-muted-foreground"
-                )}>
+                )} style={{ fontSize: 14 }}>
                   {task.title}
                 </span>
                 {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
                 <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                  className="rounded-full font-medium shrink-0"
                   style={{
+                    fontSize: 11,
+                    padding: "3px 8px",
                     backgroundColor: PRIORITY_COLORS[task.priority].bg,
                     color: PRIORITY_COLORS[task.priority].text,
                   }}
