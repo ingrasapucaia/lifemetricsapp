@@ -370,6 +370,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // Build DB updates
     const dbUpdates: any = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.icon !== undefined) dbUpdates.icon = updates.icon ?? null;
     if (updates.type !== undefined) dbUpdates.type = updates.type;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
