@@ -303,7 +303,6 @@ function HabitCard({
   onUpdate: (newChecks: Record<string, boolean | number>) => void;
 }) {
   const h = habit;
-  const area = getLifeArea(h.lifeArea);
   const completed = isHabitCompleted(h, checks[h.id]);
 
   const unitLabel =
@@ -317,39 +316,28 @@ function HabitCard({
       "border-border/60 transition-all duration-200",
       completed && "opacity-60"
     )}>
-      <CardContent className="flex items-center gap-3 py-3 px-4">
-        {/* Emoji icon */}
+      <CardContent className="flex items-center gap-2 py-2 px-3" style={{ minHeight: 44, maxHeight: 44 }}>
+        {/* Emoji icon - compact */}
         {h.icon && /[^\x00-\x7F]/.test(h.icon) && (
-          <span className="text-2xl shrink-0 w-8 text-center">{h.icon}</span>
+          <span className="shrink-0 text-center" style={{ fontSize: 18, width: 22 }}>{h.icon}</span>
         )}
 
-        {/* Name + area badge */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{h.name}</p>
-          {area && (
-            <span
-              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium mt-0.5"
-              style={{ backgroundColor: area.bgColor, color: area.textColor }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: area.textColor }} />
-              {area.label}
-            </span>
-          )}
-        </div>
+        {/* Name only - no life area badge */}
+        <p className="flex-1 min-w-0 truncate font-medium" style={{ fontSize: 13 }}>{h.name}</p>
 
-        {/* Check or numeric input on the right */}
+        {/* Check or numeric input */}
         {h.targetType === "check" ? (
           <button
             type="button"
             onClick={() => onUpdate({ ...checks, [h.id]: !checks[h.id] })}
             className={cn(
-              "w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200",
+              "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200",
               completed
                 ? "bg-primary border-primary text-primary-foreground"
                 : "border-muted-foreground/30 text-transparent hover:border-primary/50"
             )}
           >
-            <Check size={14} strokeWidth={3} />
+            <Check size={12} strokeWidth={3} />
           </button>
         ) : h.targetType === "hours_minutes" ? (
           <div className="flex items-center gap-1 shrink-0">
@@ -363,10 +351,10 @@ function HabitCard({
                 const mins = typeof checks[h.id] === "number" ? (checks[h.id] as number) % 60 : 0;
                 onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
               }}
-              className="w-12 h-8 text-sm rounded-lg text-center"
+              className="w-10 h-7 text-xs rounded-lg text-center p-0"
               placeholder="0"
             />
-            <span className="text-xs text-muted-foreground">h</span>
+            <span className="text-[10px] text-muted-foreground">h</span>
             <Input
               type="number"
               min={0}
@@ -377,13 +365,13 @@ function HabitCard({
                 const hrs = typeof checks[h.id] === "number" ? Math.floor((checks[h.id] as number) / 60) : 0;
                 onUpdate({ ...checks, [h.id]: hrs * 60 + mins });
               }}
-              className="w-12 h-8 text-sm rounded-lg text-center"
+              className="w-10 h-7 text-xs rounded-lg text-center p-0"
               placeholder="0"
             />
-            <span className="text-xs text-muted-foreground">min</span>
+            <span className="text-[10px] text-muted-foreground">min</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <Input
               type="number"
               min={0}
@@ -391,10 +379,10 @@ function HabitCard({
               step={h.targetType === "km" || h.targetType === "miles" ? 0.1 : 1}
               value={typeof checks[h.id] === "number" ? (checks[h.id] as number) : ""}
               onChange={(e) => onUpdate({ ...checks, [h.id]: Number(e.target.value) })}
-              className="w-16 h-8 text-sm rounded-lg text-center"
+              className="w-12 h-7 text-xs rounded-lg text-center p-0"
               placeholder="0"
             />
-            <span className="text-xs text-muted-foreground">{unitLabel}</span>
+            <span className="text-[10px] text-muted-foreground">{unitLabel}</span>
           </div>
         )}
       </CardContent>
