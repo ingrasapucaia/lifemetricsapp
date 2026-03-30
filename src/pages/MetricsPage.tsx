@@ -314,7 +314,7 @@ export default function MetricsPage() {
                 <Card key={h.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-2xl shrink-0">{h.icon || "✅"}</span>
+                      {h.icon && /[^\x00-\x7F]/.test(h.icon) && <span className="text-2xl shrink-0">{h.icon}</span>}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{h.name}</p>
                         {area && <LifeAreaBadge value={h.lifeArea} size="sm" className="mt-0.5" />}
