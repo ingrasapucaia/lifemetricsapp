@@ -82,7 +82,12 @@ export default function Agenda() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Agenda</h2>
+        <div>
+          <h2 className="text-base font-medium text-foreground" style={{ fontSize: 16 }}>Agenda</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: pt })}
+          </p>
+        </div>
         <button
           onClick={() => { setEditTask(null); setModalOpen(true); }}
           className="text-xs text-primary hover:text-primary/80 transition-colors font-medium flex items-center gap-1"
