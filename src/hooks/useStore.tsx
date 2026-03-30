@@ -349,6 +349,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .insert({
           user_id: user.id,
           title: g.title,
+          icon: (g as any).icon ?? null,
           type: g.type || "meta",
           status: g.status || "nao_comecei",
           life_area: g.lifeArea ?? null,
