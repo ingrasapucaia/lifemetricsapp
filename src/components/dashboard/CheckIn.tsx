@@ -402,71 +402,82 @@ function HabitCard({
   );
 }
 
-function JournalBtn({
-  title,
-  value,
-  placeholder,
-  onSave,
+function HabitsSection({
+  active,
+  checks,
+  done,
+  onUpdate,
+  onNavigate,
 }: {
-  title: string;
-  value?: string;
-  placeholder: string;
-  onSave: (v: string) => void;
+  active: Habit[];
+  checks: Record<string, boolean | number>;
+  done: number;
+  onUpdate: (newChecks: Record<string, boolean | number>) => void;
+  onNavigate: () => void;
 }) {
-  const [text, setText] = useState(value || "");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    const stored = localStorage.getItem("habits-section-open");
+    return stored !== null ? stored === "true" : true;
+  });
+
+  const handleToggle = (val: boolean) => {
+    setOpen(val);
+    localStorage.setItem("habits-section-open", String(val));
+  };
+
+  const sortedHabits = [...active].sort((a, b) => {
+    const aDone = isHabitCompleted(a, checks[a.id]);
+    const bDone = isHabitCompleted(b, checks[b.id]);
+    if (aDone !== bDone) return aDone ? 1 : -1;
+    return 0;
+  });
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) setText(value || "");
-      }}
-    >
-      <Button
-        variant="outline"
-        className="h-auto py-3 flex flex-col items-start text-left rounded-xl"
-        onClick={() => setOpen(true)}
-      >
-        <span className="text-sm font-medium flex items-center gap-2">
-          <Pencil size={14} />
-          {value ? "Editar: " : ""}
-          {title}
-        </span>
-        {value && (
-          <span className="text-xs text-muted-foreground truncate w-full mt-1">
-            {value.slice(0, 50)}
-            {value.length > 50 ? "..." : ""}
-          </span>
+    <Collapsible open={open} onOpenChange={handleToggle}>
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger className="flex items-center gap-2 group">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            HÁBITOS
+            <span className="font-normal ml-1.5">({done}/{active.length})</span>
+          </p>
+          <ChevronDown
+            size={14}
+            className={cn(
+              "text-muted-foreground transition-transform duration-200",
+              open && "rotate-180"
+            )}
+          />
+        </CollapsibleTrigger>
+        <Button
+          size="icon"
+          className="h-7 w-7 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={onNavigate}
+        >
+          <Plus size={14} />
+        </Button>
+      </div>
+
+      <CollapsibleContent className="mt-2 space-y-1">
+        {active.length === 0 && (
+          <Card className="border-border/60">
+            <CardContent className="py-6 text-center">
+              <p className="text-[13px] text-muted-foreground mb-2">Nenhum hábito ativo</p>
+              <Button variant="outline" className="rounded-xl text-[13px]" onClick={onNavigate}>
+                + Criar meu primeiro hábito
+              </Button>
+            </CardContent>
+          </Card>
         )}
-      </Button>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={4}
-          placeholder={placeholder}
-          className="rounded-xl"
-        />
-        <div className="flex justify-end gap-2 mt-2">
-          <Button variant="ghost" onClick={() => setOpen(false)} className="rounded-xl">
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              onSave(text);
-              setOpen(false);
-            }}
-            className="rounded-xl"
-          >
-            Salvar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+        {sortedHabits.map((h) => (
+          <HabitCard
+            key={h.id}
+            habit={h}
+            checks={checks}
+            onUpdate={onUpdate}
+          />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
