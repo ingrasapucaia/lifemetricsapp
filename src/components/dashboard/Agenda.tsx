@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useTasks, Task, TaskInsert, TaskUpdate } from "@/hooks/useTasks";
