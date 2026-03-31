@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { useStore } from "@/hooks/useStore";
 import { Period } from "@/types";
 import { getRecordsForPeriod, isHabitCompleted } from "@/lib/metrics";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import CheckIn from "@/components/dashboard/CheckIn";
 import Agenda from "@/components/dashboard/Agenda";
 import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
 import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
+import WeekCalendar from "@/components/dashboard/WeekCalendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
@@ -18,26 +18,9 @@ function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; si
   const offset = circumference - (value / 100) * circumference;
   return (
     <svg width={size} height={size} className="transform -rotate-90">
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="hsl(var(--muted))"
-        strokeWidth={strokeWidth}
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="hsl(var(--primary))"
-        strokeWidth={strokeWidth}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        className="transition-all duration-700 ease-out"
-      />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth={strokeWidth}
+        strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-700 ease-out" />
     </svg>
   );
 }
@@ -47,9 +30,12 @@ export default function Dashboard() {
   const { profile: authProfile } = useAuth();
   const displayName = authProfile?.name;
   const [period, setPeriod] = useState<Period>("7d");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  const today = format(new Date(), "yyyy-MM-dd");
-  const todayRecord = records.find((r) => r.date === today);
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const isToday = isSameDay(selectedDate, new Date());
+  const todayRecord = records.find((r) => r.date === selectedDateStr);
   const periodRecords = useMemo(() => getRecordsForPeriod(records, period), [records, period]);
 
   const activeHabits = habits.filter((h) => h.active);
@@ -67,9 +53,7 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 Olá, {displayName}
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Acompanhe sua evolução
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Acompanhe sua evolução</p>
             </>
           ) : (
             <>
@@ -79,7 +63,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Daily progress ring */}
         <Card className="bg-metric-habits-bg border-0 shadow-none">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="relative">
@@ -96,9 +79,18 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <CheckIn today={today} record={todayRecord} habits={habits} />
+      {/* Week Calendar */}
+      <WeekCalendar
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        weekOffset={weekOffset}
+        onWeekChange={setWeekOffset}
+        records={records}
+      />
 
-      <Agenda />
+      <CheckIn today={selectedDateStr} record={todayRecord} habits={habits} />
+
+      <Agenda selectedDate={selectedDateStr} />
 
       <GoalsInProgress />
 

@@ -37,6 +37,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<"alta" | "media" | "baixa">("media");
   const [lifeAreas, setLifeAreas] = useState<string[]>([]);
   const [goalId, setGoalId] = useState<string | null>(null);
@@ -50,6 +51,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       if (task) {
         setTitle(task.title);
         setDate(task.date);
+        setDueTime(task.due_time || "");
         setPriority(task.priority);
         setLifeAreas(task.life_areas || []);
         setGoalId(task.goal_id);
@@ -58,6 +60,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       } else {
         setTitle("");
         setDate(defaultDate || new Date().toISOString().slice(0, 10));
+        setDueTime("");
         setPriority("media");
         setLifeAreas([]);
         setGoalId(null);
@@ -74,6 +77,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       const data: TaskInsert = {
         title: title.trim(),
         date,
+        due_time: dueTime.trim() || null,
         priority,
         life_areas: lifeAreas.length > 0 ? lifeAreas : null,
         goal_id: goalId,
@@ -140,6 +144,18 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          {/* Time */}
+          <div className="space-y-2">
+            <Label>Horário (opcional)</Label>
+            <Input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              placeholder="--:--"
+              className="rounded-xl w-[140px]"
+            />
           </div>
 
           {/* Priority */}

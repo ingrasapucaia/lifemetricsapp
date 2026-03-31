@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN due_time text DEFAULT NULL;

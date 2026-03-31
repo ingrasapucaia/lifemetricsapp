@@ -462,6 +462,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           date: string
+          due_time: string | null
           goal_id: string | null
           icon: string | null
           id: string
@@ -478,6 +479,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           date?: string
+          due_time?: string | null
           goal_id?: string | null
           icon?: string | null
           id?: string
@@ -494,6 +496,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           date?: string
+          due_time?: string | null
           goal_id?: string | null
           icon?: string | null
           id?: string
