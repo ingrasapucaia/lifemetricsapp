@@ -414,6 +414,17 @@ export default function Profile() {
               </div>
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label>Meta calórica diária (kcal)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={dailyKcalGoal}
+              onChange={(e) => setDailyKcalGoal(e.target.value)}
+              placeholder="Ex: 2000"
+            />
+            <p className="text-[10px] text-muted-foreground">Defina sua meta para acompanhar o progresso no card de refeições</p>
+          </div>
         </CardContent>
       </Card>
 
