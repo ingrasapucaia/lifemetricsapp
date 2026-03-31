@@ -4,7 +4,7 @@ import { useStore } from "@/hooks/useStore";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getLifeArea } from "@/types";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
