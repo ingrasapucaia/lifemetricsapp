@@ -3,7 +3,7 @@ import { useStore } from "@/hooks/useStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Goal, GoalStatus, LIFE_AREAS, GOAL_STATUSES, getLifeArea, getGoalStatus, STATUS_SORT_ORDER } from "@/types";
-import { Plus, Target, ChevronDown, ChevronRight, Gift, ArrowUpDown, Filter, MoreVertical, Check } from "lucide-react";
+import { Plus, Target, ChevronDown, ChevronRight, Gift, ArrowUpDown, Filter, MoreVertical, Check, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import LifeAreaCollapsible from "@/components/LifeAreaCollapsible";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 type SortMode = "created" | "deadline" | "status";
 
@@ -496,7 +498,23 @@ export default function Goals() {
             {/* Deadline */}
             <div className="space-y-2">
               <Label>Prazo para concluir (opcional)</Label>
-              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="rounded-xl" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal rounded-xl", !deadline && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {deadline ? format(new Date(deadline + "T12:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadline ? new Date(deadline + "T12:00:00") : undefined}
+                    onSelect={(date) => setDeadline(date ? format(date, "yyyy-MM-dd") : "")}
+                    locale={pt}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Reward */}
