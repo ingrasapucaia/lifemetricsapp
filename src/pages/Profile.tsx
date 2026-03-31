@@ -120,6 +120,7 @@ export default function Profile() {
   const [challenges, setChallenges] = useState<string[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
   const [opportunities, setOpportunities] = useState<string[]>([]);
+  const [dailyKcalGoal, setDailyKcalGoal] = useState<string>("");
   const [diagOpen, setDiagOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
