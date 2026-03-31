@@ -260,12 +260,12 @@ export default function CheckIn({ today, record, habits }: Props) {
                 Dormiu {formatSleepHours(calculatedSleep)}
               </p>
             )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Water */}
-        <Card className="bg-metric-water-bg border-0">
-          <CardHeader className="pb-3">
+            {/* Water */}
+            <Card className="bg-metric-water-bg border-0">
+              <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-metric-water/10 flex items-center justify-center">
                 <Droplet size={14} className="text-metric-water" />
