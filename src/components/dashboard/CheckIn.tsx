@@ -445,7 +445,7 @@ function HabitsSection({
     <Collapsible open={open} onOpenChange={handleToggle}>
       <div className="flex items-center justify-between">
         <CollapsibleTrigger className="flex items-center gap-2 group">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             HÁBITOS
             <span className="font-normal ml-1.5">({done}/{active.length})</span>
           </p>

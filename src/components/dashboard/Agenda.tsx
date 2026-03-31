@@ -98,7 +98,7 @@ export default function Agenda({ selectedDate }: AgendaProps) {
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-medium text-foreground" style={{ fontSize: 16 }}>Agenda</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground">AGENDA</h2>
           <p className="text-xs text-muted-foreground mt-0.5 capitalize">
             {format(new Date(dateStr + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: pt })}
           </p>
