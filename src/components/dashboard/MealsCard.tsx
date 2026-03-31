@@ -21,7 +21,7 @@ export default function MealsCard({ selectedDate }: Props) {
     <>
       <Card
         className="border-0 cursor-pointer hover:shadow-md transition-shadow duration-200"
-        style={{ backgroundColor: "#D1F0E0" }}
+        style={{ backgroundColor: "#E3F8ED" }}
         onClick={() => navigate("/refeicoes")}
       >
         <CardHeader className="pb-2 pt-3 px-4">
