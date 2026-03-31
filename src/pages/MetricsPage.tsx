@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useStore } from "@/hooks/useStore";
+import { useMeals } from "@/hooks/useMeals";
 import { useTasks } from "@/hooks/useTasks";
 import {
   Habit, DailyRecord, Goal, LIFE_AREAS, getLifeArea, getGoalStatus,
