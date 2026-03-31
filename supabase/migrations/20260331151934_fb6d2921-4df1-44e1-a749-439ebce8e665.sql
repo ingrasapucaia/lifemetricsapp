@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN daily_kcal_goal numeric DEFAULT NULL;
