@@ -148,7 +148,7 @@ export default function Profile() {
     setChallenges(authProfile.challenges || []);
     setStrengths(authProfile.strengths || []);
     setOpportunities(authProfile.opportunities || []);
-    setDailyKcalGoal(authProfile.daily_kcal_goal ? String(authProfile.daily_kcal_goal) : "");
+    
     setLoaded(true);
   }, [authProfile]);
 
