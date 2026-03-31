@@ -3,7 +3,7 @@ import { useStore } from "@/hooks/useStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Goal, GoalStatus, LIFE_AREAS, GOAL_STATUSES, getLifeArea, getGoalStatus, STATUS_SORT_ORDER } from "@/types";
-import { Plus, Target, ChevronDown, ChevronRight, Gift, ArrowUpDown, Filter, MoreVertical, Check } from "lucide-react";
+import { Plus, Target, ChevronDown, ChevronRight, Gift, ArrowUpDown, Filter, MoreVertical, Check, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
