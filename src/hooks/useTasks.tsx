@@ -8,6 +8,7 @@ export interface Task {
   title: string;
   icon: string | null;
   date: string;
+  due_time: string | null;
   priority: "alta" | "media" | "baixa";
   life_areas: string[] | null;
   goal_id: string | null;
