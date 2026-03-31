@@ -272,13 +272,15 @@ export default function CheckIn({ today, record, habits }: Props) {
               </div>
               Água
             </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WaterDrops value={water} onChange={(v) => up({ waterIntake: v })} />
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent className="pt-0 px-4 pb-3">
+                <WaterDrops value={water} onChange={(v) => up({ waterIntake: v })} />
+              </CardContent>
+            </Card>
 
-      </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Habits - collapsible compact layout */}
       <HabitsSection
