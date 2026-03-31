@@ -19,10 +19,33 @@ import { toast } from "sonner";
 
 export default function Meals() {
   const { meals, addMeal, updateMeal, deleteMeal, getMealsForDate, getDatesWithMeals } = useMeals();
+  const { user, profile, refreshProfile } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeal, setEditMeal] = useState<Meal | null>(null);
   const [defaultMealType, setDefaultMealType] = useState<MealType | undefined>();
+  const [kcalGoal, setKcalGoal] = useState<string>("");
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  useEffect(() => {
+    setKcalGoal(profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "");
+  }, [profile?.daily_kcal_goal]);
+
+  const handleSaveGoal = async () => {
+    if (!user) return;
+    setSavingGoal(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ daily_kcal_goal: kcalGoal ? Number(kcalGoal) : null })
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error("Erro ao salvar meta");
+    } else {
+      toast("Meta calórica atualizada!");
+      await refreshProfile();
+    }
+    setSavingGoal(false);
+  };
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const dayMeals = useMemo(() => getMealsForDate(dateStr), [getMealsForDate, dateStr]);
