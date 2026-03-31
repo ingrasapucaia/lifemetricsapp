@@ -108,6 +108,32 @@ export default function Meals() {
         </Button>
       </div>
 
+      {/* Kcal Goal */}
+      <Card>
+        <CardContent className="p-4">
+          <Label className="text-sm">Meta calórica diária (kcal)</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              type="number"
+              min={0}
+              value={kcalGoal}
+              onChange={(e) => setKcalGoal(e.target.value)}
+              placeholder="Ex: 2000"
+              className="flex-1"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveGoal}
+              disabled={savingGoal || kcalGoal === (profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "")}
+              className="rounded-xl gap-1"
+            >
+              <Check size={14} />
+              Salvar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Calendar */}
       <Card>
         <CardContent className="p-3">

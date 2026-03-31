@@ -96,8 +96,8 @@ function CardSelect({ options, selected, onToggle }: {
                 : "border-border hover:border-primary/30"
             )}
           >
-            <span className="text-xl">{o.emoji}</span>
-            <span className="text-sm font-medium text-foreground">{o.label}</span>
+            <span className="text-xl shrink-0">{o.emoji}</span>
+            <span className="text-sm font-medium text-foreground min-w-0 break-words leading-tight">{o.label}</span>
           </button>
         );
       })}
