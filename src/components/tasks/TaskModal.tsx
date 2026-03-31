@@ -146,6 +146,18 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
             </Popover>
           </div>
 
+          {/* Time */}
+          <div className="space-y-2">
+            <Label>Horário (opcional)</Label>
+            <Input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              placeholder="--:--"
+              className="rounded-xl w-[140px]"
+            />
+          </div>
+
           {/* Priority */}
           <div className="space-y-2">
             <Label>Prioridade</Label>
