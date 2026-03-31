@@ -27,6 +27,7 @@ import LifeWheel from "@/pages/LifeWheel";
 import LifeWheelNew from "@/pages/LifeWheelNew";
 import LifeWheelDetail from "@/pages/LifeWheelDetail";
 import LifeWheelEdit from "@/pages/LifeWheelEdit";
+import Meals from "@/pages/Meals";
 
 const App = () => (
   <AuthProvider>
