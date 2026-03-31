@@ -30,6 +30,7 @@ export interface ProfileData {
   premium_since: string | null;
   premium_expires_at: string | null;
   premium_plan: string | null;
+  daily_kcal_goal: number | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

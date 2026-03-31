@@ -120,6 +120,7 @@ export default function Profile() {
   const [challenges, setChallenges] = useState<string[]>([]);
   const [strengths, setStrengths] = useState<string[]>([]);
   const [opportunities, setOpportunities] = useState<string[]>([]);
+  const [dailyKcalGoal, setDailyKcalGoal] = useState<string>("");
   const [diagOpen, setDiagOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -147,6 +148,7 @@ export default function Profile() {
     setChallenges(authProfile.challenges || []);
     setStrengths(authProfile.strengths || []);
     setOpportunities(authProfile.opportunities || []);
+    setDailyKcalGoal(authProfile.daily_kcal_goal ? String(authProfile.daily_kcal_goal) : "");
     setLoaded(true);
   }, [authProfile]);
 
@@ -162,9 +164,10 @@ export default function Profile() {
       lifeGoals !== (authProfile.life_goals || "") ||
       JSON.stringify(challenges) !== JSON.stringify(authProfile.challenges || []) ||
       JSON.stringify(strengths) !== JSON.stringify(authProfile.strengths || []) ||
-      JSON.stringify(opportunities) !== JSON.stringify(authProfile.opportunities || [])
+      JSON.stringify(opportunities) !== JSON.stringify(authProfile.opportunities || []) ||
+      dailyKcalGoal !== (authProfile.daily_kcal_goal ? String(authProfile.daily_kcal_goal) : "")
     );
-  }, [name, gender, weekStartsMonday, insightsTone, objectives, lifeAreas, lifeGoals, challenges, strengths, opportunities, authProfile, loaded]);
+  }, [name, gender, weekStartsMonday, insightsTone, objectives, lifeAreas, lifeGoals, challenges, strengths, opportunities, dailyKcalGoal, authProfile, loaded]);
 
   const toggleMulti = (arr: string[], setter: (a: string[]) => void) => (v: string) => {
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -186,6 +189,7 @@ export default function Profile() {
         challenges,
         strengths,
         opportunities,
+        daily_kcal_goal: dailyKcalGoal ? Number(dailyKcalGoal) : null,
       })
       .eq("user_id", user.id);
 
@@ -409,6 +413,17 @@ export default function Profile() {
                 ))}
               </div>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Meta calórica diária (kcal)</Label>
+            <Input
+              type="number"
+              min={0}
+              value={dailyKcalGoal}
+              onChange={(e) => setDailyKcalGoal(e.target.value)}
+              placeholder="Ex: 2000"
+            />
+            <p className="text-[10px] text-muted-foreground">Defina sua meta para acompanhar o progresso no card de refeições</p>
           </div>
         </CardContent>
       </Card>

@@ -436,6 +436,7 @@ export type Database = {
         Row: {
           challenges: string[] | null
           created_at: string
+          daily_kcal_goal: number | null
           gender: string | null
           id: string
           insights_tone: string | null
@@ -457,6 +458,7 @@ export type Database = {
         Insert: {
           challenges?: string[] | null
           created_at?: string
+          daily_kcal_goal?: number | null
           gender?: string | null
           id?: string
           insights_tone?: string | null
@@ -478,6 +480,7 @@ export type Database = {
         Update: {
           challenges?: string[] | null
           created_at?: string
+          daily_kcal_goal?: number | null
           gender?: string | null
           id?: string
           insights_tone?: string | null
