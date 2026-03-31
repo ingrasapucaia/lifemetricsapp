@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useStore } from "@/hooks/useStore";
+import { useMeals } from "@/hooks/useMeals";
 import { useTasks } from "@/hooks/useTasks";
 import {
   Habit, DailyRecord, Goal, LIFE_AREAS, getLifeArea, getGoalStatus,
@@ -16,7 +17,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { TrendingUp, Target, CheckSquare, Flame, Moon, CalendarIcon } from "lucide-react";
+import { TrendingUp, Target, CheckSquare, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +34,7 @@ const AREA_TEXT_COLORS: Record<string, string> = {
 export default function MetricsPage() {
   const { habits, records, goals } = useStore();
   const { tasks } = useTasks();
+  const { meals } = useMeals();
 
   const [period, setPeriod] = useState<ExtPeriod>("7d");
   const [areaFilter, setAreaFilter] = useState<string>("todas");
@@ -190,6 +192,28 @@ export default function MetricsPage() {
       return { habit: h, completed, total, rate };
     });
   }, [activeHabits, filteredRecords]);
+
+  // Nutrition chart data
+  const nutritionChartData = useMemo(() => {
+    const days = getDaysInPeriod(period, customStart, customEnd);
+    return days.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayMeals = meals.filter((m) => m.date === dateStr);
+      return {
+        date: format(day, "dd/MM"),
+        kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
+        carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
+        protein: dayMeals.reduce((s, m) => s + (m.protein_g || 0), 0),
+        fat: dayMeals.reduce((s, m) => s + (m.fat_g || 0), 0),
+      };
+    });
+  }, [meals, period, customStart, customEnd]);
+
+  const avgKcal = useMemo(() => {
+    const withData = nutritionChartData.filter((d) => d.kcal > 0);
+    if (withData.length === 0) return 0;
+    return Math.round(withData.reduce((s, d) => s + d.kcal, 0) / withData.length);
+  }, [nutritionChartData]);
 
   const chartBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(168, 64%, 38%)") : "hsl(168, 64%, 38%)";
   const taskBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(220, 10%, 60%)") : "hsl(220, 10%, 60%)";
@@ -467,7 +491,76 @@ export default function MetricsPage() {
         </Card>
       </section>
 
-      {/* Consistency */}
+      {/* Nutrition */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Nutrição</h2>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="border-0" style={{ backgroundColor: "hsl(145, 50%, 93%)" }}>
+            <CardContent className="p-4 text-center">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2 mx-auto" style={{ color: "hsl(145, 50%, 35%)" }}>
+                <UtensilsCrossed size={22} />
+              </div>
+              <p className="text-2xl font-bold">{avgKcal}</p>
+              <p className="text-xs text-muted-foreground mt-1">Média kcal/dia</p>
+            </CardContent>
+          </Card>
+          <Card className="border-0" style={{ backgroundColor: "hsl(145, 50%, 93%)" }}>
+            <CardContent className="p-4 text-center">
+              <div className="flex justify-center gap-3 mb-2 mt-1">
+                <span className="flex items-center gap-1 text-[11px]"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#22c55e" }} />Carb</span>
+                <span className="flex items-center gap-1 text-[11px]"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#f97316" }} />Prot</span>
+                <span className="flex items-center gap-1 text-[11px]"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#3b82f6" }} />Gord</span>
+              </div>
+              <div className="text-sm font-semibold space-x-3">
+                <span style={{ color: "#22c55e" }}>{nutritionChartData.reduce((s, d) => s + d.carbs, 0)}g</span>
+                <span style={{ color: "#f97316" }}>{nutritionChartData.reduce((s, d) => s + d.protein, 0)}g</span>
+                <span style={{ color: "#3b82f6" }}>{nutritionChartData.reduce((s, d) => s + d.fat, 0)}g</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Total macros no período</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Kcal chart */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Calorias por dia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={nutritionChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Macros chart */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Macronutrientes por dia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={nutritionChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
+                <Legend />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </section>
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Consistência dos hábitos</h2>
         <Card>
