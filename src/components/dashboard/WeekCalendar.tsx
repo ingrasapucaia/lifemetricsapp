@@ -36,8 +36,7 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
     return set;
   }, [records]);
 
-  const isCurrentWeek = weekOffset === 0;
-  const canGoForward = !isCurrentWeek;
+  const canGoForward = true;
 
   return (
     <div className="flex items-center gap-2">
