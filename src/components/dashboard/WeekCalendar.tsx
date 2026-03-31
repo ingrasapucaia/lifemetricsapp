@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, isAfter } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, isSameDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DailyRecord } from "@/types";
