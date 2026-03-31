@@ -37,6 +37,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<"alta" | "media" | "baixa">("media");
   const [lifeAreas, setLifeAreas] = useState<string[]>([]);
   const [goalId, setGoalId] = useState<string | null>(null);
