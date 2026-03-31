@@ -164,9 +164,10 @@ export default function Profile() {
       lifeGoals !== (authProfile.life_goals || "") ||
       JSON.stringify(challenges) !== JSON.stringify(authProfile.challenges || []) ||
       JSON.stringify(strengths) !== JSON.stringify(authProfile.strengths || []) ||
-      JSON.stringify(opportunities) !== JSON.stringify(authProfile.opportunities || [])
+      JSON.stringify(opportunities) !== JSON.stringify(authProfile.opportunities || []) ||
+      dailyKcalGoal !== (authProfile.daily_kcal_goal ? String(authProfile.daily_kcal_goal) : "")
     );
-  }, [name, gender, weekStartsMonday, insightsTone, objectives, lifeAreas, lifeGoals, challenges, strengths, opportunities, authProfile, loaded]);
+  }, [name, gender, weekStartsMonday, insightsTone, objectives, lifeAreas, lifeGoals, challenges, strengths, opportunities, dailyKcalGoal, authProfile, loaded]);
 
   const toggleMulti = (arr: string[], setter: (a: string[]) => void) => (v: string) => {
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
