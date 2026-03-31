@@ -51,6 +51,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       if (task) {
         setTitle(task.title);
         setDate(task.date);
+        setDueTime(task.due_time || "");
         setPriority(task.priority);
         setLifeAreas(task.life_areas || []);
         setGoalId(task.goal_id);
@@ -59,6 +60,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       } else {
         setTitle("");
         setDate(defaultDate || new Date().toISOString().slice(0, 10));
+        setDueTime("");
         setPriority("media");
         setLifeAreas([]);
         setGoalId(null);
