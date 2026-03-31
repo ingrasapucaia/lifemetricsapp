@@ -31,25 +31,20 @@ const LIFE_AREA_BAR_COLORS: Record<string, string> = {
   contribuicao_social: "#D3D1C7",
 };
 
-function getTaskBorderColor(lifeAreas: string[] | null): string {
-  if (!lifeAreas || lifeAreas.length === 0) return "#8E8E93";
-  return LIFE_AREA_BORDER_COLORS[lifeAreas[0]] || "#8E8E93";
+function getTaskBarColor(lifeAreas: string[] | null): string {
+  if (!lifeAreas || lifeAreas.length === 0) return "#E5E5EA";
+  return LIFE_AREA_BAR_COLORS[lifeAreas[0]] || "#E5E5EA";
 }
 
 function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
-    // Uncompleted first
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    // Tasks with time first, sorted by time
     const aTime = a.due_time || "";
     const bTime = b.due_time || "";
     if (aTime && !bTime) return -1;
     if (!aTime && bTime) return 1;
     if (aTime && bTime) return aTime.localeCompare(bTime);
-    // Then by priority
-    const pa = PRIORITY_ORDER[a.priority] ?? 1;
-    const pb = PRIORITY_ORDER[b.priority] ?? 1;
-    return pa - pb;
+    return 0;
   });
 }
 
