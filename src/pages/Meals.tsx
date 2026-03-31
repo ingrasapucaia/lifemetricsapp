@@ -1,23 +1,51 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMeals, MEAL_TYPE_LABELS, MEAL_TYPE_ORDER, MealType, Meal } from "@/hooks/useMeals";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import MealModal from "@/components/meals/MealModal";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, MoreVertical, Pencil, Trash2, UtensilsCrossed } from "lucide-react";
+import { Plus, MoreVertical, Pencil, Trash2, UtensilsCrossed, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function Meals() {
   const { meals, addMeal, updateMeal, deleteMeal, getMealsForDate, getDatesWithMeals } = useMeals();
+  const { user, profile, refreshProfile } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [editMeal, setEditMeal] = useState<Meal | null>(null);
   const [defaultMealType, setDefaultMealType] = useState<MealType | undefined>();
+  const [kcalGoal, setKcalGoal] = useState<string>("");
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  useEffect(() => {
+    setKcalGoal(profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "");
+  }, [profile?.daily_kcal_goal]);
+
+  const handleSaveGoal = async () => {
+    if (!user) return;
+    setSavingGoal(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ daily_kcal_goal: kcalGoal ? Number(kcalGoal) : null })
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error("Erro ao salvar meta");
+    } else {
+      toast("Meta calórica atualizada!");
+      await refreshProfile();
+    }
+    setSavingGoal(false);
+  };
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const dayMeals = useMemo(() => getMealsForDate(dateStr), [getMealsForDate, dateStr]);
@@ -79,6 +107,32 @@ export default function Meals() {
           Adicionar
         </Button>
       </div>
+
+      {/* Kcal Goal */}
+      <Card>
+        <CardContent className="p-4">
+          <Label className="text-sm">Meta calórica diária (kcal)</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              type="number"
+              min={0}
+              value={kcalGoal}
+              onChange={(e) => setKcalGoal(e.target.value)}
+              placeholder="Ex: 2000"
+              className="flex-1"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveGoal}
+              disabled={savingGoal || kcalGoal === (profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "")}
+              className="rounded-xl gap-1"
+            >
+              <Check size={14} />
+              Salvar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Calendar */}
       <Card>
