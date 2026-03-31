@@ -182,15 +182,15 @@ export default function CheckIn({ today, record, habits }: Props) {
               Humor
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Select
-              value={mood}
-              onValueChange={(v) => {
-                up({ mood: v });
-                toast("Humor registrado");
-              }}
-            >
-              <SelectTrigger className="rounded-xl bg-card/80">
+              <CardContent className="pt-0 px-4 pb-3">
+                <Select
+                  value={mood}
+                  onValueChange={(v) => {
+                    up({ mood: v });
+                    toast("Humor registrado");
+                  }}
+                >
+                  <SelectTrigger className="rounded-xl bg-card/80">
                 <SelectValue placeholder="Selecione seu humor">
                   {moodTag && (
                     <span
