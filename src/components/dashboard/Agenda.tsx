@@ -120,8 +120,8 @@ export default function Agenda({ selectedDate }: AgendaProps) {
             return (
               <div
                 key={task.id}
-                className={cn("flex items-center gap-2.5 rounded-xl bg-white transition-all duration-200", task.completed && "opacity-[0.45]")}
-                style={{ padding: "14px 12px", border: "0.5px solid #E5E5EA" }}
+                className={cn("flex items-center gap-2.5 rounded-xl bg-card border border-border/60 shadow-card transition-all duration-200", task.completed && "opacity-[0.45]")}
+                style={{ padding: "14px 12px" }}
               >
                 {/* Colored bar */}
                 <div className="shrink-0 self-stretch rounded" style={{ width: 5, backgroundColor: barColor }} />
