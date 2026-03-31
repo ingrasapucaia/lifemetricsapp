@@ -13,6 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { getLifeArea } from "@/types";
 
 const PRIORITY_COLORS = {
   alta: { bg: "#FCEBEB", text: "#A32D2D" },
@@ -23,22 +24,50 @@ const PRIORITY_COLORS = {
 const PRIORITY_ORDER = { alta: 0, media: 1, baixa: 2 };
 const PRIORITY_LABELS = { alta: "Alta", media: "Média", baixa: "Baixa" };
 
+const LIFE_AREA_BORDER_COLORS: Record<string, string> = {
+  saude: "#0F6E56",
+  profissional: "#185FA5",
+  financeiro: "#3B6D11",
+  estudos: "#4A3F9F",
+  autocuidado: "#99335A",
+  espiritualidade: "#7A5C00",
+  familia: "#8B3A0F",
+  relacionamentos: "#8C2E52",
+  esportes: "#0A6B7C",
+  hobbie: "#5B3BA0",
+  contribuicao_social: "#5A5550",
+};
+
+function getTaskBorderColor(lifeAreas: string[] | null): string {
+  if (!lifeAreas || lifeAreas.length === 0) return "#8E8E93";
+  return LIFE_AREA_BORDER_COLORS[lifeAreas[0]] || "#8E8E93";
+}
+
 function sortTasks(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => {
-    // Priority first
-    const pa = PRIORITY_ORDER[a.priority] ?? 1;
-    const pb = PRIORITY_ORDER[b.priority] ?? 1;
-    if (pa !== pb) return pa - pb;
     // Uncompleted first
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return 0;
+    // Tasks with time first, sorted by time
+    const aTime = a.due_time || "";
+    const bTime = b.due_time || "";
+    if (aTime && !bTime) return -1;
+    if (!aTime && bTime) return 1;
+    if (aTime && bTime) return aTime.localeCompare(bTime);
+    // Then by priority
+    const pa = PRIORITY_ORDER[a.priority] ?? 1;
+    const pb = PRIORITY_ORDER[b.priority] ?? 1;
+    return pa - pb;
   });
 }
 
-export default function Agenda() {
+interface AgendaProps {
+  selectedDate?: string;
+}
+
+export default function Agenda({ selectedDate }: AgendaProps) {
   const { tasks, toggleTask, addTask, updateTask, deleteTask } = useTasks();
-  const today = format(new Date(), "yyyy-MM-dd");
-  const todayTasks = sortTasks(tasks.filter((t) => t.date === today));
+  const dateStr = selectedDate || format(new Date(), "yyyy-MM-dd");
+  const dateTasks = sortTasks(tasks.filter((t) => t.date === dateStr));
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -84,7 +113,7 @@ export default function Agenda() {
         <div>
           <h2 className="text-base font-medium text-foreground" style={{ fontSize: 16 }}>Agenda</h2>
           <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-            {format(new Date(), "EEEE, d 'de' MMMM", { locale: pt })}
+            {format(new Date(dateStr + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: pt })}
           </p>
         </div>
         <button
@@ -95,53 +124,68 @@ export default function Agenda() {
         </button>
       </div>
 
-      {todayTasks.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nenhuma tarefa para hoje</p>
+      {dateTasks.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">Nenhuma tarefa para este dia</p>
       ) : (
         <div className="space-y-2">
-          {todayTasks.map((task) => (
-            <Card key={task.id} className={cn("transition-all duration-200", task.completed && "opacity-50")}>
-              <CardContent className="py-3 px-4 flex items-center gap-3">
-                <Checkbox
-                  checked={task.completed}
-                  onCheckedChange={() => toggleTask(task.id)}
-                  className="rounded-full h-5 w-5"
-                />
-                <span className={cn(
-                  "flex-1 font-medium truncate",
-                  task.completed && "line-through text-muted-foreground"
-                )} style={{ fontSize: 14 }}>
-                  {task.title}
-                </span>
-                {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
-                <span
-                  className="rounded-full font-medium shrink-0"
-                  style={{
-                    fontSize: 11,
-                    padding: "3px 8px",
-                    backgroundColor: PRIORITY_COLORS[task.priority].bg,
-                    color: PRIORITY_COLORS[task.priority].text,
-                  }}
-                >
-                  {PRIORITY_LABELS[task.priority]}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1 rounded-lg hover:bg-muted/50 transition-colors shrink-0">
-                      <MoreVertical size={16} className="text-muted-foreground" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(task)}>Editar</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAddNote(task)}>
-                      {task.note ? "Ver/editar nota" : "Adicionar nota"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => setDelTarget(task.id)}>Apagar</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardContent>
-            </Card>
-          ))}
+          {dateTasks.map((task) => {
+            const borderColor = getTaskBorderColor(task.life_areas);
+            return (
+              <Card key={task.id} className={cn("transition-all duration-200 overflow-hidden", task.completed && "opacity-50")}>
+                <CardContent className="py-3.5 pr-4 pl-0 flex items-center gap-3">
+                  {/* Colored left border */}
+                  <div className="w-[3px] self-stretch rounded-full shrink-0" style={{ backgroundColor: borderColor }} />
+
+                  <Checkbox
+                    checked={task.completed}
+                    onCheckedChange={() => toggleTask(task.id)}
+                    className="rounded-full h-5 w-5 shrink-0"
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      "block font-medium truncate",
+                      task.completed && "line-through text-muted-foreground"
+                    )} style={{ fontSize: 14 }}>
+                      {task.title}
+                    </span>
+                    {task.due_time && (
+                      <span className="text-xs text-muted-foreground mt-0.5 block">
+                        {task.due_time}
+                      </span>
+                    )}
+                  </div>
+
+                  {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
+                  <span
+                    className="rounded-full font-medium shrink-0"
+                    style={{
+                      fontSize: 11,
+                      padding: "3px 8px",
+                      backgroundColor: PRIORITY_COLORS[task.priority].bg,
+                      color: PRIORITY_COLORS[task.priority].text,
+                    }}
+                  >
+                    {PRIORITY_LABELS[task.priority]}
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 rounded-lg hover:bg-muted/50 transition-colors shrink-0">
+                        <MoreVertical size={16} className="text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(task)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAddNote(task)}>
+                        {task.note ? "Ver/editar nota" : "Adicionar nota"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => setDelTarget(task.id)}>Apagar</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -149,7 +193,7 @@ export default function Agenda() {
         open={modalOpen}
         onOpenChange={(o) => { setModalOpen(o); if (!o) setEditTask(null); }}
         task={editTask}
-        defaultDate={today}
+        defaultDate={dateStr}
         onSave={handleSave}
       />
 
