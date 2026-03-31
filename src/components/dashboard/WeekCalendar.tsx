@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, isAfter } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, isSameDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DailyRecord } from "@/types";
@@ -36,8 +36,7 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
     return set;
   }, [records]);
 
-  const isCurrentWeek = weekOffset === 0;
-  const canGoForward = !isCurrentWeek;
+  const canGoForward = true;
 
   return (
     <div className="flex items-center gap-2">
@@ -52,19 +51,16 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
           const isSelected = isSameDay(day, selectedDate);
-          const isFuture = isAfter(day, today);
           const dateStr = format(day, "yyyy-MM-dd");
           const hasRecord = recordDates.has(dateStr);
 
           return (
             <button
               key={i}
-              onClick={() => !isFuture && onSelectDate(day)}
-              disabled={isFuture}
+              onClick={() => onSelectDate(day)}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl transition-all duration-200 min-w-[40px]",
-                isFuture && "opacity-40 cursor-not-allowed",
-                !isFuture && !isSelected && "hover:bg-muted/50"
+                !isSelected && "hover:bg-muted/50"
               )}
             >
               <span className={cn(
