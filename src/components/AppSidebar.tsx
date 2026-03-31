@@ -13,6 +13,7 @@ const mainLinks = [
   { to: "/roda-da-vida", label: "Roda da Vida", icon: CircleDot },
   { to: "/registros", label: "Meus Registros", icon: CalendarDays },
   { to: "/habitos", label: "Controle de hábitos", icon: CheckSquare },
+  { to: "/refeicoes", label: "Refeições", icon: UtensilsCrossed },
   { to: "/metas", label: "Metas de Vida", icon: Target },
   { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
