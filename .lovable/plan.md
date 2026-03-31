@@ -1,19 +1,21 @@
 
 
-## Plan: Match meals card icon style + lighten green background
+## Plan: Move kcal goal to Meals page + fix mobile text overflow
 
-**Problem**: The Refeições card icon is a plain `UtensilsCrossed` without the circular colored background that other cards (Humor, Sono, Água) use. Also, the green background `#D1F0E0` is too dark.
+### 1. Move "Meta calórica diária" from Profile to Meals page
 
-**File: `src/components/dashboard/MealsCard.tsx`**
+**File: `src/pages/Profile.tsx`**
+- Remove the `dailyKcalGoal` state, its initialization from `authProfile`, its inclusion in `hasChanges`, and its inclusion in the save payload
+- Remove the UI block (lines 417-427) with the Label, Input, and helper text
 
-Two changes:
+**File: `src/pages/Meals.tsx`**
+- Import `useAuth`, `supabase`, `Input`, `Label`, and `toast`
+- Add local state for `kcalGoal` initialized from `profile?.daily_kcal_goal`
+- Add a card above the Calendar with the kcal goal input and a save button
+- On save, update `profiles.daily_kcal_goal` directly and call `refreshProfile()`
 
-1. **Icon**: Wrap `UtensilsCrossed` in a circular container matching the other cards' pattern:
-   ```
-   <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center">
-     <UtensilsCrossed size={14} className="text-emerald-600" />
-   </div>
-   ```
+### 2. Fix mobile text overflow in CardSelect
 
-2. **Background color**: Change from `#D1F0E0` to a lighter pastel green like `#E3F8ED`.
+**File: `src/pages/Profile.tsx`**
+- In the `CardSelect` component, add `min-w-0` to the button and `break-words` / `truncate` or `line-clamp` to the label `<span>` so long labels like "Sou empresário/autônomo" don't overflow on small screens
 
