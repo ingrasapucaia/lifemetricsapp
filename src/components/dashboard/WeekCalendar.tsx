@@ -51,7 +51,6 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
         {days.map((day, i) => {
           const isToday = isSameDay(day, today);
           const isSelected = isSameDay(day, selectedDate);
-          const isFuture = isAfter(day, today);
           const dateStr = format(day, "yyyy-MM-dd");
           const hasRecord = recordDates.has(dateStr);
 
