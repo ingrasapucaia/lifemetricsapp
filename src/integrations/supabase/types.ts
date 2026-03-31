@@ -360,6 +360,48 @@ export type Database = {
         }
         Relationships: []
       }
+      meals: {
+        Row: {
+          carbs_g: number | null
+          created_at: string
+          date: string
+          fat_g: number | null
+          id: string
+          kcal: number | null
+          meal_type: string
+          name: string
+          protein_g: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carbs_g?: number | null
+          created_at?: string
+          date?: string
+          fat_g?: number | null
+          id?: string
+          kcal?: number | null
+          meal_type?: string
+          name: string
+          protein_g?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carbs_g?: number | null
+          created_at?: string
+          date?: string
+          fat_g?: number | null
+          id?: string
+          kcal?: number | null
+          meal_type?: string
+          name?: string
+          protein_g?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_premium: {
         Row: {
           created_at: string
