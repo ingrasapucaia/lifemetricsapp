@@ -21,13 +21,15 @@ export default function MealsCard({ selectedDate }: Props) {
     <>
       <Card
         className="border-0 cursor-pointer hover:shadow-md transition-shadow duration-200"
-        style={{ backgroundColor: "#D1F0E0" }}
+        style={{ backgroundColor: "#E3F8ED" }}
         onClick={() => navigate("/refeicoes")}
       >
         <CardHeader className="pb-2 pt-3 px-4">
           <CardTitle className="text-sm font-medium flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <UtensilsCrossed className="w-4 h-4 text-muted-foreground" />
+              <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                <UtensilsCrossed size={14} className="text-emerald-600" />
+              </div>
               Refeições
             </span>
             <Button
