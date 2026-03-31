@@ -34,6 +34,7 @@ const AREA_TEXT_COLORS: Record<string, string> = {
 export default function MetricsPage() {
   const { habits, records, goals } = useStore();
   const { tasks } = useTasks();
+  const { meals } = useMeals();
 
   const [period, setPeriod] = useState<ExtPeriod>("7d");
   const [areaFilter, setAreaFilter] = useState<string>("todas");
