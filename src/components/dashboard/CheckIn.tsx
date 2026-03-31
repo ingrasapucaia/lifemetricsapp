@@ -299,6 +299,9 @@ export default function CheckIn({ today, record, habits }: Props) {
                 <WaterDrops value={water} onChange={(v) => up({ waterIntake: v })} />
               </CardContent>
             </Card>
+
+            {/* Meals */}
+            <MealsCard selectedDate={today} />
           </div>
         </CollapsibleContent>
       </Collapsible>
