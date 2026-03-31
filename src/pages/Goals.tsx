@@ -496,7 +496,23 @@ export default function Goals() {
             {/* Deadline */}
             <div className="space-y-2">
               <Label>Prazo para concluir (opcional)</Label>
-              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="rounded-xl" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal rounded-xl", !deadline && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {deadline ? format(new Date(deadline + "T12:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadline ? new Date(deadline + "T12:00:00") : undefined}
+                    onSelect={(date) => setDeadline(date ? format(date, "yyyy-MM-dd") : "")}
+                    locale={pt}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Reward */}

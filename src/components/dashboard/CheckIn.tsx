@@ -161,27 +161,48 @@ export default function CheckIn({ today, record, habits }: Props) {
     up({ sleepTime: effectiveSleep, wakeUpTime: newWakeTime, sleepHours: newSleep });
   };
 
+  const [checkInOpen, setCheckInOpen] = useState(() => {
+    const stored = localStorage.getItem("checkin-section-open");
+    return stored !== null ? stored === "true" : true;
+  });
+
+  const handleCheckInToggle = (val: boolean) => {
+    setCheckInOpen(val);
+    localStorage.setItem("checkin-section-open", String(val));
+  };
+
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <ClipboardCheck size={18} className="text-primary" />
-          Check-in do dia
-        </h2>
-        <Saved show={saved} />
-      </div>
+      <Collapsible open={checkInOpen} onOpenChange={handleCheckInToggle}>
+        <div className="flex items-center justify-between">
+          <CollapsibleTrigger className="flex items-center gap-2 group">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <ClipboardCheck size={18} className="text-primary" />
+              Check-in do dia
+            </h2>
+            <ChevronDown
+              size={16}
+              className={cn(
+                "text-muted-foreground transition-transform duration-200",
+                checkInOpen && "rotate-180"
+              )}
+            />
+          </CollapsibleTrigger>
+          <Saved show={saved} />
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Mood */}
-        <Card className="bg-metric-mood-bg border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-metric-mood/10 flex items-center justify-center">
-                <Smile size={14} className="text-metric-mood" />
-              </div>
-              Humor
-            </CardTitle>
-          </CardHeader>
+        <CollapsibleContent className="mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Mood */}
+            <Card className="bg-metric-mood-bg border-0">
+              <CardHeader className="pb-2 pt-3 px-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-metric-mood/10 flex items-center justify-center">
+                    <Smile size={14} className="text-metric-mood" />
+                  </div>
+                  Humor
+                </CardTitle>
+              </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <Select
                   value={mood}
@@ -191,37 +212,37 @@ export default function CheckIn({ today, record, habits }: Props) {
                   }}
                 >
                   <SelectTrigger className="rounded-xl bg-card/80">
-                <SelectValue placeholder="Selecione seu humor">
-                  {moodTag && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
-                      style={{ backgroundColor: `hsl(${moodTag.bgHsl})` }}
-                    >
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: `hsl(${moodTag.hsl})` }}
-                      />
-                      {moodTag.label}
-                    </span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {MOOD_TAGS.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
-                      style={{ backgroundColor: `hsl(${m.bgHsl})` }}
-                    >
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: `hsl(${m.hsl})` }}
-                      />
-                      {m.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                    <SelectValue placeholder="Selecione seu humor">
+                      {moodTag && (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                          style={{ backgroundColor: `hsl(${moodTag.bgHsl})` }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: `hsl(${moodTag.hsl})` }}
+                          />
+                          {moodTag.label}
+                        </span>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOOD_TAGS.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm"
+                          style={{ backgroundColor: `hsl(${m.bgHsl})` }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: `hsl(${m.hsl})` }}
+                          />
+                          {m.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </CardContent>
             </Card>
@@ -229,55 +250,54 @@ export default function CheckIn({ today, record, habits }: Props) {
             {/* Sleep */}
             <Card className="bg-metric-sleep-bg border-0">
               <CardHeader className="pb-2 pt-3 px-4">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-metric-sleep/10 flex items-center justify-center">
-                <Moon size={14} className="text-metric-sleep" />
-              </div>
-              Sono
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Dormi às</p>
-              <TimeSelect
-                hours={sleepH}
-                minutes={sleepM}
-                onChangeHours={(h) => updateSleepTime(h, sleepM)}
-                onChangeMinutes={(m) => updateSleepTime(sleepH, m)}
-              />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Acordei às</p>
-              <TimeSelect
-                hours={wakeH}
-                minutes={wakeM}
-                onChangeHours={(h) => updateWakeTime(h, wakeM)}
-                onChangeMinutes={(m) => updateWakeTime(wakeH, m)}
-              />
-            </div>
-            {(sleepTime || wakeUp) && (
-              <p className="text-sm font-semibold text-metric-sleep">
-                Dormiu {formatSleepHours(calculatedSleep)}
-              </p>
-            )}
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-metric-sleep/10 flex items-center justify-center">
+                    <Moon size={14} className="text-metric-sleep" />
+                  </div>
+                  Sono
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0 px-4 pb-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Dormi às</p>
+                  <TimeSelect
+                    hours={sleepH}
+                    minutes={sleepM}
+                    onChangeHours={(h) => updateSleepTime(h, sleepM)}
+                    onChangeMinutes={(m) => updateSleepTime(sleepH, m)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Acordei às</p>
+                  <TimeSelect
+                    hours={wakeH}
+                    minutes={wakeM}
+                    onChangeHours={(h) => updateWakeTime(h, wakeM)}
+                    onChangeMinutes={(m) => updateWakeTime(wakeH, m)}
+                  />
+                </div>
+                {(sleepTime || wakeUp) && (
+                  <p className="text-sm font-semibold text-metric-sleep">
+                    Dormiu {formatSleepHours(calculatedSleep)}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
             {/* Water */}
             <Card className="bg-metric-water-bg border-0">
               <CardHeader className="pb-2 pt-3 px-4">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-metric-water/10 flex items-center justify-center">
-                <Droplet size={14} className="text-metric-water" />
-              </div>
-              Água
-            </CardTitle>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-metric-water/10 flex items-center justify-center">
+                    <Droplet size={14} className="text-metric-water" />
+                  </div>
+                  Água
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 px-4 pb-3">
                 <WaterDrops value={water} onChange={(v) => up({ waterIntake: v })} />
               </CardContent>
             </Card>
-
           </div>
         </CollapsibleContent>
       </Collapsible>

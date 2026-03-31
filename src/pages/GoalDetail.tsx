@@ -370,7 +370,23 @@ export default function GoalDetail() {
             </div>
             <div className="space-y-2">
               <Label>Prazo</Label>
-              <Input type="date" value={editDeadline} onChange={(e) => setEditDeadline(e.target.value)} className="rounded-xl" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal rounded-xl", !editDeadline && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editDeadline ? format(new Date(editDeadline + "T12:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDeadline ? new Date(editDeadline + "T12:00:00") : undefined}
+                    onSelect={(date) => setEditDeadline(date ? format(date, "yyyy-MM-dd") : "")}
+                    locale={pt}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>Recompensa</Label>
