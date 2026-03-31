@@ -189,6 +189,7 @@ export default function Profile() {
         challenges,
         strengths,
         opportunities,
+        daily_kcal_goal: dailyKcalGoal ? Number(dailyKcalGoal) : null,
       })
       .eq("user_id", user.id);
 
