@@ -27,7 +27,7 @@ export default function MealsCard({ selectedDate }: Props) {
         <CardHeader className="pb-2 pt-3 px-4">
           <CardTitle className="text-sm font-medium flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className="text-base">🍽️</span>
+              <UtensilsCrossed className="w-4 h-4 text-muted-foreground" />
               Refeições
             </span>
             <Button
