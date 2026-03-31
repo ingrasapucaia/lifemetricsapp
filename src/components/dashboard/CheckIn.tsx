@@ -222,13 +222,13 @@ export default function CheckIn({ today, record, habits }: Props) {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+                </Select>
+              </CardContent>
+            </Card>
 
-        {/* Sleep */}
-        <Card className="bg-metric-sleep-bg border-0">
-          <CardHeader className="pb-3">
+            {/* Sleep */}
+            <Card className="bg-metric-sleep-bg border-0">
+              <CardHeader className="pb-2 pt-3 px-4">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-metric-sleep/10 flex items-center justify-center">
                 <Moon size={14} className="text-metric-sleep" />
