@@ -77,6 +77,7 @@ export default function TaskModal({ open, onOpenChange, task, defaultDate, onSav
       const data: TaskInsert = {
         title: title.trim(),
         date,
+        due_time: dueTime.trim() || null,
         priority,
         life_areas: lifeAreas.length > 0 ? lifeAreas : null,
         goal_id: goalId,
