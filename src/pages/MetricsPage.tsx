@@ -193,6 +193,28 @@ export default function MetricsPage() {
     });
   }, [activeHabits, filteredRecords]);
 
+  // Nutrition chart data
+  const nutritionChartData = useMemo(() => {
+    const days = getDaysInPeriod(period, customStart, customEnd);
+    return days.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayMeals = meals.filter((m) => m.date === dateStr);
+      return {
+        date: format(day, "dd/MM"),
+        kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
+        carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
+        protein: dayMeals.reduce((s, m) => s + (m.protein_g || 0), 0),
+        fat: dayMeals.reduce((s, m) => s + (m.fat_g || 0), 0),
+      };
+    });
+  }, [meals, period, customStart, customEnd]);
+
+  const avgKcal = useMemo(() => {
+    const withData = nutritionChartData.filter((d) => d.kcal > 0);
+    if (withData.length === 0) return 0;
+    return Math.round(withData.reduce((s, d) => s + d.kcal, 0) / withData.length);
+  }, [nutritionChartData]);
+
   const chartBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(168, 64%, 38%)") : "hsl(168, 64%, 38%)";
   const taskBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(220, 10%, 60%)") : "hsl(220, 10%, 60%)";
 
