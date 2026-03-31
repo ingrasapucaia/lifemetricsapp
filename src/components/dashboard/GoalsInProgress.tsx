@@ -31,7 +31,7 @@ export default function GoalsInProgress() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Metas em progresso</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">METAS EM PROGRESSO</h2>
         <button
           onClick={() => navigate("/metas")}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
