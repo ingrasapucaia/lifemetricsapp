@@ -117,61 +117,55 @@ export default function Agenda({ selectedDate }: AgendaProps) {
       ) : (
         <div className="space-y-2">
           {dateTasks.map((task) => {
-            const borderColor = getTaskBorderColor(task.life_areas);
+            const barColor = getTaskBarColor(task.life_areas);
             return (
-              <Card key={task.id} className={cn("transition-all duration-200 overflow-hidden", task.completed && "opacity-50")}>
-                <CardContent className="py-3.5 pr-4 pl-0 flex items-center gap-3">
-                  {/* Colored left border */}
-                  <div className="w-[3px] self-stretch rounded-full shrink-0" style={{ backgroundColor: borderColor }} />
+              <div
+                key={task.id}
+                className={cn("flex items-center gap-2.5 rounded-xl bg-white transition-all duration-200", task.completed && "opacity-[0.45]")}
+                style={{ padding: "14px 12px", border: "0.5px solid #E5E5EA" }}
+              >
+                {/* Colored bar */}
+                <div className="shrink-0 self-stretch rounded" style={{ width: 5, backgroundColor: barColor }} />
 
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={() => toggleTask(task.id)}
-                    className="rounded-full h-5 w-5 shrink-0"
-                  />
-
-                  <div className="flex-1 min-w-0">
-                    <span className={cn(
-                      "block font-medium truncate",
-                      task.completed && "line-through text-muted-foreground"
-                    )} style={{ fontSize: 14 }}>
-                      {task.title}
-                    </span>
-                    {task.due_time && (
-                      <span className="text-xs text-muted-foreground mt-0.5 block">
-                        {task.due_time}
-                      </span>
-                    )}
+                {/* Time */}
+                {task.due_time && (
+                  <div className="shrink-0" style={{ width: 52 }}>
+                    <span style={{ fontSize: 16, fontWeight: 500, color: "#1C1C1E" }}>{task.due_time}</span>
                   </div>
+                )}
 
-                  {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
-                  <span
-                    className="rounded-full font-medium shrink-0"
-                    style={{
-                      fontSize: 11,
-                      padding: "3px 8px",
-                      backgroundColor: PRIORITY_COLORS[task.priority].bg,
-                      color: PRIORITY_COLORS[task.priority].text,
-                    }}
-                  >
-                    {PRIORITY_LABELS[task.priority]}
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-1 rounded-lg hover:bg-muted/50 transition-colors shrink-0">
-                        <MoreVertical size={16} className="text-muted-foreground" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(task)}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAddNote(task)}>
-                        {task.note ? "Ver/editar nota" : "Adicionar nota"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => setDelTarget(task.id)}>Apagar</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardContent>
-              </Card>
+                {/* Checkbox */}
+                <Checkbox
+                  checked={task.completed}
+                  onCheckedChange={() => toggleTask(task.id)}
+                  className="rounded-full shrink-0"
+                  style={{ width: 22, height: 22 }}
+                />
+
+                {/* Title */}
+                <span className={cn(
+                  "flex-1 min-w-0 truncate",
+                  task.completed && "line-through"
+                )} style={{ fontSize: 15, fontWeight: 500, color: "#1C1C1E" }}>
+                  {task.title}
+                </span>
+
+                {task.note && <StickyNote size={14} className="text-muted-foreground shrink-0" />}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1 rounded-lg hover:bg-muted/50 transition-colors shrink-0">
+                      <MoreVertical size={16} className="text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(task)}>Editar</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAddNote(task)}>
+                      {task.note ? "Ver/editar nota" : "Adicionar nota"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => setDelTarget(task.id)}>Apagar</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             );
           })}
         </div>
