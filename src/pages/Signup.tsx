@@ -25,15 +25,11 @@ export default function Signup() {
     if (password.length < 6) { toast.error("A senha deve ter pelo menos 6 caracteres"); return; }
     setLoading(true);
 
-    // Check if email has an active purchase
-    const { data: pendingData } = await supabase
-      .from("pending_premium")
-      .select("id")
-      .eq("email", email.toLowerCase().trim())
-      .eq("processed", false)
-      .limit(1);
+    // Check if email has an active purchase (secure RPC)
+    const { data: hasPending, error: rpcError } = await supabase
+      .rpc("check_pending_premium", { check_email: email.toLowerCase().trim() });
 
-    if (!pendingData || pendingData.length === 0) {
+    if (rpcError || !hasPending) {
       toast.error(
         "Esse e-mail não tem um plano ativo. Verifique se usou o mesmo e-mail da sua compra ou adquira seu acesso.",
         { duration: 8000 }

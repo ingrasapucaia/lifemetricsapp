@@ -50,14 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("user_id", userId)
       .single();
 
-    // Check premium expiration
+    // Check premium expiration client-side (read-only flag)
     if (data && data.is_premium && data.premium_expires_at) {
       const expiresAt = new Date(data.premium_expires_at);
       if (expiresAt < new Date()) {
-        await supabase
-          .from("profiles")
-          .update({ is_premium: false })
-          .eq("user_id", userId);
+        // Mark as expired locally; the trigger prevents client-side premium field updates
         data.is_premium = false;
       }
     }
