@@ -13,6 +13,7 @@ import {
   Smile, Moon, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MealsCard from "@/components/dashboard/MealsCard";
 
 function Saved({ show }: { show: boolean }) {
   if (!show) return null;
