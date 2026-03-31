@@ -25,10 +25,10 @@ import { ptBR } from "date-fns/locale";
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
 
 const AREA_TEXT_COLORS: Record<string, string> = {
-  saude: "#0F6E56", profissional: "#185FA5", financeiro: "#3B6D11",
-  estudos: "#4A3F9F", autocuidado: "#99335A", espiritualidade: "#7A5C00",
-  familia: "#8B3A0F", relacionamentos: "#8C2E52", esportes: "#0A6B7C",
-  hobbie: "#5B3BA0", contribuicao_social: "#5A5550",
+  saude: "#9FE1CB", profissional: "#B5D4F4", financeiro: "#C0DD97",
+  estudos: "#CECBF6", autocuidado: "#F4C0D1", espiritualidade: "#FAC775",
+  familia: "#F5C4B3", relacionamentos: "#FCDDE8", esportes: "#7BE3E6",
+  hobbie: "#D4B8F0", contribuicao_social: "#D3D1C7",
 };
 
 export default function MetricsPage() {
