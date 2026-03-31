@@ -27,6 +27,7 @@ import LifeWheel from "@/pages/LifeWheel";
 import LifeWheelNew from "@/pages/LifeWheelNew";
 import LifeWheelDetail from "@/pages/LifeWheelDetail";
 import LifeWheelEdit from "@/pages/LifeWheelEdit";
+import Meals from "@/pages/Meals";
 
 const App = () => (
   <AuthProvider>
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/metricas" element={<MetricsPage />} />
               <Route path="/registros" element={<Records />} />
               <Route path="/habitos" element={<Habits />} />
+              <Route path="/refeicoes" element={<Meals />} />
               <Route path="/metas" element={<Goals />} />
               <Route path="/metas/:id" element={<GoalDetail />} />
               <Route path="/prazos" element={<Deadlines />} />

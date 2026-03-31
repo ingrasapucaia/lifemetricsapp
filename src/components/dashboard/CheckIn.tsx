@@ -13,6 +13,7 @@ import {
   Smile, Moon, ChevronDown, Droplet, icons, ClipboardCheck, Plus, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MealsCard from "@/components/dashboard/MealsCard";
 
 function Saved({ show }: { show: boolean }) {
   if (!show) return null;
@@ -298,6 +299,9 @@ export default function CheckIn({ today, record, habits }: Props) {
                 <WaterDrops value={water} onChange={(v) => up({ waterIntake: v })} />
               </CardContent>
             </Card>
+
+            {/* Meals */}
+            <MealsCard selectedDate={today} />
           </div>
         </CollapsibleContent>
       </Collapsible>
