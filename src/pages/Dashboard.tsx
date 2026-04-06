@@ -1,17 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useStore } from "@/hooks/useStore";
-import { Period } from "@/types";
-import { getRecordsForPeriod, isHabitCompleted } from "@/lib/metrics";
-import { format, isSameDay, isAfter, startOfDay } from "date-fns";
+import { format, isAfter, startOfDay } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import WeekCalendar from "@/components/dashboard/WeekCalendar";
-import ProgressCard from "@/components/dashboard/ProgressCard";
+import WeeklyStreakCard from "@/components/dashboard/WeeklyStreakCard";
 import DailyMetricsGrid from "@/components/dashboard/DailyMetricsGrid";
 import HabitCardGrid from "@/components/dashboard/HabitCardGrid";
-import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
 import RegisterSheet from "@/components/dashboard/RegisterSheet";
 
 function getGreeting(): string {
@@ -35,10 +32,8 @@ export default function Dashboard() {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayRecord = records.find((r) => r.date === selectedDateStr);
 
-  const activeHabits = habits.filter((h) => h.active);
   const checks = todayRecord?.habitChecks || {};
 
-  // Handle calendar day click -> open sheet
   const handleDaySelect = (day: Date) => {
     const isFuture = isAfter(startOfDay(day), startOfDay(new Date()));
     if (isFuture) return;
@@ -47,7 +42,6 @@ export default function Dashboard() {
     setSheetOpen(true);
   };
 
-  // Handle floating button -> open today's sheet
   const handleRegisterToday = () => {
     setSheetDate(todayStr);
     setSheetOpen(true);
@@ -61,7 +55,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* 1. Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -73,7 +67,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* 2. Week Calendar */}
+      {/* Week Calendar */}
       <WeekCalendar
         selectedDate={selectedDate}
         onSelectDate={handleDaySelect}
@@ -82,14 +76,10 @@ export default function Dashboard() {
         records={records}
       />
 
-      {/* 3. Progress Card */}
-      <ProgressCard
-        records={records}
-        habits={habits}
-        todayRecord={todayRecord}
-      />
+      {/* Weekly Streak Card */}
+      <WeeklyStreakCard records={records} />
 
-      {/* 4. Daily Metrics Grid */}
+      {/* Daily Metrics */}
       <DailyMetricsGrid
         todayRecord={todayRecord}
         records={records}
@@ -97,7 +87,7 @@ export default function Dashboard() {
         selectedDate={selectedDateStr}
       />
 
-      {/* 5. Habits Grid */}
+      {/* Habits Grid */}
       <HabitCardGrid
         habits={habits}
         checks={checks}
@@ -105,10 +95,7 @@ export default function Dashboard() {
         initialCount={4}
       />
 
-      {/* 6. Goals In Progress */}
-      <GoalsInProgress />
-
-      {/* Floating "Registrar meu dia" button */}
+      {/* Floating button */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
         <Button
           onClick={handleRegisterToday}

@@ -13,17 +13,41 @@ interface HabitCardGridProps {
   initialCount?: number;
 }
 
+function getHabitUnit(habit: Habit): string {
+  if (habit.metricUnit) return habit.metricUnit;
+  switch (habit.metricType) {
+    case "tempo": return habit.metricTimeUnit === "horas" ? "h" : habit.metricTimeUnit === "segundos" ? "s" : "min";
+    case "km": return "km";
+    case "milhas": return "mi";
+    case "calorias": return "kcal";
+    case "litros": return "L";
+    case "reais": return "R$";
+    case "dolar": return "$";
+    case "euro": return "€";
+    default: break;
+  }
+  switch (habit.targetType) {
+    case "minutes": return "min";
+    case "hours_minutes": return "h";
+    case "km": return "km";
+    case "miles": return "mi";
+    default: return "";
+  }
+}
+
 function ProgressCircle({
   value,
   target,
   completed,
   isCheck,
-  size = 56,
+  unit,
+  size = 60,
 }: {
   value: number;
   target: number;
   completed: boolean;
   isCheck: boolean;
+  unit: string;
   size?: number;
 }) {
   const strokeWidth = 4;
@@ -37,12 +61,17 @@ function ProgressCircle({
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth}
+          fill="none"
+          stroke={isCheck && !completed ? "hsl(var(--muted-foreground) / 0.3)" : "hsl(var(--muted))"}
+          strokeWidth={isCheck && !completed ? strokeWidth + 1 : strokeWidth}
         />
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="hsl(var(--primary))" strokeWidth={strokeWidth}
-          strokeDasharray={circumference} strokeDashoffset={offset}
+          fill={completed ? "hsl(var(--primary))" : "none"}
+          stroke="hsl(var(--primary))"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
           strokeLinecap="round"
           className="transition-all duration-500 ease-out"
         />
@@ -50,13 +79,14 @@ function ProgressCircle({
       <div className="absolute inset-0 flex items-center justify-center">
         {isCheck ? (
           completed ? (
-            <Check size={20} className="text-primary" strokeWidth={3} />
+            <Check size={24} className="text-primary-foreground" strokeWidth={3} />
           ) : (
-            <span className="text-xs text-muted-foreground">—</span>
+            <Plus size={18} className="text-muted-foreground" strokeWidth={2} />
           )
         ) : (
-          <span className="text-xs font-bold text-foreground">
+          <span className="text-[11px] font-bold text-foreground leading-tight text-center">
             {value}/{target}
+            {unit && <span className="text-[9px] font-medium text-muted-foreground block -mt-0.5">{unit}</span>}
           </span>
         )}
       </div>
@@ -77,6 +107,7 @@ function CompactHabitCard({
   const isCheck = habit.targetType === "check";
   const currentValue = typeof checks[habit.id] === "number" ? (checks[habit.id] as number) : 0;
   const target = habit.targetValue || 1;
+  const unit = getHabitUnit(habit);
 
   const handleIncrement = () => {
     onUpdate({ ...checks, [habit.id]: currentValue + 1 });
@@ -108,16 +139,16 @@ function CompactHabitCard({
 
         {/* Progress circle */}
         {isCheck ? (
-          <button type="button" onClick={handleCheckToggle} className="focus:outline-none">
+          <button type="button" onClick={handleCheckToggle} className="focus:outline-none active:scale-95 transition-transform">
             <ProgressCircle
               value={0} target={1}
-              completed={completed} isCheck
+              completed={completed} isCheck unit=""
             />
           </button>
         ) : (
           <ProgressCircle
             value={currentValue} target={target}
-            completed={completed} isCheck={false}
+            completed={completed} isCheck={false} unit={unit}
           />
         )}
 
@@ -127,14 +158,14 @@ function CompactHabitCard({
             <button
               type="button"
               onClick={handleDecrement}
-              className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+              className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
             >
               <Minus size={14} className="text-muted-foreground" />
             </button>
             <button
               type="button"
               onClick={handleIncrement}
-              className="w-7 h-7 rounded-full border border-primary bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              className="w-7 h-7 rounded-full border border-primary bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-95"
             >
               <Plus size={14} className="text-primary" />
             </button>
