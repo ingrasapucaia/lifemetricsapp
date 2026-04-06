@@ -1,21 +1,17 @@
 
 
-## Plan: Move kcal goal to Meals page + fix mobile text overflow
+## Plan: Increase base font size globally for mobile comfort
 
-### 1. Move "Meta calórica diária" from Profile to Meals page
+The simplest and most effective approach is to increase the base `font-size` on the `html`/`body` element for mobile viewports. Since the app uses Tailwind's `text-sm`, `text-xs`, `text-base` etc. (which are all relative to the root font size in `rem`), bumping the root font size on mobile will scale everything up uniformly -- titles, habit names, goal labels, metrics, buttons, inputs, all of it.
 
-**File: `src/pages/Profile.tsx`**
-- Remove the `dailyKcalGoal` state, its initialization from `authProfile`, its inclusion in `hasChanges`, and its inclusion in the save payload
-- Remove the UI block (lines 417-427) with the Label, Input, and helper text
+### Changes
 
-**File: `src/pages/Meals.tsx`**
-- Import `useAuth`, `supabase`, `Input`, `Label`, and `toast`
-- Add local state for `kcalGoal` initialized from `profile?.daily_kcal_goal`
-- Add a card above the Calendar with the kcal goal input and a save button
-- On save, update `profiles.daily_kcal_goal` directly and call `refreshProfile()`
+**File: `src/index.css`**
 
-### 2. Fix mobile text overflow in CardSelect
+Add a mobile-first font size rule in the `@layer base` block:
 
-**File: `src/pages/Profile.tsx`**
-- In the `CardSelect` component, add `min-w-0` to the button and `break-words` / `truncate` or `line-clamp` to the label `<span>` so long labels like "Sou empresário/autônomo" don't overflow on small screens
+- Set `html { font-size: 17px }` as the default (mobile-first), which bumps everything ~6% from the browser default of 16px
+- Add a `@media (min-width: 768px)` rule resetting to `font-size: 16px` so desktop stays unchanged
+
+This single change propagates across every `rem`-based size in the entire app (Tailwind classes, shadcn components, custom styles) without needing to touch individual components.
 
