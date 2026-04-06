@@ -27,7 +27,7 @@ type FilterDays = 3 | 7 | 14 | 30;
 interface DeadlineItem {
   id: string;
   title: string;
-  type: "meta" | "tarefa";
+  type: "meta";
   deadline: string;
   lifeAreas: string[];
   progress?: number;
@@ -41,17 +41,6 @@ const FILTERS: { label: string; value: FilterDays }[] = [
   { label: "1 mês", value: 30 },
 ];
 
-const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  alta: { bg: "#FCEBEB", text: "#A32D2D" },
-  media: { bg: "#FDF3DC", text: "#7A5C00" },
-  baixa: { bg: "#F1EFE8", text: "#5F5E5A" },
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  alta: "Alta",
-  media: "Média",
-  baixa: "Baixa",
-};
 
 export default function Deadlines() {
   const { user } = useAuth();
@@ -68,7 +57,7 @@ export default function Deadlines() {
     const today = format(new Date(), "yyyy-MM-dd");
     const end = format(addDays(new Date(), filter), "yyyy-MM-dd");
 
-    const [goalsRes, tasksRes, acksRes, actionsRes] = await Promise.all([
+    const [goalsRes, acksRes, actionsRes] = await Promise.all([
       supabase
         .from("goals")
         .select("id, title, life_area, deadline, status")
@@ -77,13 +66,6 @@ export default function Deadlines() {
         .not("deadline", "is", null)
         .gte("deadline", today)
         .lte("deadline", end),
-      supabase
-        .from("tasks")
-        .select("id, title, life_areas, date, priority")
-        .eq("user_id", user.id)
-        .eq("completed", false)
-        .gte("date", today)
-        .lte("date", end),
       supabase
         .from("deadline_acknowledgments")
         .select("item_id, item_type")
@@ -119,16 +101,8 @@ export default function Deadlines() {
       };
     });
 
-    const taskItems: DeadlineItem[] = (tasksRes.data || []).map((t: any) => ({
-      id: t.id,
-      title: t.title,
-      type: "tarefa" as const,
-      deadline: t.date,
-      lifeAreas: t.life_areas || [],
-      priority: t.priority,
-    }));
 
-    const all = [...goalItems, ...taskItems]
+    const all = [...goalItems]
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     setItems(all);
@@ -140,14 +114,14 @@ export default function Deadlines() {
     fetchData();
   }, [fetchData]);
 
-  const getItemKey = (item: DeadlineItem) => `${item.type === "meta" ? "meta" : "tarefa"}:${item.id}`;
+  const getItemKey = (item: DeadlineItem) => `meta:${item.id}`;
 
   const handleAcknowledge = async (item: DeadlineItem) => {
     if (!user) return;
     const key = getItemKey(item);
     if (acknowledged.has(key)) return;
 
-    const itemType = item.type === "meta" ? "meta" : "tarefa";
+    const itemType = "meta";
     await supabase.from("deadline_acknowledgments").insert({
       user_id: user.id,
       item_id: item.id,
@@ -162,7 +136,7 @@ export default function Deadlines() {
     const key = getItemKey(item);
     // Save acknowledgment if not already saved
     if (!acknowledged.has(key)) {
-      const itemType = item.type === "meta" ? "meta" : "tarefa";
+      const itemType = "meta";
       await supabase.from("deadline_acknowledgments").insert({
         user_id: user.id,
         item_id: item.id,
@@ -181,7 +155,7 @@ export default function Deadlines() {
       const inserts = toAcknowledge.map((item) => ({
         user_id: user.id,
         item_id: item.id,
-        item_type: item.type === "meta" ? "meta" : "tarefa",
+        item_type: "meta",
       }));
       await supabase.from("deadline_acknowledgments").insert(inserts);
       setAcknowledged((prev) => {
