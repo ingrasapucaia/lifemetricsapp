@@ -2,100 +2,131 @@ import { useState, useMemo } from "react";
 import { useStore } from "@/hooks/useStore";
 import { Period } from "@/types";
 import { getRecordsForPeriod, isHabitCompleted } from "@/lib/metrics";
-import { format, isSameDay } from "date-fns";
-import CheckIn from "@/components/dashboard/CheckIn";
-
-import Metrics from "@/components/dashboard/Metrics";
-import Insights from "@/components/dashboard/Insights";
-import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
-import WeekCalendar from "@/components/dashboard/WeekCalendar";
-import { Card, CardContent } from "@/components/ui/card";
+import { format, isSameDay, isAfter, startOfDay } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
+import { Bell, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-function ProgressRing({ value, size = 72, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
-  return (
-    <svg width={size} height={size} className="transform -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth} />
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsl(var(--primary))" strokeWidth={strokeWidth}
-        strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-700 ease-out" />
-    </svg>
-  );
+import WeekCalendar from "@/components/dashboard/WeekCalendar";
+import ProgressCard from "@/components/dashboard/ProgressCard";
+import DailyMetricsGrid from "@/components/dashboard/DailyMetricsGrid";
+import HabitCardGrid from "@/components/dashboard/HabitCardGrid";
+import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
+import RegisterSheet from "@/components/dashboard/RegisterSheet";
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default function Dashboard() {
   const { records, habits } = useStore();
   const { profile: authProfile } = useAuth();
   const displayName = authProfile?.name;
-  const [period, setPeriod] = useState<Period>("7d");
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDate, setSheetDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-  const isToday = isSameDay(selectedDate, new Date());
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayRecord = records.find((r) => r.date === selectedDateStr);
-  const periodRecords = useMemo(() => getRecordsForPeriod(records, period), [records, period]);
 
   const activeHabits = habits.filter((h) => h.active);
   const checks = todayRecord?.habitChecks || {};
-  const done = activeHabits.filter((h) => isHabitCompleted(h, checks[h.id])).length;
-  const pct = activeHabits.length > 0 ? Math.round((done / activeHabits.length) * 100) : 0;
+
+  // Handle calendar day click -> open sheet
+  const handleDaySelect = (day: Date) => {
+    const isFuture = isAfter(startOfDay(day), startOfDay(new Date()));
+    if (isFuture) return;
+    setSelectedDate(day);
+    setSheetDate(format(day, "yyyy-MM-dd"));
+    setSheetOpen(true);
+  };
+
+  // Handle floating button -> open today's sheet
+  const handleRegisterToday = () => {
+    setSheetDate(todayStr);
+    setSheetOpen(true);
+  };
+
+  const { upsertRecord } = useStore();
+
+  const onDashboardHabitUpdate = (newChecks: Record<string, boolean | number>) => {
+    upsertRecord({ date: selectedDateStr, habitChecks: newChecks });
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Greeting + Progress Ring */}
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-6 pb-24">
+      {/* 1. Header */}
+      <div className="flex items-center justify-between">
         <div>
-          {displayName ? (
-            <>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                Olá, {displayName}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">Acompanhe sua evolução</p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-              <p className="text-sm text-muted-foreground mt-1">Acompanhe sua evolução</p>
-            </>
-          )}
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {getGreeting()}{displayName ? `, ${displayName}` : ""}
+          </h1>
         </div>
-
-        <Card className="bg-metric-habits-bg border-0 shadow-none">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="relative">
-              <ProgressRing value={pct} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-foreground">{pct}%</span>
-              </div>
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-xs font-medium text-foreground">{done}/{activeHabits.length}</p>
-              <p className="text-[10px] text-muted-foreground">hábitos hoje</p>
-            </div>
-          </CardContent>
-        </Card>
+        <button className="p-2 rounded-full hover:bg-muted/60 transition-colors">
+          <Bell size={22} className="text-muted-foreground" />
+        </button>
       </div>
 
-      {/* Week Calendar */}
+      {/* 2. Week Calendar */}
       <WeekCalendar
         selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
+        onSelectDate={handleDaySelect}
         weekOffset={weekOffset}
         onWeekChange={setWeekOffset}
         records={records}
       />
 
-      <CheckIn today={selectedDateStr} record={todayRecord} habits={habits} />
+      {/* 3. Progress Card */}
+      <ProgressCard
+        records={records}
+        habits={habits}
+        todayRecord={todayRecord}
+      />
 
-      
+      {/* 4. Daily Metrics Grid */}
+      <DailyMetricsGrid
+        todayRecord={todayRecord}
+        records={records}
+        habits={habits}
+        selectedDate={selectedDateStr}
+      />
 
+      {/* 5. Habits Grid */}
+      <HabitCardGrid
+        habits={habits}
+        checks={checks}
+        onUpdate={onDashboardHabitUpdate}
+        initialCount={4}
+      />
+
+      {/* 6. Goals In Progress */}
       <GoalsInProgress />
 
-      <Metrics records={periodRecords} habits={habits} period={period} setPeriod={setPeriod} />
-      <Insights records={periodRecords} habits={habits} todayRecord={todayRecord} />
+      {/* Floating "Registrar meu dia" button */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <Button
+          onClick={handleRegisterToday}
+          className="h-12 px-6 rounded-full shadow-lg text-base font-semibold gap-2"
+        >
+          <Plus size={18} />
+          Registrar meu dia
+        </Button>
+      </div>
+
+      {/* Bottom Sheet */}
+      <RegisterSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        date={sheetDate}
+        record={records.find((r) => r.date === sheetDate)}
+        habits={habits}
+      />
     </div>
   );
 }

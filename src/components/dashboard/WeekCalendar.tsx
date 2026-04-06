@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, startOfWeek, addDays, addWeeks, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, isSameDay, isAfter, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DailyRecord } from "@/types";
@@ -36,8 +36,6 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
     return set;
   }, [records]);
 
-  const canGoForward = true;
-
   return (
     <div className="flex items-center gap-2">
       <button
@@ -53,14 +51,17 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
           const isSelected = isSameDay(day, selectedDate);
           const dateStr = format(day, "yyyy-MM-dd");
           const hasRecord = recordDates.has(dateStr);
+          const isFuture = isAfter(startOfDay(day), startOfDay(today));
 
           return (
             <button
               key={i}
-              onClick={() => onSelectDate(day)}
+              onClick={() => !isFuture && onSelectDate(day)}
+              disabled={isFuture}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl transition-all duration-200 min-w-[40px]",
-                !isSelected && "hover:bg-muted/50"
+                isFuture && "opacity-40 cursor-not-allowed",
+                !isSelected && !isFuture && "hover:bg-muted/50"
               )}
             >
               <span className={cn(
@@ -91,12 +92,8 @@ export default function WeekCalendar({ selectedDate, onSelectDate, weekOffset, o
       </div>
 
       <button
-        onClick={() => canGoForward && onWeekChange(weekOffset + 1)}
-        disabled={!canGoForward}
-        className={cn(
-          "p-1.5 rounded-full transition-colors shrink-0",
-          canGoForward ? "hover:bg-muted/60" : "opacity-30 cursor-not-allowed"
-        )}
+        onClick={() => onWeekChange(weekOffset + 1)}
+        className="p-1.5 rounded-full hover:bg-muted/60 transition-colors shrink-0"
       >
         <ChevronRight size={18} className="text-muted-foreground" />
       </button>
