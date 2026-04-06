@@ -65,20 +65,17 @@ Deno.serve(async (req) => {
     const [
       profileRes,
       goalsRes,
-      tasksRes,
       habitsRes,
       recordsRes,
     ] = await Promise.all([
       userClient.from("profiles").select("*").eq("user_id", userId).single(),
       userClient.from("goals").select("*, goal_actions(*)").eq("user_id", userId),
-      userClient.from("tasks").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(100),
       userClient.from("habits").select("*").eq("user_id", userId),
       userClient.from("daily_records").select("*").eq("user_id", userId).order("date", { ascending: false }).limit(60),
     ]);
 
     const profile = profileRes.data;
     const goals = goalsRes.data || [];
-    const tasks = tasksRes.data || [];
     const habits: any[] = habitsRes.data || [];
     const records: any[] = (recordsRes.data || []).map((r: any) => ({
       date: r.date,
@@ -140,11 +137,6 @@ Deno.serve(async (req) => {
     const goalsCompletedRecently = goals.filter((g: any) => g.status === "concluido" && g.completed_at && g.completed_at >= thirtyDaysAgo);
     const goalsNoActions = goals.filter((g: any) => !g.goal_actions || g.goal_actions.length === 0);
 
-    // Task stats (7 days)
-    const recentTasks = tasks.filter((t: any) => t.date >= sevenDaysAgo);
-    const tasksCreated = recentTasks.length;
-    const tasksCompleted = recentTasks.filter((t: any) => t.completed).length;
-    const taskCompletionRate = tasksCreated > 0 ? Math.round((tasksCompleted / tasksCreated) * 100) : 0;
 
     // Today habit adherence
     const todayChecks = todayRecord?.habitChecks || {};
@@ -207,8 +199,6 @@ METAS:
 - Concluídas recentemente: ${goalsCompletedRecently.length}
 - Sem ações definidas: ${goalsNoActions.filter((g: any) => g.status !== "concluido").length}
 
-TAREFAS — ÚLTIMOS 7 DIAS:
-- Criadas: ${tasksCreated} | Concluídas: ${tasksCompleted} | Taxa: ${taskCompletionRate}%
 `;
 
     const systemPrompt = `Você é um coach pessoal especializado em desenvolvimento de hábitos e produtividade, dentro do app Metrics.
