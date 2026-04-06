@@ -4,7 +4,7 @@ import { Period } from "@/types";
 import { getRecordsForPeriod, isHabitCompleted } from "@/lib/metrics";
 import { format, isSameDay } from "date-fns";
 import CheckIn from "@/components/dashboard/CheckIn";
-import Agenda from "@/components/dashboard/Agenda";
+
 import Metrics from "@/components/dashboard/Metrics";
 import Insights from "@/components/dashboard/Insights";
 import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
@@ -90,7 +90,7 @@ export default function Dashboard() {
 
       <CheckIn today={selectedDateStr} record={todayRecord} habits={habits} />
 
-      <Agenda selectedDate={selectedDateStr} />
+      
 
       <GoalsInProgress />
 

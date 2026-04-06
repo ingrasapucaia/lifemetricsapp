@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     // Delete all user data from tables (order matters for foreign keys)
     await adminClient.from("deadline_acknowledgments").delete().eq("user_id", userId);
-    await adminClient.from("tasks").delete().eq("user_id", userId);
+    
     await adminClient.from("goal_actions").delete().in(
       "goal_id",
       (await adminClient.from("goals").select("id").eq("user_id", userId)).data?.map((g: any) => g.id) || []
