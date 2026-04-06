@@ -205,13 +205,12 @@ export default function Profile() {
   const handleExport = async () => {
     if (!user) return;
     try {
-      const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes, acknowledgementsRes] = await Promise.all([
+      const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, achievementsRes, acknowledgementsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("habits").select("*").eq("user_id", user.id),
         supabase.from("daily_records").select("*").eq("user_id", user.id),
         supabase.from("goals").select("*").eq("user_id", user.id),
         supabase.from("goal_actions").select("*"),
-        supabase.from("tasks").select("*").eq("user_id", user.id),
         supabase.from("achievements").select("*").eq("user_id", user.id),
         supabase.from("deadline_acknowledgments").select("*").eq("user_id", user.id),
       ]);
@@ -227,7 +226,7 @@ export default function Profile() {
         records: recordsRes.data || [],
         goals: goalsRes.data || [],
         goalActions: userActions,
-        tasks: tasksRes.data || [],
+        
         achievements: achievementsRes.data || [],
         deadlineAcknowledgments: acknowledgementsRes.data || [],
       };
@@ -254,13 +253,12 @@ export default function Profile() {
     try {
       // Auto-export backup before destructive operation
       try {
-        const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, tasksRes, achievementsRes] = await Promise.all([
+        const [profileRes, habitsRes, recordsRes, goalsRes, actionsRes, achievementsRes] = await Promise.all([
           supabase.from("profiles").select("*").eq("user_id", user.id).single(),
           supabase.from("habits").select("*").eq("user_id", user.id),
           supabase.from("daily_records").select("*").eq("user_id", user.id),
           supabase.from("goals").select("*").eq("user_id", user.id),
           supabase.from("goal_actions").select("*"),
-          supabase.from("tasks").select("*").eq("user_id", user.id),
           supabase.from("achievements").select("*").eq("user_id", user.id),
         ]);
         const backupData = {
@@ -271,7 +269,7 @@ export default function Profile() {
           records: recordsRes.data,
           goals: goalsRes.data,
           goal_actions: actionsRes.data,
-          tasks: tasksRes.data,
+          
           achievements: achievementsRes.data,
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
@@ -292,7 +290,7 @@ export default function Profile() {
       // Delete from Supabase tables
       await Promise.all([
         supabase.from("deadline_acknowledgments").delete().eq("user_id", user.id),
-        supabase.from("tasks").delete().eq("user_id", user.id),
+        
         supabase.from("achievements").delete().eq("user_id", user.id),
         supabase.from("daily_records").delete().eq("user_id", user.id),
         supabase.from("daily_insights").delete().eq("user_id", user.id),
