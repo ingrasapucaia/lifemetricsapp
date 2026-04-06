@@ -1,28 +1,31 @@
 
 
-## Plan: Add period filters and reorder button to dashboard metrics
+## Plan: Fix stretched charts on desktop and add responsive grid layout
+
+### Problem
+On desktop, the metric cards stretch full-width across a wide viewport (~1000px content area), making charts look distorted and wasting space. The app is mobile-first but should look organized on desktop.
 
 ### Changes
 
 **File: `src/components/dashboard/DailyMetricsGrid.tsx`**
 
-1. **Add period filter pills** next to the "Métricas de vida" title:
-   - Three options: "7 dias", "30 dias", "Total"
-   - Styled as pill buttons matching the uploaded reference (rounded bg-muted container, active state with white bg + shadow)
-   - New prop `period` and `setPeriod` passed from Dashboard, or managed internally with `useState`
-   - Filter the `records` used for chart data based on selected period (reuse `getRecordsForPeriod` from `src/lib/metrics.ts`)
+1. **Responsive grid for metric cards** (line 544):
+   - Mobile: keep single column (`flex-col`)
+   - Desktop (md+): switch to a 2-column grid so cards fill the space side by side
+   - Replace `<div className="flex flex-col gap-3">` with `<div className="grid grid-cols-1 md:grid-cols-2 gap-3">`
 
-2. **Add a discrete reorder button** (small icon button, e.g. `ArrowUpDown` or `GripVertical` from Lucide):
-   - Placed near the title row, right side
-   - Clicking toggles a reorder mode where each metric card shows drag handles (up/down arrows)
-   - User can move cards up/down with arrow buttons (no drag library needed)
-   - Order stored in component state; optionally persisted via localStorage
+2. **Fix SVG line chart stretching** (MiniLineChart, line 129):
+   - Remove `preserveAspectRatio="none"` which causes distortion
+   - Change to `preserveAspectRatio="xMidYMid meet"` so the chart scales proportionally
+   - Use a proper viewBox and let the SVG scale naturally with `height: auto` instead of a fixed pixel height
 
-**File: `src/pages/Dashboard.tsx`**
-- No changes needed if state is managed inside `DailyMetricsGrid`
+3. **Constrain chart heights on desktop**:
+   - Bar charts and dot charts: keep current flex-based approach (already responsive)
+   - Line chart SVG: set `className="w-full h-auto"` with a `max-height` via style to prevent excessive vertical stretching
 
-### Technical notes
-- Period filtering reuses existing `getRecordsForPeriod` from `src/lib/metrics.ts`
-- Reorder uses simple array index swapping with useState + localStorage persistence
-- No backend changes, no new dependencies
+### What stays the same
+- Mobile layout unchanged (single column, same card sizes)
+- All data logic, period filters, reorder functionality
+- No backend changes
+- No other pages affected
 
