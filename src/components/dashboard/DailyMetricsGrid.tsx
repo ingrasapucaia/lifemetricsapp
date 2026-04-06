@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Moon, Minus } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { format, subDays, isAfter, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+
+type MetricPeriod = "7d" | "30d" | "total";
 
 interface Props {
   todayRecord: DailyRecord | undefined;
