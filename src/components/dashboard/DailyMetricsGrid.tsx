@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { isHabitCompleted } from "@/lib/metrics";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Moon, Droplet, Activity, Minus, CheckSquare, ChevronUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Moon, Minus, ChevronUp } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,43 @@ interface MetricItem {
   max7: number;
 }
 
+function getHabitUnit(habit: Habit): string {
+  if (habit.metricUnit) return habit.metricUnit;
+  switch (habit.metricType) {
+    case "tempo": return habit.metricTimeUnit === "horas" ? "h" : "min";
+    case "km": return "km";
+    case "milhas": return "mi";
+    case "calorias": return "kcal";
+    case "litros": return "L";
+    case "reais": return "R$";
+    case "dolar": return "$";
+    case "euro": return "€";
+    default: break;
+  }
+  switch (habit.targetType) {
+    case "minutes": return "min";
+    case "hours_minutes": return "h";
+    case "km": return "km";
+    case "miles": return "mi";
+    default: return "";
+  }
+}
+
+function getHabitColor(habit: Habit, index: number): string {
+  if (habit.color) return habit.color;
+  const palette = [
+    "hsl(var(--metric-sleep))",
+    "hsl(160, 50%, 38%)",
+    "hsl(220, 70%, 55%)",
+    "hsl(340, 65%, 50%)",
+    "hsl(35, 80%, 50%)",
+    "hsl(270, 55%, 55%)",
+  ];
+  return palette[index % palette.length];
+}
+
+const HABIT_ICONS: Record<string, string> = {};
+
 export default function DailyMetricsGrid({ todayRecord, records, habits, selectedDate }: Props) {
   const metrics = useMemo((): MetricItem[] => {
     const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
@@ -35,91 +72,85 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
     );
     const last7Records = last7Dates.map((d) => records.find((r) => r.date === d));
 
-    const activeHabits = habits.filter((h) => h.active);
-    const checks = todayRecord?.habitChecks || {};
-    const done = activeHabits.filter((h) => isHabitCompleted(h, checks[h.id])).length;
-    const total = activeHabits.length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-    const yChecks = yesterdayRecord?.habitChecks || {};
-    const yDone = activeHabits.filter((h) => isHabitCompleted(h, yChecks[h.id])).length;
-    const yPct = total > 0 ? Math.round((yDone / total) * 100) : 0;
-
-    const sleep = todayRecord?.sleepHours || 0;
-    const ySleep = yesterdayRecord?.sleepHours || 0;
-
-    const water = todayRecord?.waterIntake || 0;
-    const yWater = yesterdayRecord?.waterIntake || 0;
-
-    const exercise = todayRecord?.exerciseMinutes || 0;
-    const yExercise = yesterdayRecord?.exerciseMinutes || 0;
-
     const trend = (a: number, b: number): "up" | "down" | "same" =>
       a > b ? "up" : a < b ? "down" : "same";
 
-    const trendLabel = (a: number, b: number) =>
-      a === b ? "igual" : a > b ? `+${a - b}` : `${a - b}`;
-
-    const habitLast7 = last7Records.map((r) => {
-      if (!r || total === 0) return 0;
-      const c = r.habitChecks || {};
-      return Math.round(
-        (activeHabits.filter((h) => isHabitCompleted(h, c[h.id])).length / total) * 100
-      );
-    });
-    const sleepLast7 = last7Records.map((r) => r?.sleepHours || 0);
-    const waterLast7 = last7Records.map((r) => r?.waterIntake || 0);
-    const exerciseLast7 = last7Records.map((r) => r?.exerciseMinutes || 0);
-
     const safeMax = (arr: number[]) => Math.max(...arr, 1);
 
-    return [
-      {
-        icon: <CheckSquare size={18} />,
-        value: `${pct}%`,
-        label: "Hábitos",
+    const items: MetricItem[] = [];
+
+    // 1. Sleep card (from daily records)
+    const sleep = todayRecord?.sleepHours || 0;
+    const ySleep = yesterdayRecord?.sleepHours || 0;
+    const sleepLast7 = last7Records.map((r) => r?.sleepHours || 0);
+
+    items.push({
+      icon: <Moon size={18} />,
+      value: formatSleepHours(sleep),
+      label: "Sono",
+      subtitle: "Últimos 7 dias",
+      trend: trend(sleep, ySleep),
+      trendLabel:
+        sleep > ySleep ? `+${(sleep - ySleep).toFixed(1)}h` : sleep < ySleep ? `${(sleep - ySleep).toFixed(1)}h` : "igual",
+      color: "hsl(var(--metric-sleep))",
+      last7: sleepLast7,
+      max7: safeMax(sleepLast7),
+    });
+
+    // 2. Dynamic cards per active habit
+    const activeHabits = habits.filter((h) => h.active);
+    activeHabits.forEach((habit, idx) => {
+      const todayVal = todayRecord?.habitChecks?.[habit.id];
+      const yVal = yesterdayRecord?.habitChecks?.[habit.id];
+
+      const isCheck = habit.targetType === "check" && (!habit.metricType || habit.metricType === "check");
+      const unit = getHabitUnit(habit);
+      const target = habit.dailyGoal || habit.targetValue || 0;
+      const color = getHabitColor(habit, idx);
+
+      let displayValue: string;
+      let numericToday: number;
+      let numericYesterday: number;
+
+      if (isCheck) {
+        numericToday = todayVal === true ? 1 : 0;
+        numericYesterday = yVal === true ? 1 : 0;
+        displayValue = numericToday ? "✓" : "—";
+      } else {
+        numericToday = typeof todayVal === "number" ? todayVal : 0;
+        numericYesterday = typeof yVal === "number" ? yVal : 0;
+        displayValue = target > 0 ? `${numericToday}/${target} ${unit}`.trim() : `${numericToday} ${unit}`.trim();
+      }
+
+      const last7 = last7Records.map((r) => {
+        const v = r?.habitChecks?.[habit.id];
+        if (isCheck) return v === true ? 1 : 0;
+        return typeof v === "number" ? v : 0;
+      });
+
+      const habitIcon = habit.icon ? (
+        <span className="text-base">{habit.icon}</span>
+      ) : null;
+
+      items.push({
+        icon: habitIcon,
+        value: displayValue,
+        label: habit.name,
         subtitle: "Últimos 7 dias",
-        trend: trend(pct, yPct),
-        trendLabel: trendLabel(pct, yPct),
-        color: "hsl(var(--metric-habits))",
-        last7: habitLast7,
-        max7: safeMax(habitLast7),
-      },
-      {
-        icon: <Moon size={18} />,
-        value: formatSleepHours(sleep),
-        label: "Sono",
-        subtitle: "Últimos 7 dias",
-        trend: trend(sleep, ySleep),
+        trend: trend(numericToday, numericYesterday),
         trendLabel:
-          sleep > ySleep ? `+${(sleep - ySleep).toFixed(1)}h` : sleep < ySleep ? `${(sleep - ySleep).toFixed(1)}h` : "igual",
-        color: "hsl(var(--metric-sleep))",
-        last7: sleepLast7,
-        max7: safeMax(sleepLast7),
-      },
-      {
-        icon: <Droplet size={18} />,
-        value: `${water}/8`,
-        label: "Água",
-        subtitle: "Últimos 7 dias",
-        trend: trend(water, yWater),
-        trendLabel: trendLabel(water, yWater),
-        color: "hsl(var(--metric-water))",
-        last7: waterLast7,
-        max7: safeMax(waterLast7),
-      },
-      {
-        icon: <Activity size={18} />,
-        value: `${exercise}min`,
-        label: "Exercício",
-        subtitle: "Últimos 7 dias",
-        trend: trend(exercise, yExercise),
-        trendLabel: trendLabel(exercise, yExercise),
-        color: "hsl(var(--metric-exercise))",
-        last7: exerciseLast7,
-        max7: safeMax(exerciseLast7),
-      },
-    ];
+          numericToday === numericYesterday
+            ? "igual"
+            : numericToday > numericYesterday
+            ? `+${numericToday - numericYesterday}`
+            : `${numericToday - numericYesterday}`,
+        color,
+        last7,
+        max7: safeMax(last7),
+      });
+    });
+
+    return items;
   }, [todayRecord, records, habits, selectedDate]);
 
   return (
@@ -167,7 +198,6 @@ function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
   return (
     <Card className="border-border/60">
       <CardContent className="p-4">
-        {/* Header row */}
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -189,7 +219,6 @@ function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
 
         {expanded && (
           <div className="mt-3 space-y-3">
-            {/* Today value + trend */}
             <div className="flex items-baseline justify-between">
               <span className="text-xs text-muted-foreground">Hoje</span>
               <div className="flex items-center gap-2">
@@ -206,7 +235,6 @@ function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
               </div>
             </div>
 
-            {/* Bar chart */}
             <BarChart data={metric.last7} max={metric.max7} color={metric.color} />
             <div className="flex justify-between">
               {DAY_LABELS.map((l, i) => (
