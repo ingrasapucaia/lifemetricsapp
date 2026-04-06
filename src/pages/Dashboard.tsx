@@ -53,12 +53,6 @@ export default function Dashboard() {
     setSheetOpen(true);
   };
 
-  // Update habit checks directly from dashboard cards
-  const handleHabitUpdate = (newChecks: Record<string, boolean | number>) => {
-    const { upsertRecord } = useStore.getState?.() || {};
-    // We use the store's upsertRecord via the hook below
-  };
-
   const { upsertRecord } = useStore();
 
   const onDashboardHabitUpdate = (newChecks: Record<string, boolean | number>) => {
