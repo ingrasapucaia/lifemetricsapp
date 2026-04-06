@@ -244,19 +244,51 @@ function MiniProgressBar({ value, target, color }: { value: number; target: numb
   );
 }
 
-/* ─── Metric Card ─── */
+/* ─── Metric Card (with optional reorder controls) ─── */
 
-function MetricCard({ metric, startDayIndex }: { metric: MetricItem; startDayIndex: number }) {
+function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, isFirst, isLast: isLastItem }: {
+  metric: MetricItem;
+  startDayIndex: number;
+  reordering?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
+}) {
   return (
     <Card className="border-border/40 shadow-sm rounded-2xl">
       <CardContent className="p-4 space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 min-w-0">
+            {reordering && (
+              <div className="flex flex-col gap-0.5 shrink-0 mr-1">
+                <button
+                  onClick={onMoveUp}
+                  disabled={isFirst}
+                  className={cn(
+                    "p-0.5 rounded transition-colors",
+                    isFirst ? "text-muted-foreground/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  onClick={onMoveDown}
+                  disabled={isLastItem}
+                  className={cn(
+                    "p-0.5 rounded transition-colors",
+                    isLastItem ? "text-muted-foreground/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+            )}
             <span style={{ color: metric.color }} className="shrink-0">{metric.icon}</span>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{metric.label}</p>
-              <p className="text-[10px] text-muted-foreground">Últimos 7 dias</p>
+              <p className="text-[10px] text-muted-foreground">{metric.periodLabel}</p>
             </div>
           </div>
           <div className="text-right shrink-0">
@@ -294,42 +326,94 @@ function MetricCard({ metric, startDayIndex }: { metric: MetricItem; startDayInd
   );
 }
 
+/* ─── Period filter helpers ─── */
+
+const PERIOD_OPTIONS: { value: MetricPeriod; label: string }[] = [
+  { value: "7d", label: "7 dias" },
+  { value: "30d", label: "30 dias" },
+  { value: "total", label: "Total" },
+];
+
+function getRecordSlice(records: DailyRecord[], period: MetricPeriod): DailyRecord[] {
+  if (period === "total") return records;
+  const days = period === "7d" ? 7 : 30;
+  const cutoff = subDays(new Date(), days);
+  return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+}
+
+function getChartDates(selectedDate: string, period: MetricPeriod): string[] {
+  const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
+  return Array.from({ length: count }, (_, i) =>
+    format(subDays(new Date(selectedDate + "T12:00:00"), count - 1 - i), "yyyy-MM-dd")
+  );
+}
+
+function getPeriodLabel(period: MetricPeriod): string {
+  if (period === "7d") return "Últimos 7 dias";
+  if (period === "30d") return "Últimos 30 dias";
+  return "Todo o período";
+}
+
+const STORAGE_KEY = "metrics-order";
+
+function loadOrder(): string[] | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveOrder(ids: string[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+}
+
 /* ─── Main Grid ─── */
 
 export default function DailyMetricsGrid({ todayRecord, records, habits, selectedDate }: Props) {
-  const metrics = useMemo((): MetricItem[] => {
-    const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
-    const yesterdayRecord = records.find((r) => r.date === yesterday);
+  const [period, setPeriod] = useState<MetricPeriod>("7d");
+  const [reordering, setReordering] = useState(false);
+  const [customOrder, setCustomOrder] = useState<string[] | null>(() => loadOrder());
 
-    const last7Dates = Array.from({ length: 7 }, (_, i) =>
-      format(subDays(new Date(selectedDate + "T12:00:00"), 6 - i), "yyyy-MM-dd")
-    );
-    const last7Records = last7Dates.map((d) => records.find((r) => r.date === d));
+  // Save order on change
+  useEffect(() => {
+    if (customOrder) saveOrder(customOrder);
+  }, [customOrder]);
+
+  const filteredRecords = useMemo(() => getRecordSlice(records, period), [records, period]);
+  const chartDates = useMemo(() => getChartDates(selectedDate, period), [selectedDate, period]);
+  const periodLabel = getPeriodLabel(period);
+
+  const metrics = useMemo((): (MetricItem & { id: string })[] => {
+    const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
+    const yesterdayRecord = filteredRecords.find((r) => r.date === yesterday);
+    const chartRecords = chartDates.map((d) => filteredRecords.find((r) => r.date === d));
 
     const trend = (a: number, b: number): "up" | "down" | "same" =>
       a > b ? "up" : a < b ? "down" : "same";
     const safeMax = (arr: number[]) => Math.max(...arr, 1);
 
-    const items: MetricItem[] = [];
+    const items: (MetricItem & { id: string })[] = [];
 
     // Sleep
     const sleep = todayRecord?.sleepHours || 0;
     const ySleep = yesterdayRecord?.sleepHours || 0;
-    const sleepLast7 = last7Records.map((r) => r?.sleepHours || 0);
+    const sleepChart = chartRecords.map((r) => r?.sleepHours || 0);
     const sleepDiff = sleep - ySleep;
 
     items.push({
+      id: "__sleep__",
       icon: <Moon size={16} />,
       value: formatSleepHours(sleep),
       label: "Sono",
       trend: trend(sleep, ySleep),
       trendLabel: sleepDiff === 0 ? "igual" : sleepDiff > 0 ? `+${sleepDiff.toFixed(1)}h` : `${sleepDiff.toFixed(1)}h`,
       color: "hsl(250, 55%, 55%)",
-      last7: sleepLast7,
-      max7: safeMax(sleepLast7),
+      last7: sleepChart,
+      max7: safeMax(sleepChart),
       chartType: "bar",
       target: 8,
       unit: "h",
+      periodLabel,
     });
 
     // Dynamic habit cards
@@ -356,7 +440,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
         displayValue = target > 0 ? `${numericToday}/${target} ${unit}`.trim() : `${numericToday} ${unit}`.trim();
       }
 
-      const last7 = last7Records.map((r) => {
+      const chartData = chartRecords.map((r) => {
         const v = r?.habitChecks?.[habit.id];
         if (isCheck) return v === true ? 1 : 0;
         return typeof v === "number" ? v : 0;
@@ -366,37 +450,108 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       const diff = numericToday - numericYesterday;
 
       items.push({
+        id: habit.id,
         icon: habitIcon,
         value: displayValue,
         label: habit.name,
         trend: trend(numericToday, numericYesterday),
         trendLabel: diff === 0 ? "igual" : diff > 0 ? `+${diff}` : `${diff}`,
         color,
-        last7,
-        max7: safeMax(last7),
+        last7: chartData,
+        max7: safeMax(chartData),
         chartType: getChartType(habit),
         target,
         unit,
+        periodLabel,
       });
     });
 
     return items;
-  }, [todayRecord, records, habits, selectedDate]);
+  }, [todayRecord, filteredRecords, chartDates, habits, selectedDate, periodLabel]);
 
-  // Calculate start day index for labels
+  // Apply custom order
+  const orderedMetrics = useMemo(() => {
+    if (!customOrder) return metrics;
+    const map = new Map(metrics.map((m) => [m.id, m]));
+    const ordered: typeof metrics = [];
+    customOrder.forEach((id) => {
+      const item = map.get(id);
+      if (item) {
+        ordered.push(item);
+        map.delete(id);
+      }
+    });
+    // Append any new metrics not in saved order
+    map.forEach((item) => ordered.push(item));
+    return ordered;
+  }, [metrics, customOrder]);
+
   const startDayIndex = useMemo(() => {
-    const d = subDays(new Date(selectedDate + "T12:00:00"), 6);
+    const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
+    const d = subDays(new Date(selectedDate + "T12:00:00"), count - 1);
     return d.getDay();
-  }, [selectedDate]);
+  }, [selectedDate, period]);
+
+  const moveMetric = useCallback((fromIdx: number, dir: -1 | 1) => {
+    const toIdx = fromIdx + dir;
+    if (toIdx < 0 || toIdx >= orderedMetrics.length) return;
+    const ids = orderedMetrics.map((m) => m.id);
+    [ids[fromIdx], ids[toIdx]] = [ids[toIdx], ids[fromIdx]];
+    setCustomOrder(ids);
+  }, [orderedMetrics]);
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        Métricas do dia
-      </p>
+      {/* Title row with filters and reorder */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
+          Métricas de vida
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-muted rounded-xl p-0.5">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setPeriod(opt.value)}
+                className={cn(
+                  "px-2.5 py-1 text-[11px] rounded-lg transition-all duration-200",
+                  period === opt.value
+                    ? "bg-card text-foreground shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setReordering((v) => !v)}
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              reordering
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Reordenar métricas"
+          >
+            {reordering ? <Check size={14} /> : <ArrowUpDown size={14} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Metric cards */}
       <div className="flex flex-col gap-3">
-        {metrics.map((m, i) => (
-          <MetricCard key={i} metric={m} startDayIndex={startDayIndex} />
+        {orderedMetrics.map((m, i) => (
+          <MetricCard
+            key={m.id}
+            metric={m}
+            startDayIndex={startDayIndex}
+            reordering={reordering}
+            onMoveUp={() => moveMetric(i, -1)}
+            onMoveDown={() => moveMetric(i, 1)}
+            isFirst={i === 0}
+            isLast={i === orderedMetrics.length - 1}
+          />
         ))}
       </div>
     </div>
