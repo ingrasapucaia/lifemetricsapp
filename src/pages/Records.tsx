@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { calculateDailyAdherence, isHabitCompleted } from "@/lib/metrics";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3, ClipboardList } from "lucide-react";
-import AgendaTab from "@/components/records/AgendaTab";
+import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3 } from "lucide-react";
 
 export default function Records() {
   const { records, habits, upsertRecord, deleteRecord } = useStore();
@@ -105,7 +104,6 @@ export default function Records() {
         <TabsList className="rounded-xl">
           <TabsTrigger value="calendar" className="gap-2 rounded-lg"><CalendarDays size={14} /> Calendário</TabsTrigger>
           <TabsTrigger value="list" className="gap-2 rounded-lg"><List size={14} /> Lista</TabsTrigger>
-          <TabsTrigger value="agenda" className="gap-2 rounded-lg"><ClipboardList size={14} /> Agenda</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar">
@@ -182,9 +180,6 @@ export default function Records() {
           )}
         </TabsContent>
 
-        <TabsContent value="agenda">
-          <AgendaTab />
-        </TabsContent>
       </Tabs>
 
       {/* New record */}
