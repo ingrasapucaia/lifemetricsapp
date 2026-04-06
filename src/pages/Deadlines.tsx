@@ -281,11 +281,11 @@ export default function Deadlines() {
                     <span
                       className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
                       style={{
-                        backgroundColor: item.type === "meta" ? "#D6E8FA" : "#E8E4FB",
-                        color: item.type === "meta" ? "#185FA5" : "#4A3F9F",
+                        backgroundColor: "#D6E8FA",
+                        color: "#185FA5",
                       }}
                     >
-                      {item.type === "meta" ? "Meta" : "Tarefa"}
+                      Meta
                     </span>
 
                     {/* Title */}
@@ -310,26 +310,14 @@ export default function Deadlines() {
                       </div>
                     )}
 
-                    {/* Progress for goals */}
-                    {item.type === "meta" && item.progress !== undefined && (
+                    {/* Progress */}
+                    {item.progress !== undefined && (
                       <div className="flex items-center gap-2">
                         <Progress value={item.progress} className="h-1.5 flex-1" />
                         <span className="text-[10px] text-muted-foreground font-medium">{item.progress}%</span>
                       </div>
                     )}
 
-                    {/* Priority for tasks */}
-                    {item.type === "tarefa" && item.priority && (
-                      <span
-                        className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                        style={{
-                          backgroundColor: PRIORITY_COLORS[item.priority]?.bg,
-                          color: PRIORITY_COLORS[item.priority]?.text,
-                        }}
-                      >
-                        {PRIORITY_LABELS[item.priority] || item.priority}
-                      </span>
-                    )}
                   </div>
 
                   {/* Right side: deadline + actions */}
