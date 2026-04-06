@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
-import { isHabitCompleted } from "@/lib/metrics";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Moon, Droplet, Activity, Minus, CheckSquare, ChevronUp } from "lucide-react";
+import { Moon, ChevronUp } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -13,114 +12,71 @@ interface Props {
   selectedDate: string;
 }
 
-interface MetricItem {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  subtitle: string;
-  trend: "up" | "down" | "same";
-  trendLabel: string;
-  color: string;
-  last7: number[];
-  max7: number;
+const DAY_LABELS = ["S", "T", "Q", "Q", "S", "S", "D"];
+
+const HABIT_COLORS = [
+  "hsl(168 60% 50%)",
+  "hsl(270 55% 60%)",
+  "hsl(38 80% 55%)",
+  "hsl(330 55% 60%)",
+  "hsl(200 60% 55%)",
+  "hsl(142 50% 50%)",
+  "hsl(25 70% 55%)",
+  "hsl(45 80% 50%)",
+];
+
+function getHabitDisplayValue(habit: Habit, val: boolean | number | undefined): string {
+  if (habit.targetType === "check" || habit.metricType === "check") {
+    return val === true ? "✓" : "—";
+  }
+  const num = typeof val === "number" ? val : 0;
+  const unit = habit.metricUnit || getDefaultUnit(habit);
+  const goal = habit.dailyGoal || habit.targetValue;
+  if (goal) return `${num}/${goal}${unit ? " " + unit : ""}`;
+  return `${num}${unit ? " " + unit : ""}`;
+}
+
+function getDefaultUnit(habit: Habit): string {
+  if (habit.metricType === "km" || habit.targetType === "km") return "km";
+  if (habit.metricType === "milhas" || habit.targetType === "miles") return "mi";
+  if (habit.metricType === "tempo" || habit.targetType === "minutes") return "min";
+  if (habit.targetType === "hours_minutes") return "min";
+  if (habit.metricType === "calorias") return "cal";
+  if (habit.metricType === "litros") return "L";
+  if (habit.metricType === "numero" || habit.targetType === "count") return "";
+  return "";
+}
+
+function isHabitDone(habit: Habit, val: boolean | number | undefined): boolean {
+  if (val === undefined) return false;
+  if (habit.targetType === "check" || habit.metricType === "check") return val === true;
+  if (typeof val === "number") {
+    const goal = habit.dailyGoal || habit.targetValue;
+    return goal ? val >= goal : val > 0;
+  }
+  return false;
+}
+
+function getHabitNumericValue(habit: Habit, val: boolean | number | undefined): number {
+  if (habit.targetType === "check" || habit.metricType === "check") return val === true ? 1 : 0;
+  return typeof val === "number" ? val : 0;
+}
+
+function getHabitIcon(habit: Habit): string {
+  return habit.icon || "📊";
 }
 
 export default function DailyMetricsGrid({ todayRecord, records, habits, selectedDate }: Props) {
-  const metrics = useMemo((): MetricItem[] => {
-    const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
-    const yesterdayRecord = records.find((r) => r.date === yesterday);
-
-    const last7Dates = Array.from({ length: 7 }, (_, i) =>
+  const last7Dates = useMemo(() =>
+    Array.from({ length: 7 }, (_, i) =>
       format(subDays(new Date(selectedDate + "T12:00:00"), 6 - i), "yyyy-MM-dd")
-    );
-    const last7Records = last7Dates.map((d) => records.find((r) => r.date === d));
+    ), [selectedDate]);
 
-    const activeHabits = habits.filter((h) => h.active);
-    const checks = todayRecord?.habitChecks || {};
-    const done = activeHabits.filter((h) => isHabitCompleted(h, checks[h.id])).length;
-    const total = activeHabits.length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const last7Records = useMemo(() =>
+    last7Dates.map((d) => records.find((r) => r.date === d)),
+    [last7Dates, records]);
 
-    const yChecks = yesterdayRecord?.habitChecks || {};
-    const yDone = activeHabits.filter((h) => isHabitCompleted(h, yChecks[h.id])).length;
-    const yPct = total > 0 ? Math.round((yDone / total) * 100) : 0;
-
-    const sleep = todayRecord?.sleepHours || 0;
-    const ySleep = yesterdayRecord?.sleepHours || 0;
-
-    const water = todayRecord?.waterIntake || 0;
-    const yWater = yesterdayRecord?.waterIntake || 0;
-
-    const exercise = todayRecord?.exerciseMinutes || 0;
-    const yExercise = yesterdayRecord?.exerciseMinutes || 0;
-
-    const trend = (a: number, b: number): "up" | "down" | "same" =>
-      a > b ? "up" : a < b ? "down" : "same";
-
-    const trendLabel = (a: number, b: number) =>
-      a === b ? "igual" : a > b ? `+${a - b}` : `${a - b}`;
-
-    const habitLast7 = last7Records.map((r) => {
-      if (!r || total === 0) return 0;
-      const c = r.habitChecks || {};
-      return Math.round(
-        (activeHabits.filter((h) => isHabitCompleted(h, c[h.id])).length / total) * 100
-      );
-    });
-    const sleepLast7 = last7Records.map((r) => r?.sleepHours || 0);
-    const waterLast7 = last7Records.map((r) => r?.waterIntake || 0);
-    const exerciseLast7 = last7Records.map((r) => r?.exerciseMinutes || 0);
-
-    const safeMax = (arr: number[]) => Math.max(...arr, 1);
-
-    return [
-      {
-        icon: <CheckSquare size={18} />,
-        value: `${pct}%`,
-        label: "Hábitos",
-        subtitle: "Últimos 7 dias",
-        trend: trend(pct, yPct),
-        trendLabel: trendLabel(pct, yPct),
-        color: "hsl(var(--metric-habits))",
-        last7: habitLast7,
-        max7: safeMax(habitLast7),
-      },
-      {
-        icon: <Moon size={18} />,
-        value: formatSleepHours(sleep),
-        label: "Sono",
-        subtitle: "Últimos 7 dias",
-        trend: trend(sleep, ySleep),
-        trendLabel:
-          sleep > ySleep ? `+${(sleep - ySleep).toFixed(1)}h` : sleep < ySleep ? `${(sleep - ySleep).toFixed(1)}h` : "igual",
-        color: "hsl(var(--metric-sleep))",
-        last7: sleepLast7,
-        max7: safeMax(sleepLast7),
-      },
-      {
-        icon: <Droplet size={18} />,
-        value: `${water}/8`,
-        label: "Água",
-        subtitle: "Últimos 7 dias",
-        trend: trend(water, yWater),
-        trendLabel: trendLabel(water, yWater),
-        color: "hsl(var(--metric-water))",
-        last7: waterLast7,
-        max7: safeMax(waterLast7),
-      },
-      {
-        icon: <Activity size={18} />,
-        value: `${exercise}min`,
-        label: "Exercício",
-        subtitle: "Últimos 7 dias",
-        trend: trend(exercise, yExercise),
-        trendLabel: trendLabel(exercise, yExercise),
-        color: "hsl(var(--metric-exercise))",
-        last7: exerciseLast7,
-        max7: safeMax(exerciseLast7),
-      },
-    ];
-  }, [todayRecord, records, habits, selectedDate]);
+  const activeHabits = useMemo(() => habits.filter((h) => h.active), [habits]);
 
   return (
     <div className="space-y-3">
@@ -128,55 +84,54 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
         Métricas do dia
       </p>
       <div className="space-y-3">
-        {metrics.map((m, i) => (
-          <ExpandableMetricCard key={i} metric={m} />
+        {/* Sleep card */}
+        <SleepMetricCard
+          todayRecord={todayRecord}
+          last7Records={last7Records}
+        />
+
+        {/* Dynamic habit cards */}
+        {activeHabits.map((habit, idx) => (
+          <HabitMetricCard
+            key={habit.id}
+            habit={habit}
+            todayRecord={todayRecord}
+            last7Records={last7Records}
+            color={HABIT_COLORS[idx % HABIT_COLORS.length]}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-const DAY_LABELS = ["S", "T", "Q", "Q", "S", "S", "D"];
-
-function BarChart({ data, max, color }: { data: number[]; max: number; color: string }) {
-  const barHeight = 48;
-  return (
-    <div className="flex items-end justify-between gap-1 w-full" style={{ height: barHeight }}>
-      {data.map((v, i) => {
-        const h = max > 0 ? Math.max((v / max) * barHeight, 3) : 3;
-        const isLast = i === data.length - 1;
-        return (
-          <div key={i} className="flex flex-col items-center gap-1 flex-1">
-            <div
-              className="w-full max-w-[28px] rounded-md transition-all duration-300 mx-auto"
-              style={{
-                height: h,
-                backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
-              }}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
+function SleepMetricCard({
+  todayRecord,
+  last7Records,
+}: {
+  todayRecord: DailyRecord | undefined;
+  last7Records: (DailyRecord | undefined)[];
+}) {
   const [expanded, setExpanded] = useState(true);
+  const sleep = todayRecord?.sleepHours || 0;
+  const goal = 8;
+  const progress = Math.min((sleep / goal) * 100, 100);
+  const color = "hsl(var(--metric-sleep))";
 
   return (
-    <Card className="border-border/60">
-      <CardContent className="p-4">
-        {/* Header row */}
+    <Card className="border-border/40 shadow-sm">
+      <CardContent className="p-5">
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
           className="w-full flex items-center justify-between"
         >
-          <div className="flex items-center gap-2">
-            <span style={{ color: metric.color }}>{metric.icon}</span>
-            <span className="text-sm font-semibold text-foreground">{metric.label}</span>
-            <span className="text-xs text-muted-foreground">{metric.subtitle}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">🌙</span>
+            <div className="text-left">
+              <span className="text-sm font-semibold text-foreground">Sono</span>
+              <span className="text-xs text-muted-foreground ml-2">Últimos 7 dias</span>
+            </div>
           </div>
           <ChevronUp
             size={16}
@@ -188,30 +143,144 @@ function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
         </button>
 
         {expanded && (
-          <div className="mt-3 space-y-3">
-            {/* Today value + trend */}
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted-foreground">Hoje</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-foreground">{metric.value}</span>
-                <span
-                  className={cn(
-                    "flex items-center gap-0.5 text-xs font-medium",
-                    metric.trend === "up" ? "text-primary-dark" : metric.trend === "down" ? "text-destructive" : "text-muted-foreground"
-                  )}
-                >
-                  {metric.trend === "up" ? <TrendingUp size={12} /> : metric.trend === "down" ? <TrendingDown size={12} /> : <Minus size={12} />}
-                  {metric.trendLabel}
+          <div className="mt-4 space-y-4">
+            {/* Today value + progress bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Hoje</span>
+                <span className="text-sm font-bold text-foreground">
+                  {formatSleepHours(sleep)}/{goal}h
                 </span>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%`, backgroundColor: color }}
+                />
               </div>
             </div>
 
-            {/* Bar chart */}
-            <BarChart data={metric.last7} max={metric.max7} color={metric.color} />
-            <div className="flex justify-between">
-              {DAY_LABELS.map((l, i) => (
-                <span key={i} className="text-[10px] text-muted-foreground font-medium flex-1 text-center">{l}</span>
-              ))}
+            {/* 7-day circles */}
+            <div className="flex justify-between items-center">
+              {last7Records.map((r, i) => {
+                const val = r?.sleepHours || 0;
+                const done = val >= 6;
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                      style={{
+                        backgroundColor: done ? color : "transparent",
+                        border: done ? "none" : `2px solid color-mix(in srgb, ${color} 30%, transparent)`,
+                      }}
+                    >
+                      {done && (
+                        <Moon size={12} className="text-primary-foreground" style={{ color: "white" }} />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {DAY_LABELS[i]}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function HabitMetricCard({
+  habit,
+  todayRecord,
+  last7Records,
+  color,
+}: {
+  habit: Habit;
+  todayRecord: DailyRecord | undefined;
+  last7Records: (DailyRecord | undefined)[];
+  color: string;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const checks = todayRecord?.habitChecks || {};
+  const todayVal = checks[habit.id];
+  const displayValue = getHabitDisplayValue(habit, todayVal);
+
+  const goal = habit.dailyGoal || habit.targetValue || 0;
+  const numericVal = getHabitNumericValue(habit, todayVal);
+  const isCheck = habit.targetType === "check" || habit.metricType === "check";
+  const progress = isCheck
+    ? (todayVal === true ? 100 : 0)
+    : (goal > 0 ? Math.min((numericVal / goal) * 100, 100) : (numericVal > 0 ? 100 : 0));
+
+  return (
+    <Card className="border-border/40 shadow-sm">
+      <CardContent className="p-5">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">{getHabitIcon(habit)}</span>
+            <div className="text-left">
+              <span className="text-sm font-semibold text-foreground">{habit.name}</span>
+              <span className="text-xs text-muted-foreground ml-2">Últimos 7 dias</span>
+            </div>
+          </div>
+          <ChevronUp
+            size={16}
+            className={cn(
+              "text-muted-foreground transition-transform duration-200",
+              !expanded && "rotate-180"
+            )}
+          />
+        </button>
+
+        {expanded && (
+          <div className="mt-4 space-y-4">
+            {/* Today value + progress bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Hoje</span>
+                <span className="text-sm font-bold text-foreground">{displayValue}</span>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%`, backgroundColor: color }}
+                />
+              </div>
+            </div>
+
+            {/* 7-day circles */}
+            <div className="flex justify-between items-center">
+              {last7Records.map((r, i) => {
+                const val = r?.habitChecks?.[habit.id];
+                const done = isHabitDone(habit, val);
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                      style={{
+                        backgroundColor: done ? color : "transparent",
+                        border: done ? "none" : `2px solid color-mix(in srgb, ${color} 30%, transparent)`,
+                      }}
+                    >
+                      {done && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {DAY_LABELS[i]}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
