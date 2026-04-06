@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useStore } from "@/hooks/useStore";
 import { useMeals } from "@/hooks/useMeals";
-import { useTasks } from "@/hooks/useTasks";
 import {
   Habit, DailyRecord, Goal, LIFE_AREAS, getLifeArea, getGoalStatus,
   Period, getMoodTag, formatSleepHours, moodToNumber, HABIT_PASTEL_COLORS,
@@ -33,7 +32,7 @@ const AREA_TEXT_COLORS: Record<string, string> = {
 
 export default function MetricsPage() {
   const { habits, records, goals } = useStore();
-  const { tasks } = useTasks();
+  
   const { meals } = useMeals();
 
   const [period, setPeriod] = useState<ExtPeriod>("7d");
@@ -74,27 +73,6 @@ export default function MetricsPage() {
     return goals.filter((g) => g.lifeArea === areaFilter);
   }, [goals, areaFilter]);
 
-  // Tasks filtered by area and period
-  const filteredTasks = useMemo(() => {
-    let t = tasks;
-    if (areaFilter !== "todas") {
-      t = t.filter((tk) => tk.life_areas?.includes(areaFilter));
-    }
-    // Filter by period
-    if (period === "total") return t;
-    if (period === "custom" && customStart && customEnd) {
-      const s = startOfDay(customStart);
-      const e = startOfDay(customEnd);
-      return t.filter((tk) => {
-        const d = startOfDay(parseISO(tk.date));
-        return (isAfter(d, s) || d.getTime() === s.getTime()) &&
-               (isBefore(d, e) || d.getTime() === e.getTime());
-      });
-    }
-    const days = period === "7d" ? 7 : 30;
-    const cutoff = subDays(new Date(), days);
-    return t.filter((tk) => isAfter(parseISO(tk.date), cutoff));
-  }, [tasks, areaFilter, period, customStart, customEnd]);
 
   // Completed goals in period
   const completedGoals = useMemo(() => {
@@ -140,9 +118,6 @@ export default function MetricsPage() {
     return +(sleeps.reduce((a, b) => a + b, 0) / sleeps.length).toFixed(1);
   }, [filteredRecords]);
 
-  // Tasks metrics
-  const completedTasks = filteredTasks.filter((t) => t.completed);
-  const taskRate = filteredTasks.length > 0 ? Math.round((completedTasks.length / filteredTasks.length) * 100) : 0;
 
   // Chart: habits per day
   const habitChartData = useMemo(() => {
@@ -155,15 +130,6 @@ export default function MetricsPage() {
     });
   }, [filteredRecords, activeHabits, period, customStart, customEnd]);
 
-  // Chart: tasks per day
-  const taskChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
-    return days.map((day) => {
-      const dateStr = format(day, "yyyy-MM-dd");
-      const count = filteredTasks.filter((t) => t.completed && t.completed_at && t.completed_at.startsWith(dateStr)).length;
-      return { date: format(day, "dd/MM"), count };
-    });
-  }, [filteredTasks, period, customStart, customEnd]);
 
   // Sleep & Mood chart
   const sleepMoodChart = useMemo(() => {
@@ -216,7 +182,7 @@ export default function MetricsPage() {
   }, [nutritionChartData]);
 
   const chartBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(168, 64%, 38%)") : "hsl(168, 64%, 38%)";
-  const taskBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(220, 10%, 60%)") : "hsl(220, 10%, 60%)";
+  
 
   const sortedRecordsForConsistency = useMemo(() => [...filteredRecords].sort((a, b) => a.date.localeCompare(b.date)), [filteredRecords]);
 
@@ -320,7 +286,7 @@ export default function MetricsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
         <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
-        <SummaryCard icon={<CheckSquare size={24} />} label="Tarefas concluídas" value={String(completedTasks.length)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
+        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
         <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
         <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
       </div>
@@ -401,47 +367,6 @@ export default function MetricsPage() {
         )}
       </section>
 
-      {/* Tasks section */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Tarefas no período</h2>
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="border-0" style={{ backgroundColor: "hsl(220, 15%, 95%)" }}>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{filteredTasks.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Total criadas</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0" style={{ backgroundColor: "hsl(168, 60%, 94%)" }}>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{completedTasks.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">Concluídas</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{taskRate}%</p>
-              <p className="text-xs text-muted-foreground mt-1">Taxa de conclusão</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Tarefas concluídas por dia</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={taskChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídas" fill={taskBarColor} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </section>
 
       {/* Sleep & Mood */}
       <section className="space-y-4">
