@@ -28,6 +28,7 @@ interface MetricItem {
   chartType: ChartType;
   target: number;
   unit: string;
+  periodLabel: string;
 }
 
 const DAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
