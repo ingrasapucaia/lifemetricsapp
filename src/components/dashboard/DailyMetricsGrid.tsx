@@ -126,7 +126,7 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
 
   return (
     <div className="w-full">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: h }} preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id={`grad-${color.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.25} />
@@ -541,7 +541,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       </div>
 
       {/* Metric cards */}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {orderedMetrics.map((m, i) => (
           <MetricCard
             key={m.id}
