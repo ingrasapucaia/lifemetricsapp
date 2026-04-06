@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
-import { isHabitCompleted } from "@/lib/metrics";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Moon, Minus, ChevronUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Moon, Minus } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +16,6 @@ interface MetricItem {
   icon: React.ReactNode;
   value: string;
   label: string;
-  subtitle: string;
   trend: "up" | "down" | "same";
   trendLabel: string;
   color: string;
@@ -50,17 +48,68 @@ function getHabitUnit(habit: Habit): string {
 function getHabitColor(habit: Habit, index: number): string {
   if (habit.color) return habit.color;
   const palette = [
-    "hsl(var(--metric-sleep))",
     "hsl(160, 50%, 38%)",
+    "hsl(270, 55%, 55%)",
     "hsl(220, 70%, 55%)",
     "hsl(340, 65%, 50%)",
     "hsl(35, 80%, 50%)",
-    "hsl(270, 55%, 55%)",
+    "hsl(190, 60%, 45%)",
   ];
   return palette[index % palette.length];
 }
 
-const HABIT_ICONS: Record<string, string> = {};
+function MiniBarChart({ data, max, color }: { data: number[]; max: number; color: string }) {
+  const barHeight = 36;
+  return (
+    <div className="flex items-end justify-between gap-[3px] w-full" style={{ height: barHeight }}>
+      {data.map((v, i) => {
+        const h = max > 0 ? Math.max((v / max) * barHeight, 2) : 2;
+        const isLast = i === data.length - 1;
+        return (
+          <div
+            key={i}
+            className="flex-1 rounded-t-sm transition-all duration-300"
+            style={{
+              height: h,
+              backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function CompactMetricCard({ metric }: { metric: MetricItem }) {
+  return (
+    <Card className="border-border/40 shadow-sm">
+      <CardContent className="p-3 space-y-2">
+        {/* Header: icon + name + trend */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span style={{ color: metric.color }} className="shrink-0">{metric.icon}</span>
+            <span className="text-xs font-semibold text-foreground truncate">{metric.label}</span>
+          </div>
+          <span
+            className={cn(
+              "flex items-center gap-0.5 text-[10px] font-medium shrink-0",
+              metric.trend === "up" ? "text-primary-dark" : metric.trend === "down" ? "text-destructive" : "text-muted-foreground"
+            )}
+          >
+            {metric.trend === "up" ? <TrendingUp size={10} /> : metric.trend === "down" ? <TrendingDown size={10} /> : <Minus size={10} />}
+            {metric.trendLabel}
+          </span>
+        </div>
+
+        {/* Value */}
+        <p className="text-xl font-bold text-foreground leading-none">{metric.value}</p>
+
+        {/* Mini bar chart */}
+        <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DailyMetricsGrid({ todayRecord, records, habits, selectedDate }: Props) {
   const metrics = useMemo((): MetricItem[] => {
@@ -79,19 +128,18 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
 
     const items: MetricItem[] = [];
 
-    // 1. Sleep card (from daily records)
+    // 1. Sleep card
     const sleep = todayRecord?.sleepHours || 0;
     const ySleep = yesterdayRecord?.sleepHours || 0;
     const sleepLast7 = last7Records.map((r) => r?.sleepHours || 0);
+    const sleepDiff = sleep - ySleep;
 
     items.push({
-      icon: <Moon size={18} />,
+      icon: <Moon size={14} />,
       value: formatSleepHours(sleep),
       label: "Sono",
-      subtitle: "Últimos 7 dias",
       trend: trend(sleep, ySleep),
-      trendLabel:
-        sleep > ySleep ? `+${(sleep - ySleep).toFixed(1)}h` : sleep < ySleep ? `${(sleep - ySleep).toFixed(1)}h` : "igual",
+      trendLabel: sleepDiff === 0 ? "igual" : sleepDiff > 0 ? `+${sleepDiff.toFixed(1)}h` : `${sleepDiff.toFixed(1)}h`,
       color: "hsl(var(--metric-sleep))",
       last7: sleepLast7,
       max7: safeMax(sleepLast7),
@@ -129,21 +177,17 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       });
 
       const habitIcon = habit.icon ? (
-        <span className="text-base">{habit.icon}</span>
+        <span className="text-sm">{habit.icon}</span>
       ) : null;
+
+      const diff = numericToday - numericYesterday;
 
       items.push({
         icon: habitIcon,
         value: displayValue,
         label: habit.name,
-        subtitle: "Últimos 7 dias",
         trend: trend(numericToday, numericYesterday),
-        trendLabel:
-          numericToday === numericYesterday
-            ? "igual"
-            : numericToday > numericYesterday
-            ? `+${numericToday - numericYesterday}`
-            : `${numericToday - numericYesterday}`,
+        trendLabel: diff === 0 ? "igual" : diff > 0 ? `+${diff}` : `${diff}`,
         color,
         last7,
         max7: safeMax(last7),
@@ -158,92 +202,11 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Métricas do dia
       </p>
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
         {metrics.map((m, i) => (
-          <ExpandableMetricCard key={i} metric={m} />
+          <CompactMetricCard key={i} metric={m} />
         ))}
       </div>
     </div>
-  );
-}
-
-const DAY_LABELS = ["S", "T", "Q", "Q", "S", "S", "D"];
-
-function BarChart({ data, max, color }: { data: number[]; max: number; color: string }) {
-  const barHeight = 48;
-  return (
-    <div className="flex items-end justify-between gap-1 w-full" style={{ height: barHeight }}>
-      {data.map((v, i) => {
-        const h = max > 0 ? Math.max((v / max) * barHeight, 3) : 3;
-        const isLast = i === data.length - 1;
-        return (
-          <div key={i} className="flex flex-col items-center gap-1 flex-1">
-            <div
-              className="w-full max-w-[28px] rounded-md transition-all duration-300 mx-auto"
-              style={{
-                height: h,
-                backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
-              }}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ExpandableMetricCard({ metric }: { metric: MetricItem }) {
-  const [expanded, setExpanded] = useState(true);
-
-  return (
-    <Card className="border-border/60">
-      <CardContent className="p-4">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-2">
-            <span style={{ color: metric.color }}>{metric.icon}</span>
-            <span className="text-sm font-semibold text-foreground">{metric.label}</span>
-            <span className="text-xs text-muted-foreground">{metric.subtitle}</span>
-          </div>
-          <ChevronUp
-            size={16}
-            className={cn(
-              "text-muted-foreground transition-transform duration-200",
-              !expanded && "rotate-180"
-            )}
-          />
-        </button>
-
-        {expanded && (
-          <div className="mt-3 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted-foreground">Hoje</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-foreground">{metric.value}</span>
-                <span
-                  className={cn(
-                    "flex items-center gap-0.5 text-xs font-medium",
-                    metric.trend === "up" ? "text-primary-dark" : metric.trend === "down" ? "text-destructive" : "text-muted-foreground"
-                  )}
-                >
-                  {metric.trend === "up" ? <TrendingUp size={12} /> : metric.trend === "down" ? <TrendingDown size={12} /> : <Minus size={12} />}
-                  {metric.trendLabel}
-                </span>
-              </div>
-            </div>
-
-            <BarChart data={metric.last7} max={metric.max7} color={metric.color} />
-            <div className="flex justify-between">
-              {DAY_LABELS.map((l, i) => (
-                <span key={i} className="text-[10px] text-muted-foreground font-medium flex-1 text-center">{l}</span>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }

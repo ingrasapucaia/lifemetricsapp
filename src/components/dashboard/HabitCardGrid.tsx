@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Habit } from "@/types";
 import { isHabitCompleted } from "@/lib/metrics";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,6 +94,36 @@ function ProgressCircle({
   );
 }
 
+function NumericInput({
+  value,
+  onChange,
+  unit,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  unit: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="flex items-center gap-1.5 justify-center">
+      <input
+        ref={inputRef}
+        type="number"
+        inputMode="numeric"
+        value={value || ""}
+        placeholder="0"
+        onChange={(e) => {
+          const v = parseFloat(e.target.value);
+          onChange(isNaN(v) ? 0 : v);
+        }}
+        className="w-14 h-8 text-center text-sm font-semibold rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      {unit && <span className="text-xs text-muted-foreground font-medium">{unit}</span>}
+    </div>
+  );
+}
+
 function CompactHabitCard({
   habit,
   checks,
@@ -108,6 +138,7 @@ function CompactHabitCard({
   const currentValue = typeof checks[habit.id] === "number" ? (checks[habit.id] as number) : 0;
   const target = habit.targetValue || 1;
   const unit = getHabitUnit(habit);
+  const useLargeInput = !isCheck && target > 10;
 
   const handleIncrement = () => {
     onUpdate({ ...checks, [habit.id]: currentValue + 1 });
@@ -121,6 +152,10 @@ function CompactHabitCard({
 
   const handleCheckToggle = () => {
     onUpdate({ ...checks, [habit.id]: !checks[habit.id] });
+  };
+
+  const handleNumericChange = (v: number) => {
+    onUpdate({ ...checks, [habit.id]: v });
   };
 
   return (
@@ -152,24 +187,28 @@ function CompactHabitCard({
           />
         )}
 
-        {/* +/- buttons for numeric habits */}
+        {/* Input: text field for large targets, +/- for small */}
         {!isCheck && (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleDecrement}
-              className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
-            >
-              <Minus size={14} className="text-muted-foreground" />
-            </button>
-            <button
-              type="button"
-              onClick={handleIncrement}
-              className="w-7 h-7 rounded-full border border-primary bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-95"
-            >
-              <Plus size={14} className="text-primary" />
-            </button>
-          </div>
+          useLargeInput ? (
+            <NumericInput value={currentValue} onChange={handleNumericChange} unit={unit} />
+          ) : (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleDecrement}
+                className="w-7 h-7 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors active:scale-95"
+              >
+                <Minus size={14} className="text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                onClick={handleIncrement}
+                className="w-7 h-7 rounded-full border border-primary bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors active:scale-95"
+              >
+                <Plus size={14} className="text-primary" />
+              </button>
+            </div>
+          )
         )}
       </CardContent>
     </Card>
