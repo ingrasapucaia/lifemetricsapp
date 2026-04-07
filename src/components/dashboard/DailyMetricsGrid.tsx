@@ -150,7 +150,7 @@ function MiniBarChart({ data, max, color, startDayIndex, dates, unit }: { data: 
   const labels = sparseLabels(data, startDayIndex);
   const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
+    <div className="w-full overflow-visible" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
@@ -286,7 +286,7 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex, dates, u
   const labels = sparseLabels(data, startDayIndex);
   const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
+    <div className="w-full overflow-visible" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h + (showLabels ? 14 : 0) }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
@@ -338,7 +338,7 @@ function MiniDotChart({ data, max, color, startDayIndex, dates, unit }: { data: 
   const labels = sparseLabels(data, startDayIndex);
   const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
+    <div className="w-full overflow-visible" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className="flex items-center justify-between py-2" style={{ minHeight: 48 }}>
         {data.map((v, i) => {
           const r = max > 0 ? minR + ((v / max) * (cappedMaxR - minR)) : minR;
@@ -416,7 +416,7 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
 }) {
   return (
     <Card className="border-border/40 shadow-sm rounded-2xl">
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 overflow-visible">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 min-w-0">
