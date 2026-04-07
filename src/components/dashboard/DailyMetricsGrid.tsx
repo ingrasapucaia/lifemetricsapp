@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
-import { format, subDays, isAfter, parseISO, startOfWeek, eachDayOfInterval } from "date-fns";
+import { format, subDays, isAfter, parseISO, eachDayOfInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
@@ -367,14 +367,13 @@ const PERIOD_OPTIONS: { value: MetricPeriod; label: string }[] = [
 
 function getRecordSlice(records: DailyRecord[], period: MetricPeriod): DailyRecord[] {
   if (period === "total") return records;
-  const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const cutoff = period === "7d" ? monday : subDays(monday, 21);
+  const today = new Date();
+  const cutoff = period === "7d" ? subDays(today, 6) : subDays(today, 29);
   return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
 }
 
 function getChartDates(selectedDate: string, period: MetricPeriod, records?: DailyRecord[]): string[] {
   const today = new Date(selectedDate + "T12:00:00");
-  const monday = startOfWeek(today, { weekStartsOn: 1 });
 
   if (period === "total") {
     if (records && records.length > 0) {
@@ -385,7 +384,8 @@ function getChartDates(selectedDate: string, period: MetricPeriod, records?: Dai
     return Array.from({ length: 7 }, (_, i) => format(subDays(today, 6 - i), "yyyy-MM-dd"));
   }
 
-  const start = period === "7d" ? monday : subDays(monday, 21);
+  const numDays = period === "7d" ? 6 : 29;
+  const start = subDays(today, numDays);
   return eachDayOfInterval({ start, end: today }).map((d) => format(d, "yyyy-MM-dd"));
 }
 
@@ -425,8 +425,6 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   const periodLabel = getPeriodLabel(period);
 
   const metrics = useMemo((): (MetricItem & { id: string })[] => {
-    const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
-    const yesterdayRecord = filteredRecords.find((r) => r.date === yesterday);
     const chartRecords = chartDates.map((d) => filteredRecords.find((r) => r.date === d));
 
     const trend = (a: number, b: number): "up" | "down" | "same" =>
@@ -435,18 +433,30 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
 
     const items: (MetricItem & { id: string })[] = [];
 
-    // Sleep
-    const sleep = todayRecord?.sleepHours || 0;
-    const ySleep = yesterdayRecord?.sleepHours || 0;
+    // Helper: compute previous period records for trend comparison
+    const periodDays = chartDates.length;
+    const todayDate = new Date(selectedDate + "T12:00:00");
+    const prevStart = subDays(todayDate, periodDays * 2 - 1);
+    const prevEnd = subDays(todayDate, periodDays);
+    const prevRecords = records.filter((r) => {
+      const d = parseISO(r.date);
+      return isAfter(d, subDays(prevStart, 1)) && !isAfter(d, prevEnd);
+    });
+
+    // Sleep — show average across period
     const sleepChart = chartRecords.map((r) => r?.sleepHours || 0);
-    const sleepDiff = sleep - ySleep;
+    const sleepValues = filteredRecords.filter((r) => r.sleepHours > 0).map((r) => r.sleepHours);
+    const avgSleep = sleepValues.length > 0 ? sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length : 0;
+    const prevSleepValues = prevRecords.filter((r) => r.sleepHours > 0).map((r) => r.sleepHours);
+    const prevAvgSleep = prevSleepValues.length > 0 ? prevSleepValues.reduce((a, b) => a + b, 0) / prevSleepValues.length : 0;
+    const sleepDiff = avgSleep - prevAvgSleep;
 
     items.push({
       id: "__sleep__",
       icon: <Moon size={16} />,
-      value: formatSleepHours(sleep),
+      value: formatSleepHours(avgSleep),
       label: "Sono",
-      trend: trend(sleep, ySleep),
+      trend: trend(avgSleep, prevAvgSleep),
       trendLabel: sleepDiff === 0 ? "igual" : sleepDiff > 0 ? `+${sleepDiff.toFixed(1)}h` : `${sleepDiff.toFixed(1)}h`,
       color: "hsl(250, 55%, 55%)",
       last7: sleepChart,
@@ -454,32 +464,16 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       chartType: "bar",
       target: 8,
       unit: "h",
-      periodLabel,
+      periodLabel: period === "total" ? "Média geral" : `Média ${periodLabel.toLowerCase()}`,
     });
 
     // Dynamic habit cards
     const activeHabits = habits.filter((h) => h.active);
     activeHabits.forEach((habit, idx) => {
-      const todayVal = todayRecord?.habitChecks?.[habit.id];
-      const yVal = yesterdayRecord?.habitChecks?.[habit.id];
       const isCheck = habit.targetType === "check" && (!habit.metricType || habit.metricType === "check");
       const unit = getHabitUnit(habit);
       const target = habit.dailyGoal || habit.targetValue || 0;
       const color = getHabitColor(habit, idx);
-
-      let displayValue: string;
-      let numericToday: number;
-      let numericYesterday: number;
-
-      if (isCheck) {
-        numericToday = todayVal === true ? 1 : 0;
-        numericYesterday = yVal === true ? 1 : 0;
-        displayValue = numericToday ? "✓" : "✗";
-      } else {
-        numericToday = typeof todayVal === "number" ? todayVal : 0;
-        numericYesterday = typeof yVal === "number" ? yVal : 0;
-        displayValue = target > 0 ? `${numericToday}/${target} ${unit}`.trim() : `${numericToday} ${unit}`.trim();
-      }
 
       const chartData = chartRecords.map((r) => {
         const v = r?.habitChecks?.[habit.id];
@@ -487,28 +481,74 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
         return typeof v === "number" ? v : 0;
       });
 
+      let displayValue: string;
+      let currentAggregate: number;
+      let prevAggregate: number;
+      let trendLabelText: string;
+
+      if (isCheck) {
+        // Count completed days / total days with records
+        const completedDays = filteredRecords.filter((r) => r.habitChecks?.[habit.id] === true).length;
+        const totalDays = filteredRecords.length;
+        const pct = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+        displayValue = `${completedDays}/${totalDays} dias`;
+        currentAggregate = pct;
+
+        const prevCompleted = prevRecords.filter((r) => r.habitChecks?.[habit.id] === true).length;
+        const prevTotal = prevRecords.length;
+        prevAggregate = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : 0;
+        trendLabelText = currentAggregate === prevAggregate ? "igual" : `${currentAggregate}%`;
+      } else {
+        // Sum total accumulated in period
+        const total = filteredRecords.reduce((sum, r) => {
+          const v = r.habitChecks?.[habit.id];
+          return sum + (typeof v === "number" ? v : 0);
+        }, 0);
+        currentAggregate = total;
+
+        const prevTotal = prevRecords.reduce((sum, r) => {
+          const v = r.habitChecks?.[habit.id];
+          return sum + (typeof v === "number" ? v : 0);
+        }, 0);
+        prevAggregate = prevTotal;
+
+        // Format display value
+        if (unit === "h" || habit.metricTimeUnit === "horas") {
+          const h = Math.floor(total);
+          const m = Math.round((total - h) * 60);
+          displayValue = m > 0 ? `${h}h ${m}min` : `${h}h`;
+        } else if (unit === "min" || habit.metricTimeUnit === "minutos") {
+          const h = Math.floor(total / 60);
+          const m = Math.round(total % 60);
+          displayValue = h > 0 ? `${h}h ${m}min` : `${total} min`;
+        } else {
+          displayValue = `${total % 1 === 0 ? total : total.toFixed(1)} ${unit}`.trim();
+        }
+        const diff = total - prevTotal;
+        trendLabelText = diff === 0 ? "igual" : diff > 0 ? `+${diff % 1 === 0 ? diff : diff.toFixed(1)}` : `${diff % 1 === 0 ? diff : diff.toFixed(1)}`;
+      }
+
       const habitIcon = habit.icon ? <span className="text-base">{habit.icon}</span> : null;
-      const diff = numericToday - numericYesterday;
 
       items.push({
         id: habit.id,
         icon: habitIcon,
         value: displayValue,
         label: habit.name,
-        trend: trend(numericToday, numericYesterday),
-        trendLabel: diff === 0 ? "igual" : diff > 0 ? `+${diff}` : `${diff}`,
+        trend: trend(currentAggregate, prevAggregate),
+        trendLabel: trendLabelText,
         color,
         last7: chartData,
         max7: safeMax(chartData),
         chartType: getChartType(habit),
         target,
         unit,
-        periodLabel,
+        periodLabel: period === "total" ? "Acumulado geral" : `Acumulado ${periodLabel.toLowerCase()}`,
       });
     });
 
     return items;
-  }, [todayRecord, filteredRecords, chartDates, habits, selectedDate, periodLabel]);
+  }, [todayRecord, filteredRecords, chartDates, habits, selectedDate, periodLabel, period, records]);
 
   // Apply custom order
   const orderedMetrics = useMemo(() => {
