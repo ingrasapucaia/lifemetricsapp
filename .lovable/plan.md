@@ -1,46 +1,65 @@
 
 
-## Plan: Add deadline to subtasks + reorder button
+## Plan: Fix charts, data sync, periods, animations, and tooltips
 
-### 1. Database migration — add `deadline` column to `goal_actions`
+### 1. Fix data sync — Dashboard showing "—" instead of real values
 
-```sql
-ALTER TABLE public.goal_actions ADD COLUMN deadline date DEFAULT NULL;
-```
+**File: `src/components/dashboard/DailyMetricsGrid.tsx`** (line 437)
 
-### 2. Update TypeScript type
+The dashboard shows "—" for check-type habits when not completed. Change to show "✗" or "0" instead of "—" for consistency. For numeric habits, the value already shows correctly. The core issue is line 437: `displayValue = numericToday ? "✓" : "—"` — replace "—" with "✗" to be clear it's a real value (not missing data).
 
-**File: `src/types/index.ts`**
-- Add `deadline?: string` to `GoalAction` interface
+Also, the dashboard and MetricsPage already use the same data source (`useStore`), so the data itself is identical. The "—" display issue is purely a formatting problem in the dashboard cards.
 
-### 3. Update store layer
+### 2. Fix period logic — Monday-based weeks
 
-**File: `src/hooks/useStore.tsx`**
-- `mapGoalActionRow`: map `row.deadline` to the action
-- `addGoalAction`: include `deadline` in the insert
-- `updateGoalAction`: handle `deadline` in `dbUpdates`
+**File: `src/lib/metrics.ts`**
+- Add a shared helper `getMonday(date)` using `startOfWeek(date, { weekStartsOn: 1 })` 
+- `7d` period: from Monday of current week to Sunday (or today if mid-week)
+- `30d` period: from the Monday 4 weeks ago to end of current week
+- `total`: return all records (no filtering)
 
-### 4. Update GoalDetail UI — date picker on subtasks + reorder button
+**File: `src/pages/MetricsPage.tsx`**
+- Update `filteredRecords` (lines 44-58): use Monday-based logic for 7d/30d
+- Update `getDaysInPeriod` (lines 537-547): use Monday-based intervals, and fix "total" to use `eachDayOfInterval` from first record to today (currently it falls back to 30 days)
 
-**File: `src/pages/GoalDetail.tsx`**
+**File: `src/components/dashboard/DailyMetricsGrid.tsx`**
+- Update `getRecordSlice` (lines 338-343): same Monday-based logic
+- Update `getChartDates` (lines 345-350): generate dates from Monday of current week
 
-**Add action form**: Add an optional date picker (Popover + Calendar) next to the priority selector when creating a new action.
+### 3. Add animations to Recharts charts (MetricsPage)
 
-**Action cards**: Show the deadline date next to the priority badge (small text, e.g. "12 abr").
+**File: `src/pages/MetricsPage.tsx`**
+- Add `animationDuration={500}` and `animationEasing="ease-out"` to all `<Bar>` and `<Line>` components (Recharts supports this natively)
+- Bars will grow from bottom; lines will draw left-to-right automatically with these props
 
-**Edit action dialog**: Add a date field so users can set/change deadline on existing actions.
+### 4. Add animations to mini SVG charts (DailyMetricsGrid)
 
-**Reorder button**: Add a button (e.g. `ArrowUpDown` icon) next to the "Ações (X/50)" header. When clicked, it sorts the actions list: pending first, completed last — applied visually via local state sort, not changing DB order.
+**File: `src/components/dashboard/DailyMetricsGrid.tsx`**
+- `MiniBarChart`: add CSS animation — bars start at height 0 and grow to target height using `@keyframes grow-bar` (400ms ease-out), with staggered delay per bar
+- `MiniLineChart`: add `stroke-dasharray` / `stroke-dashoffset` animation to draw the path (500ms)
+- `MiniDotChart`: add scale-in animation to each dot with staggered delays
+- `MiniBarPercentChart`: same grow animation as MiniBarChart
 
-### 5. Update Deadlines panel to include subtask deadlines
+**File: `src/index.css`**
+- Add `@keyframes grow-bar` and `@keyframes draw-line` keyframes
 
-**File: `src/pages/Deadlines.tsx`**
-- In `fetchData`, also query `goal_actions` with non-null deadlines within the filter range
-- Add these as individual `DeadlineItem` entries (type: `"acao"`) with the parent goal title as context
-- Update `DeadlineItem` type to support `"acao"` type and add `parentTitle` field
-- Update `getItemKey` to handle the new type
+### 5. Improve tooltips on MetricsPage charts
 
-### Technical notes
-- Single migration: one column addition, no RLS changes needed (existing policies on `goal_actions` already cover this)
-- No changes to any other pages
+**File: `src/pages/MetricsPage.tsx`**
+- Replace inline `contentStyle` Tooltip with a custom `content` renderer for all charts
+- Tooltip format: white background, rounded-xl, shadow-lg, shows weekday + date + value + unit
+- Example: "Ter, 01/04 — 4,5 km"
+- Add `cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}` to BarCharts for hover highlight
+- Add `activeDot={{ r: 6, strokeWidth: 2 }}` to LineCharts for point highlight on hover
+
+### Files changed
+- `src/lib/metrics.ts` — add Monday-based period helper
+- `src/components/dashboard/DailyMetricsGrid.tsx` — fix "—" display, fix periods, add SVG animations
+- `src/pages/MetricsPage.tsx` — fix periods, fix "total", add Recharts animations, improve tooltips
+- `src/index.css` — add keyframe animations for mini charts
+
+### No changes to
+- Backend/database
+- Any other pages or components
+- Card layouts or structure
 
