@@ -30,6 +30,7 @@ interface MetricItem {
   target: number;
   unit: string;
   periodLabel: string;
+  dates: string[];
 }
 
 const DAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
