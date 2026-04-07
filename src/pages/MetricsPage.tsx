@@ -124,7 +124,7 @@ export default function MetricsPage() {
 
   // Chart: habits per day
   const habitChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
@@ -136,7 +136,7 @@ export default function MetricsPage() {
 
   // Sleep & Mood chart
   const sleepMoodChart = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
@@ -164,7 +164,7 @@ export default function MetricsPage() {
 
   // Nutrition chart data
   const nutritionChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
