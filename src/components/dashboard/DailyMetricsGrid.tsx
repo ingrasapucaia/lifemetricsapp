@@ -367,16 +367,26 @@ const PERIOD_OPTIONS: { value: MetricPeriod; label: string }[] = [
 
 function getRecordSlice(records: DailyRecord[], period: MetricPeriod): DailyRecord[] {
   if (period === "total") return records;
-  const days = period === "7d" ? 7 : 30;
-  const cutoff = subDays(new Date(), days);
-  return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+  const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const cutoff = period === "7d" ? monday : subDays(monday, 21);
+  return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
 }
 
-function getChartDates(selectedDate: string, period: MetricPeriod): string[] {
-  const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
-  return Array.from({ length: count }, (_, i) =>
-    format(subDays(new Date(selectedDate + "T12:00:00"), count - 1 - i), "yyyy-MM-dd")
-  );
+function getChartDates(selectedDate: string, period: MetricPeriod, records?: DailyRecord[]): string[] {
+  const today = new Date(selectedDate + "T12:00:00");
+  const monday = startOfWeek(today, { weekStartsOn: 1 });
+
+  if (period === "total") {
+    if (records && records.length > 0) {
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      const firstDate = parseISO(sorted[0].date);
+      return eachDayOfInterval({ start: firstDate, end: today }).map((d) => format(d, "yyyy-MM-dd"));
+    }
+    return Array.from({ length: 7 }, (_, i) => format(subDays(today, 6 - i), "yyyy-MM-dd"));
+  }
+
+  const start = period === "7d" ? monday : subDays(monday, 21);
+  return eachDayOfInterval({ start, end: today }).map((d) => format(d, "yyyy-MM-dd"));
 }
 
 function getPeriodLabel(period: MetricPeriod): string {
@@ -464,7 +474,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       if (isCheck) {
         numericToday = todayVal === true ? 1 : 0;
         numericYesterday = yVal === true ? 1 : 0;
-        displayValue = numericToday ? "✓" : "—";
+        displayValue = numericToday ? "✓" : "✗";
       } else {
         numericToday = typeof todayVal === "number" ? todayVal : 0;
         numericYesterday = typeof yVal === "number" ? yVal : 0;
