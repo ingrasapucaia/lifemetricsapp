@@ -27,11 +27,12 @@ type FilterDays = 3 | 7 | 14 | 30;
 interface DeadlineItem {
   id: string;
   title: string;
-  type: "meta";
+  type: "meta" | "acao";
   deadline: string;
   lifeAreas: string[];
   progress?: number;
   priority?: string;
+  parentTitle?: string;
 }
 
 const FILTERS: { label: string; value: FilterDays }[] = [
@@ -57,7 +58,7 @@ export default function Deadlines() {
     const today = format(new Date(), "yyyy-MM-dd");
     const end = format(addDays(new Date(), filter), "yyyy-MM-dd");
 
-    const [goalsRes, acksRes, actionsRes] = await Promise.all([
+    const [goalsRes, acksRes, actionsRes, actionDeadlinesRes] = await Promise.all([
       supabase
         .from("goals")
         .select("id, title, life_area, deadline, status")
@@ -73,6 +74,13 @@ export default function Deadlines() {
       supabase
         .from("goal_actions")
         .select("goal_id, completed"),
+      supabase
+        .from("goal_actions")
+        .select("id, title, deadline, completed, priority, goal_id")
+        .eq("completed", false)
+        .not("deadline", "is", null)
+        .gte("deadline", today)
+        .lte("deadline", end),
     ]);
 
     const ackSet = new Set(
@@ -101,8 +109,31 @@ export default function Deadlines() {
       };
     });
 
+    // Build action deadline items — need goal titles for context
+    const goalTitleMap: Record<string, string> = {};
+    for (const g of goalsRes.data || []) goalTitleMap[g.id] = g.title;
+    // Also fetch titles for goals referenced by action deadlines but not in goalsRes
+    const actionGoalIds = [...new Set((actionDeadlinesRes.data || []).map((a: any) => a.goal_id))];
+    const missingIds = actionGoalIds.filter((id) => !goalTitleMap[id]);
+    if (missingIds.length > 0) {
+      const { data: extraGoals } = await supabase
+        .from("goals")
+        .select("id, title")
+        .in("id", missingIds);
+      for (const g of extraGoals || []) goalTitleMap[g.id] = g.title;
+    }
 
-    const all = [...goalItems]
+    const actionItems: DeadlineItem[] = (actionDeadlinesRes.data || []).map((a: any) => ({
+      id: a.id,
+      title: a.title,
+      type: "acao" as const,
+      deadline: a.deadline,
+      lifeAreas: [],
+      priority: a.priority || undefined,
+      parentTitle: goalTitleMap[a.goal_id] || "Meta",
+    }));
+
+    const all = [...goalItems, ...actionItems]
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     setItems(all);
@@ -114,14 +145,14 @@ export default function Deadlines() {
     fetchData();
   }, [fetchData]);
 
-  const getItemKey = (item: DeadlineItem) => `meta:${item.id}`;
+  const getItemKey = (item: DeadlineItem) => `${item.type}:${item.id}`;
 
   const handleAcknowledge = async (item: DeadlineItem) => {
     if (!user) return;
     const key = getItemKey(item);
     if (acknowledged.has(key)) return;
 
-    const itemType = "meta";
+    const itemType = item.type;
     await supabase.from("deadline_acknowledgments").insert({
       user_id: user.id,
       item_id: item.id,
@@ -136,7 +167,7 @@ export default function Deadlines() {
     const key = getItemKey(item);
     // Save acknowledgment if not already saved
     if (!acknowledged.has(key)) {
-      const itemType = "meta";
+      const itemType = item.type;
       await supabase.from("deadline_acknowledgments").insert({
         user_id: user.id,
         item_id: item.id,
@@ -155,7 +186,7 @@ export default function Deadlines() {
       const inserts = toAcknowledge.map((item) => ({
         user_id: user.id,
         item_id: item.id,
-        item_type: "meta",
+        item_type: item.type,
       }));
       await supabase.from("deadline_acknowledgments").insert(inserts);
       setAcknowledged((prev) => {
