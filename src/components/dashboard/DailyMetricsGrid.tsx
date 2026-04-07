@@ -1,8 +1,8 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
-import { format, subDays, isAfter, parseISO } from "date-fns";
+import { format, subDays, isAfter, parseISO, startOfWeek, eachDayOfInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
@@ -90,10 +90,12 @@ function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  transformOrigin: "bottom",
+                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
                 }}
               />
             </div>
@@ -124,6 +126,15 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaD = `${pathD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
 
+  const pathRef = useRef<SVGPathElement>(null);
+  const [lineLength, setLineLength] = useState(0);
+
+  useEffect(() => {
+    if (pathRef.current) {
+      setLineLength(pathRef.current.getTotalLength());
+    }
+  }, [data]);
+
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
@@ -134,10 +145,26 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
           </linearGradient>
         </defs>
         <path d={areaD} fill={`url(#grad-${color.replace(/[^a-z0-9]/gi, "")})`} />
-        <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          ref={pathRef}
+          d={pathD}
+          fill="none"
+          stroke={color}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={lineLength > 0 ? {
+            strokeDasharray: lineLength,
+            strokeDashoffset: lineLength,
+            animation: `draw-line 500ms ease-out forwards`,
+            ["--line-length" as any]: lineLength,
+          } : undefined}
+        />
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={i === data.length - 1 ? 4 : 2.5}
-            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5} />
+            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5}
+            style={{ transformOrigin: `${p.x}px ${p.y}px`, animation: `dot-pop 300ms ease-out ${200 + i * 50}ms both` }}
+          />
         ))}
       </svg>
       <div className="flex justify-between mt-1">
@@ -166,10 +193,12 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
                 {v > 0 ? `${pct}%` : ""}
               </span>
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  transformOrigin: "bottom",
+                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
                 }}
               />
             </div>
@@ -199,7 +228,7 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
           return (
             <div key={i} className="flex-1 flex justify-center">
               <div
-                className="rounded-full transition-all duration-300"
+                className="rounded-full"
                 style={{
                   width: v > 0 ? r * 2 : 6,
                   height: v > 0 ? r * 2 : 6,
@@ -207,6 +236,7 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
                     ? isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
                     : "hsl(var(--muted))",
                   border: v === 0 ? `1.5px dashed hsl(var(--muted-foreground) / 0.3)` : "none",
+                  animation: `dot-pop 300ms ease-out ${i * 60}ms both`,
                 }}
               />
             </div>
