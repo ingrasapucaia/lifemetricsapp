@@ -100,7 +100,7 @@ export default function WeeklyStreakCard({ records, objective }: Props) {
               </span>
             </div>
             {objective ? (
-              <p className="text-base font-bold text-primary-foreground leading-snug line-clamp-2">
+              <p className="text-base text-primary-foreground leading-snug line-clamp-2 font-semibold">
                 {objective}
               </p>
             ) : (
