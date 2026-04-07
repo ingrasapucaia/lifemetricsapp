@@ -342,7 +342,7 @@ export default function MetricsPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} isAnimationActive={true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -403,7 +403,7 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={800} />
                 <Line
                   yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5}
                   stroke="hsl(var(--metric-mood))"
@@ -461,7 +461,7 @@ export default function MetricsPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" isAnimationActive={true} animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -480,9 +480,9 @@ export default function MetricsPage() {
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
                 <Legend />
-                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} />
-                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} />
-                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} isAnimationActive={true} animationDuration={800} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} isAnimationActive={true} animationDuration={800} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} isAnimationActive={true} animationDuration={800} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
