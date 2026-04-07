@@ -1,43 +1,91 @@
-## Plan: Redesign habits section as a single minimalist shareable card
 
-### Concept
 
-Replace the current 2-column grid of individual habit cards with a single unified card containing a clean checklist layout. The design should be "screenshot-worthy" — something users would want to share on social media showing their daily progress.
+## Plan: Create Agenda (Task Schedule) Module
 
-### Design
+### Overview
+Create a new "Agenda" tab with a weekly task scheduler where users can create tasks for any day, assign life areas, link to goals, set priority levels and times. Design follows the reference image: day-based cards with tasks listed vertically.
 
-A single `Card` with:
+### Database
 
-- **Header**: Date (e.g. "07 de abril") + progress ring showing X/Y completed + percentage
-- **Habit list**: Vertical list of rows, each row showing:
-  - Emoji icon (if any) + habit name on the left
-  - For check habits: a circular checkbox (tap to toggle) with animated check mark
-  - For numeric habits: compact value/target display (e.g. "3/5 km") with inline +/- or input
-- **Completed habits**: Get a subtle strikethrough or green tint + check icon, sorted to bottom
-- **Footer**: App branding subtle watermark for screenshots (optional, tiny)
-- Expand/collapse if more than 6 habits
+**New table: `tasks`**
+```sql
+create table public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  title text not null,
+  date date not null,
+  time time null,
+  completed boolean default false,
+  priority text default 'media' check (priority in ('alta', 'media', 'baixa')),
+  life_area text null,
+  goal_id uuid references public.goals(id) on delete set null null,
+  created_at timestamptz default now()
+);
 
-### Visual style
+alter table public.tasks enable row level security;
 
-- Clean white card, subtle border, generous padding
-- Completed rows get a soft green-tinted background with the primary color check
-- Overall progress circle at top-right of the header
-- Minimalist typography — no uppercase headers, just clean sans-serif
+create policy "Users manage own tasks"
+  on public.tasks for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+```
 
-### Changes
+### Navigation
+**File: `src/components/AppSidebar.tsx`**
+- Add "Agenda" link with `CalendarCheck` icon right after Dashboard (position 2)
+- Route: `/agenda`
 
-**File: `src/components/dashboard/HabitCardGrid.tsx**` — Full rewrite:
+### Route
+**File: `src/App.tsx`**
+- Add route `/agenda` pointing to new `Agenda` page
 
-1. Replace grid of individual cards with a single `Card` component
-2. Header row: formatted date + circular progress indicator (done/total)
-3. Habit rows as a vertical list with dividers
-4. Check habits: circular toggle button on the right side
-5. Numeric habits: value/target text + compact +/- buttons or input on the right
-6. Completed items get subtle green bg highlight + check icon
-7. "Ver todos" expand button remains at bottom if habits > initialCount
+### Types
+**File: `src/types/index.ts`**
+- Add `Task` interface with fields: id, userId, title, date, time, completed, priority, lifeArea, goalId, createdAt
 
-### Not changed
+### Page
+**New file: `src/pages/Agenda.tsx`**
 
-- Backend, database, other pages, Dashboard layout structure
-- `getHabitUnit`, `isHabitCompleted` logic stays the same
-- Props interface stays the same (habits, checks, onUpdate, initialCount)
+Design inspired by the reference image (light mode, not dark):
+- **Header**: "SEMANA {number} • {MONTH}" in uppercase muted text
+- **Week navigation**: Previous/next week arrows
+- **Day cards**: One card per day of the week, each showing:
+  - Left side: Large day number + weekday name (bold) + month (muted)
+  - Right side: Task count badge + "+" add button
+  - Task list below: Each task as a row with circular check toggle + title
+  - Completed tasks get green background highlight (using primary color #D6F3A1)
+  - Empty days show subtle placeholder text "Sem tarefas"
+- **Add task modal/sheet**: Title input, date (pre-filled), time picker, priority selector (Alta=green, Média=yellow, Baixa=red), life area dropdown, optional goal link dropdown
+
+### Priority colors
+- Alta (high): green (#D6F3A1 bg, dark text)
+- Média (medium): yellow (#FDF3DC bg)
+- Baixa (low): red (#FCEBEB bg)
+
+Priority shown as a small colored dot or left border on the task row.
+
+### Task creation sheet
+- Opens when clicking "+" on a day card
+- Fields: title, time (optional), priority (3-button selector), life area (dropdown from LIFE_AREAS), linked goal (dropdown from user's goals)
+- Save persists to database immediately
+
+### Deadlines integration
+**File: `src/pages/Deadlines.tsx`**
+- Include tasks with dates in the deadlines/reminders view alongside goal deadlines
+
+### Store integration
+**File: `src/hooks/useStore.tsx`**
+- Add tasks state, CRUD operations (addTask, updateTask, deleteTask, toggleTask)
+- Fetch tasks in the initial data load
+- Include in context value
+
+### Files changed
+1. Database migration — create `tasks` table with RLS
+2. `src/types/index.ts` — add Task interface
+3. `src/hooks/useStore.tsx` — add tasks CRUD
+4. `src/pages/Agenda.tsx` — new page (main implementation)
+5. `src/components/AppSidebar.tsx` — add Agenda nav link
+6. `src/App.tsx` — add /agenda route
+7. `src/pages/Deadlines.tsx` — include tasks with deadlines
+
