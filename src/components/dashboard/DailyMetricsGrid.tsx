@@ -593,6 +593,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       target: 8,
       unit: "h",
       periodLabel: period === "total" ? "Média geral" : `Média ${periodLabel.toLowerCase()}`,
+      dates: chartDates,
     });
 
     // Dynamic habit cards
@@ -672,6 +673,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
         target,
         unit,
         periodLabel: period === "total" ? "Acumulado geral" : `Acumulado ${periodLabel.toLowerCase()}`,
+        dates: chartDates,
       });
     });
 
