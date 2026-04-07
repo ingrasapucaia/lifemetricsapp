@@ -1,6 +1,6 @@
 // Store provider — all data from Supabase, zero localStorage
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
+import { Habit, DailyRecord, Achievement, Goal, GoalAction, Task, LIFE_AREAS } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -151,6 +151,7 @@ interface StoreType {
   habits: Habit[];
   records: DailyRecord[];
   goals: Goal[];
+  tasks: Task[];
   upsertRecord: (updates: Partial<DailyRecord> & { date: string }) => void;
   deleteRecord: (id: string) => void;
   addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
@@ -164,6 +165,10 @@ interface StoreType {
   updateGoalAction: (goalId: string, actionId: string, updates: Partial<GoalAction>) => void;
   deleteGoalAction: (goalId: string, actionId: string) => void;
   toggleGoalAction: (goalId: string, actionId: string) => void;
+  addTask: (task: Omit<Task, "id" | "createdAt" | "userId">) => void;
+  updateTask: (id: string, updates: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
+  toggleTask: (id: string) => void;
   clearAll: () => void;
 }
 
@@ -174,6 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // ── Fetch all data on login ──────────────────
   useEffect(() => {
@@ -186,13 +192,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setHabits([]);
         setRecords([]);
         setGoals([]);
+        setTasks([]);
         return;
       }
 
-      const [habitsRes, recordsRes, goalsRes] = await Promise.all([
+      const [habitsRes, recordsRes, goalsRes, tasksRes] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
         supabase.from("daily_records").select("*").eq("user_id", user.id).order("date", { ascending: true }),
         supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("tasks").select("*").eq("user_id", user.id).order("date", { ascending: true }),
       ]);
 
       const goalRows = goalsRes.data || [];
@@ -204,12 +212,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      if (habitsRes.error || recordsRes.error || goalsRes.error || actionsRes.error) {
+      if (habitsRes.error || recordsRes.error || goalsRes.error || actionsRes.error || tasksRes.error) {
         console.error("Error fetching app data:", {
           habits: habitsRes.error,
           records: recordsRes.error,
           goals: goalsRes.error,
           actions: actionsRes.error,
+          tasks: tasksRes.error,
         });
       }
 
@@ -222,6 +231,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           .map(mapGoalActionRow);
         return mapGoalRow(g, gActions);
       }));
+
+      setTasks((tasksRes.data || []).map((t: any): Task => ({
+        id: t.id,
+        userId: t.user_id,
+        title: t.title,
+        date: t.date,
+        time: t.time || undefined,
+        completed: t.completed,
+        priority: t.priority || "media",
+        lifeArea: t.life_area || undefined,
+        goalId: t.goal_id || undefined,
+        createdAt: t.created_at,
+      })));
     };
 
     void fetchAll();
