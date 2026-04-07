@@ -309,15 +309,22 @@ export default function Deadlines() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-2 flex-1 min-w-0">
                     {/* Type badge */}
-                    <span
-                      className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                      style={{
-                        backgroundColor: "#D6E8FA",
-                        color: "#185FA5",
-                      }}
-                    >
-                      Meta
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={{
+                          backgroundColor: item.type === "acao" ? "#EDE4FB" : "#D6E8FA",
+                          color: item.type === "acao" ? "#5B3BA0" : "#185FA5",
+                        }}
+                      >
+                        {item.type === "acao" ? "Ação" : "Meta"}
+                      </span>
+                      {item.parentTitle && (
+                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                          {item.parentTitle}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Title */}
                     <p className="text-sm font-medium leading-snug">{item.title}</p>
