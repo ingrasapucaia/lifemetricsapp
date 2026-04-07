@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPeriodCutoff } from "@/lib/metrics";
 
@@ -127,7 +127,8 @@ export default function MetricsPage() {
       const r = filteredRecords.find((rec) => rec.date === dateStr);
       const done = r ? activeHabits.filter((h) => isHabitCompleted(h, r.habitChecks[h.id])).length : 0;
       const weekday = format(day, "EEE", { locale: ptBR });
-      return { date: format(day, "dd/MM"), fullDate: `${weekday}, ${format(day, "dd/MM")}`, count: done };
+      const label = period === "7d" ? weekday : format(day, "dd/MM");
+      return { date: label, fullDate: `${weekday}, ${format(day, "dd/MM")}`, count: done };
     });
   }, [filteredRecords, activeHabits, period, customStart, customEnd, records]);
 
@@ -169,8 +170,9 @@ export default function MetricsPage() {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
       const weekday = format(day, "EEE", { locale: ptBR });
+      const label = period === "7d" ? weekday : format(day, "dd/MM");
       return {
-        date: format(day, "dd/MM"),
+        date: label,
         fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
         carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
@@ -487,7 +489,7 @@ export default function MetricsPage() {
                     );
                   }}
                 />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" animationDuration={500} animationEasing="ease-out" />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -587,8 +589,7 @@ function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date
     }
     return eachDayOfInterval({ start: subDays(today, 30), end: today });
   }
-  const monday = startOfWeek(today, { weekStartsOn: 1 });
-  const start = period === "7d" ? monday : subDays(monday, 21);
+  const start = period === "7d" ? subDays(today, 6) : subDays(today, 29);
   return eachDayOfInterval({ start, end: today });
 }
 
