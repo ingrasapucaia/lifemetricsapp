@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, LogOut, Bell, CheckSquare, BarChart3, Sparkles, CircleDot } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Menu, Trophy, Target, LogOut, CheckSquare, BarChart3, Sparkles, CircleDot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -15,7 +15,6 @@ const mainLinks = [
   { to: "/habitos", label: "Controle de hábitos", icon: CheckSquare },
   
   { to: "/metas", label: "Metas de Vida", icon: Target },
-  { to: "/prazos", label: "Prazos e lembretes", icon: Bell },
   { to: "/conquistas", label: "Minhas Conquistas", icon: Trophy },
   
 ];
