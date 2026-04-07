@@ -186,7 +186,7 @@ export default function MetricsPage() {
     return Math.round(withData.reduce((s, d) => s + d.kcal, 0) / withData.length);
   }, [nutritionChartData]);
 
-  const chartBarColor = areaFilter !== "todas" ? (AREA_TEXT_COLORS[areaFilter] || "hsl(168, 64%, 38%)") : "hsl(168, 64%, 38%)";
+  const chartBarColor = "hsl(var(--primary))";
   
 
   const sortedRecordsForConsistency = useMemo(() => [...filteredRecords].sort((a, b) => a.date.localeCompare(b.date)), [filteredRecords]);
@@ -303,7 +303,7 @@ export default function MetricsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {habitStats.map(({ habit: h, completed, total, rate }) => {
               const area = getLifeArea(h.lifeArea);
-              const barColor = area ? AREA_TEXT_COLORS[h.lifeArea || ""] || "hsl(168, 64%, 38%)" : "hsl(168, 64%, 38%)";
+              const barColor = "hsl(var(--primary))";
               return (
                 <Card key={h.id}>
                   <CardContent className="p-4">
@@ -535,7 +535,7 @@ export default function MetricsPage() {
               <div className="space-y-4">
                 {consistency.map(({ habit, rate }, idx) => {
                   const area = getLifeArea(habit.lifeArea);
-                  const barColor = area ? (AREA_TEXT_COLORS[habit.lifeArea || ""] || HABIT_PASTEL_COLORS[idx % HABIT_PASTEL_COLORS.length]) : HABIT_PASTEL_COLORS[idx % HABIT_PASTEL_COLORS.length];
+                  const barColor = "hsl(var(--primary))";
                   return (
                     <div key={habit.id} className="space-y-1.5">
                       <div className="flex items-center justify-between">
