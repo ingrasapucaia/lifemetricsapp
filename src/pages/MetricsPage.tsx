@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
@@ -52,8 +52,11 @@ export default function MetricsPage() {
                (isBefore(d, e) || d.getTime() === e.getTime());
       });
     }
-    const days = period === "7d" ? 7 : 30;
-    const cutoff = subDays(new Date(), days);
+    if (period === "7d") {
+      const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+      return records.filter((r) => isAfter(parseISO(r.date), subDays(monday, 1)));
+    }
+    const cutoff = subDays(new Date(), 30);
     return records.filter((r) => isAfter(parseISO(r.date), cutoff));
   }, [records, period, customStart, customEnd]);
 
@@ -286,7 +289,6 @@ export default function MetricsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
         <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
-        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
         <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
         <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
       </div>
@@ -534,16 +536,25 @@ export default function MetricsPage() {
 
 // ─── Helpers ────────────────────────────────
 
-function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date): Date[] {
+function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date, records?: DailyRecord[]): Date[] {
   const today = new Date();
   if (period === "custom" && customStart && customEnd) {
     return eachDayOfInterval({ start: customStart, end: customEnd });
   }
   if (period === "total") {
+    if (records && records.length > 0) {
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      return eachDayOfInterval({ start: parseISO(sorted[0].date), end: today });
+    }
     return eachDayOfInterval({ start: subDays(today, 30), end: today });
   }
-  const days = period === "7d" ? 7 : 30;
-  return eachDayOfInterval({ start: subDays(today, days - 1), end: today });
+  if (period === "7d") {
+    const monday = startOfWeek(today, { weekStartsOn: 1 });
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return eachDayOfInterval({ start: monday, end: sunday > today ? today : sunday });
+  }
+  return eachDayOfInterval({ start: subDays(today, 29), end: today });
 }
 
 function SummaryCard({ icon, label, value, bgColor, iconColor }: {
