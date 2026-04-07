@@ -78,7 +78,63 @@ function getHabitColor(habit: Habit, index: number): string {
   return palette[index % palette.length];
 }
 
-/* ─── Chart Components (pure SVG) ─── */
+/* ─── Tooltip helpers ─── */
+
+function useChartTooltip() {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeIdx === null) return;
+    const handler = (e: TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setActiveIdx(null);
+      }
+    };
+    document.addEventListener("touchstart", handler);
+    return () => document.removeEventListener("touchstart", handler);
+  }, [activeIdx]);
+
+  return { activeIdx, setActiveIdx, containerRef };
+}
+
+function formatTooltipDate(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), "EEE, dd/MM", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTooltipValue(value: number, unit: string): string {
+  if (unit === "h") {
+    const h = Math.floor(value);
+    const m = Math.round((value - h) * 60);
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+  }
+  if (unit === "min") {
+    const h = Math.floor(value / 60);
+    const m = Math.round(value % 60);
+    return h > 0 ? `${h}h ${m}min` : `${value}min`;
+  }
+  const formatted = value % 1 === 0 ? String(value) : value.toFixed(1);
+  return unit ? `${formatted} ${unit}` : formatted;
+}
+
+function MiniChartTooltip({ dateStr, value, unit, style }: { dateStr: string; value: number; unit: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      className="absolute z-50 pointer-events-none px-2 py-1 rounded-lg bg-popover border border-border shadow-md text-xs text-popover-foreground whitespace-nowrap"
+      style={{ transform: "translateX(-50%)", bottom: "100%", marginBottom: 6, ...style }}
+    >
+      <span className="font-medium">{formatTooltipDate(dateStr)}</span>
+      <span className="mx-1">—</span>
+      <span className="font-bold">{formatTooltipValue(value, unit)}</span>
+    </div>
+  );
+}
+
+/* ─── Chart Components (with tooltips) ─── */
 
 function sparseLabels(data: any[], startDayIndex: number) {
   const len = data.length;
@@ -87,23 +143,33 @@ function sparseLabels(data: any[], startDayIndex: number) {
   return data.map((_, i) => (i % step === 0 || i === len - 1) ? DAY_LABELS[(startDayIndex + i) % 7] : "");
 }
 
-function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
+function MiniBarChart({ data, max, color, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; startDayIndex: number; dates: string[]; unit: string }) {
   const h = 48;
   const gapClass = data.length > 15 ? "gap-px" : data.length > 7 ? "gap-[2px]" : "gap-[6px]";
   const labels = sparseLabels(data, startDayIndex);
+  const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const isLast = i === data.length - 1;
+          const isActive = activeIdx === i;
           return (
-            <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1">
+            <div
+              key={i}
+              className="flex-1 min-w-0 flex flex-col items-center gap-1 relative cursor-pointer"
+              onMouseEnter={() => setActiveIdx(i)}
+              onTouchStart={() => setActiveIdx(i)}
+            >
+              {isActive && dates[i] && (
+                <MiniChartTooltip dateStr={dates[i]} value={v} unit={unit} style={{ left: "50%" }} />
+              )}
               <div
-                className="w-full rounded-t-md"
+                className="w-full rounded-t-md transition-opacity duration-150"
                 style={{
                   height: barH,
-                  backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  backgroundColor: isActive || isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
                   transformOrigin: "bottom",
                   animation: `grow-bar 400ms ease-out ${i * (data.length > 15 ? 15 : 40)}ms both`,
                 }}
@@ -123,7 +189,7 @@ function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max
   );
 }
 
-function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
+function MiniLineChart({ data, max, color, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; startDayIndex: number; dates: string[]; unit: string }) {
   const w = 280;
   const h = 48;
   const pad = 8;
@@ -138,6 +204,7 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
 
   const pathRef = useRef<SVGPathElement>(null);
   const [lineLength, setLineLength] = useState(0);
+  const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
 
   useEffect(() => {
     if (pathRef.current) {
@@ -146,7 +213,21 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
   }, [data]);
 
   return (
-    <div className="w-full">
+    <div className="w-full relative" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
+      {activeIdx !== null && dates[activeIdx] && (
+        <MiniChartTooltip
+          dateStr={dates[activeIdx]}
+          value={data[activeIdx]}
+          unit={unit}
+          style={{
+            left: `${(points[activeIdx].x / w) * 100}%`,
+            bottom: "auto",
+            top: -6,
+            position: "absolute",
+            marginBottom: 0,
+          }}
+        />
+      )}
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id={`grad-${color.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
@@ -171,10 +252,17 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
           } : undefined}
         />
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={i === data.length - 1 ? 4 : 2.5}
-            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5}
-            style={{ transformOrigin: `${p.x}px ${p.y}px`, animation: `dot-pop 300ms ease-out ${200 + i * 50}ms both` }}
-          />
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={activeIdx === i ? 5 : i === data.length - 1 ? 4 : 2.5}
+              fill={activeIdx === i || i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5}
+              style={{ transformOrigin: `${p.x}px ${p.y}px`, animation: `dot-pop 300ms ease-out ${200 + i * 50}ms both` }}
+            />
+            {/* Invisible hit area */}
+            <circle cx={p.x} cy={p.y} r={12} fill="transparent" className="cursor-pointer"
+              onMouseEnter={() => setActiveIdx(i)}
+              onTouchStart={() => setActiveIdx(i)}
+            />
+          </g>
         ))}
       </svg>
       {(() => { const labels = sparseLabels(data, startDayIndex); return (
@@ -190,30 +278,40 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
   );
 }
 
-function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data: number[]; max: number; color: string; target: number; startDayIndex: number }) {
+function MiniBarPercentChart({ data, max, color, target, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; target: number; startDayIndex: number; dates: string[]; unit: string }) {
   const h = 48;
   const showLabels = data.length <= 10;
   const gapClass = data.length > 15 ? "gap-px" : data.length > 7 ? "gap-[2px]" : "gap-[6px]";
   const labels = sparseLabels(data, startDayIndex);
+  const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h + (showLabels ? 14 : 0) }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const pct = target > 0 ? Math.round((v / target) * 100) : 0;
           const isLast = i === data.length - 1;
+          const isActive = activeIdx === i;
           return (
-            <div key={i} className="flex-1 min-w-0 flex flex-col items-center">
+            <div
+              key={i}
+              className="flex-1 min-w-0 flex flex-col items-center relative cursor-pointer"
+              onMouseEnter={() => setActiveIdx(i)}
+              onTouchStart={() => setActiveIdx(i)}
+            >
+              {isActive && dates[i] && (
+                <MiniChartTooltip dateStr={dates[i]} value={v} unit={unit} style={{ left: "50%" }} />
+              )}
               {showLabels && (
                 <span className="text-[8px] font-semibold mb-0.5" style={{ color: isLast ? color : "hsl(var(--muted-foreground))" }}>
                   {v > 0 ? `${pct}%` : ""}
                 </span>
               )}
               <div
-                className="w-full rounded-t-md"
+                className="w-full rounded-t-md transition-opacity duration-150"
                 style={{
                   height: barH,
-                  backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  backgroundColor: isActive || isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
                   transformOrigin: "bottom",
                   animation: `grow-bar 400ms ease-out ${i * (data.length > 15 ? 15 : 40)}ms both`,
                 }}
@@ -233,26 +331,36 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
   );
 }
 
-function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
+function MiniDotChart({ data, max, color, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; startDayIndex: number; dates: string[]; unit: string }) {
   const cappedMaxR = data.length > 15 ? 6 : data.length > 7 ? 8 : 12;
   const minR = data.length > 15 ? 2 : 4;
   const labels = sparseLabels(data, startDayIndex);
+  const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-hidden" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
       <div className="flex items-center justify-between py-2" style={{ minHeight: 48 }}>
         {data.map((v, i) => {
           const r = max > 0 ? minR + ((v / max) * (cappedMaxR - minR)) : minR;
           const isLast = i === data.length - 1;
+          const isActive = activeIdx === i;
           const emptySize = data.length > 15 ? 4 : 6;
           return (
-            <div key={i} className="flex-1 min-w-0 flex justify-center">
+            <div
+              key={i}
+              className="flex-1 min-w-0 flex justify-center relative cursor-pointer"
+              onMouseEnter={() => setActiveIdx(i)}
+              onTouchStart={() => setActiveIdx(i)}
+            >
+              {isActive && dates[i] && (
+                <MiniChartTooltip dateStr={dates[i]} value={v} unit={unit} style={{ left: "50%" }} />
+              )}
               <div
-                className="rounded-full shrink-0"
+                className="rounded-full shrink-0 transition-all duration-150"
                 style={{
-                  width: v > 0 ? r * 2 : emptySize,
-                  height: v > 0 ? r * 2 : emptySize,
+                  width: v > 0 ? (isActive ? (r + 2) * 2 : r * 2) : emptySize,
+                  height: v > 0 ? (isActive ? (r + 2) * 2 : r * 2) : emptySize,
                   backgroundColor: v > 0
-                    ? isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
+                    ? isActive || isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
                     : "hsl(var(--muted))",
                   border: v === 0 ? `1.5px dashed hsl(var(--muted-foreground) / 0.3)` : "none",
                   animation: `dot-pop 300ms ease-out ${i * (data.length > 15 ? 20 : 60)}ms both`,
