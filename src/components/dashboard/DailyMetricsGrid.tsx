@@ -415,7 +415,7 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
   isLast?: boolean;
 }) {
   return (
-    <Card className="border-border/40 shadow-sm rounded-2xl">
+    <Card className="border-border/40 shadow-sm rounded-2xl overflow-visible">
       <CardContent className="p-4 space-y-3 overflow-visible">
         {/* Header */}
         <div className="flex items-start justify-between">
