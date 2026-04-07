@@ -233,7 +233,7 @@ export default function RegisterSheet({ open, onOpenChange, date, record, habits
               />
 
               {/* Meals */}
-              <div className="space-y-3">
+              <div className="rounded-2xl bg-card border border-border/60 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <UtensilsCrossed size={16} className="text-primary" />
@@ -258,7 +258,7 @@ export default function RegisterSheet({ open, onOpenChange, date, record, habits
                       const items = groupedMeals[type];
                       const groupKcal = items.reduce((s, m) => s + (m.kcal || 0), 0);
                       return (
-                        <div key={type} className="rounded-xl border border-border/40 p-3 space-y-2">
+                        <div key={type} className="rounded-xl bg-muted/30 p-3 space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-semibold">{MEAL_TYPE_LABELS[type as MealType]}</p>
                             <span className="text-xs text-muted-foreground">{groupKcal} kcal</span>
