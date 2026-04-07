@@ -421,7 +421,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   }, [customOrder]);
 
   const filteredRecords = useMemo(() => getRecordSlice(records, period), [records, period]);
-  const chartDates = useMemo(() => getChartDates(selectedDate, period), [selectedDate, period]);
+  const chartDates = useMemo(() => getChartDates(selectedDate, period, records), [selectedDate, period, records]);
   const periodLabel = getPeriodLabel(period);
 
   const metrics = useMemo((): (MetricItem & { id: string })[] => {

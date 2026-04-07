@@ -18,8 +18,9 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getPeriodCutoff } from "@/lib/metrics";
 
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
 
@@ -52,9 +53,8 @@ export default function MetricsPage() {
                (isBefore(d, e) || d.getTime() === e.getTime());
       });
     }
-    const days = period === "7d" ? 7 : 30;
-    const cutoff = subDays(new Date(), days);
-    return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+    const cutoff = getPeriodCutoff(period as "7d" | "30d");
+    return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
   }, [records, period, customStart, customEnd]);
 
   // Active habits filtered by area
