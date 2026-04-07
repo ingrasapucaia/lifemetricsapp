@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
 import LifeAreaCollapsible from "@/components/LifeAreaCollapsible";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -404,6 +405,27 @@ export default function Goals() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
+
+                    {/* Progress bar */}
+                    {(() => {
+                      const total = g.actions.length;
+                      const done = g.actions.filter((a) => a.completed).length;
+                      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                      const pending = total - done;
+                      return (
+                        <div className="mt-2.5 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Progress value={pct} className="h-1.5 flex-1" />
+                            <span className="text-[11px] font-medium text-muted-foreground shrink-0">{pct}%</span>
+                          </div>
+                          {total > 0 && (
+                            <p className="text-[11px] text-muted-foreground">
+                              {pending > 0 ? `${pending} ${pending === 1 ? "tarefa pendente" : "tarefas pendentes"}` : "Todas as tarefas concluídas ✓"}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {g.deadline && (
                       <p className="text-[11px] text-muted-foreground mt-2">

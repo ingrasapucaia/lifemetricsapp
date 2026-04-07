@@ -11,6 +11,7 @@ import WeekCalendar from "@/components/dashboard/WeekCalendar";
 import WeeklyStreakCard from "@/components/dashboard/WeeklyStreakCard";
 import DailyMetricsGrid from "@/components/dashboard/DailyMetricsGrid";
 import HabitCardGrid from "@/components/dashboard/HabitCardGrid";
+import GoalsInProgress from "@/components/dashboard/GoalsInProgress";
 import RegisterSheet from "@/components/dashboard/RegisterSheet";
 
 function getGreeting(): string {
@@ -100,6 +101,9 @@ export default function Dashboard() {
         onUpdate={onDashboardHabitUpdate}
         initialCount={4}
       />
+
+      {/* Goals In Progress */}
+      <GoalsInProgress />
 
       {/* Floating button */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
