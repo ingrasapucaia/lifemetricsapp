@@ -67,19 +67,55 @@ function ProgressRing({ done, total, size = 44 }: { done: number; total: number;
 }
 
 function CheckToggle({ completed, onToggle }: { completed: boolean; onToggle: () => void }) {
+  const [animating, setAnimating] = useState(false);
+
+  const handleClick = () => {
+    if (!completed) {
+      setAnimating(true);
+      setTimeout(() => setAnimating(false), 600);
+    }
+    onToggle();
+  };
+
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={cn(
-        "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 active:scale-90 shrink-0",
-        completed
-          ? "bg-primary border-primary"
-          : "border-muted-foreground/30 hover:border-primary/50"
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={handleClick}
+        className={cn(
+          "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 active:scale-90",
+          completed
+            ? "bg-primary border-primary"
+            : "border-muted-foreground/30 hover:border-primary/50",
+          animating && "animate-[bounce-check_0.4s_ease-out]"
+        )}
+      >
+        {completed && (
+          <Check
+            size={14}
+            className={cn("text-primary-foreground", animating && "animate-[draw-check_0.3s_ease-out]")}
+            strokeWidth={3}
+          />
+        )}
+      </button>
+      {/* Confetti dots */}
+      {animating && (
+        <div className="absolute inset-0 pointer-events-none">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-primary animate-[confetti-dot_0.6s_ease-out_forwards]"
+              style={{
+                left: "50%",
+                top: "50%",
+                // @ts-ignore
+                "--angle": `${i * 60}deg`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
       )}
-    >
-      {completed && <Check size={14} className="text-primary-foreground" strokeWidth={3} />}
-    </button>
+    </div>
   );
 }
 
