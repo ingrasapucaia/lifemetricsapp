@@ -534,16 +534,21 @@ export default function MetricsPage() {
 
 // ─── Helpers ────────────────────────────────
 
-function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date): Date[] {
+function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date, records?: DailyRecord[]): Date[] {
   const today = new Date();
   if (period === "custom" && customStart && customEnd) {
     return eachDayOfInterval({ start: customStart, end: customEnd });
   }
   if (period === "total") {
+    if (records && records.length > 0) {
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      return eachDayOfInterval({ start: parseISO(sorted[0].date), end: today });
+    }
     return eachDayOfInterval({ start: subDays(today, 30), end: today });
   }
-  const days = period === "7d" ? 7 : 30;
-  return eachDayOfInterval({ start: subDays(today, days - 1), end: today });
+  const monday = startOfWeek(today, { weekStartsOn: 1 });
+  const start = period === "7d" ? monday : subDays(monday, 21);
+  return eachDayOfInterval({ start, end: today });
 }
 
 function SummaryCard({ icon, label, value, bgColor, iconColor }: {
