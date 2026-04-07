@@ -344,8 +344,20 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p>{d.count} hábitos concluídos</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
