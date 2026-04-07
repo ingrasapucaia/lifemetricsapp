@@ -466,16 +466,16 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
 
         {/* Chart */}
         {metric.chartType === "line" && (
-          <MiniLineChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniLineChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
         )}
         {metric.chartType === "bar" && (
-          <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
         )}
         {metric.chartType === "bar-percent" && (
-          <MiniBarPercentChart data={metric.last7} max={metric.max7} color={metric.color} target={metric.target} startDayIndex={startDayIndex} />
+          <MiniBarPercentChart data={metric.last7} max={metric.max7} color={metric.color} target={metric.target} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
         )}
         {metric.chartType === "dot" && (
-          <MiniDotChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniDotChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
         )}
         {metric.chartType === "progress" && (
           <MiniProgressBar value={metric.last7[metric.last7.length - 1] || 0} target={metric.target} color={metric.color} />
