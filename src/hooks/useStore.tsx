@@ -561,11 +561,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         date: data.date,
         time: data.time || undefined,
         completed: data.completed,
-        priority: data.priority || "media",
+        priority: (data.priority || "media") as Task["priority"],
         lifeArea: data.life_area || undefined,
         goalId: data.goal_id || undefined,
         createdAt: data.created_at,
-      }]);
+      } as Task]);
     })();
   }, [user]);
 
