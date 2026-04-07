@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
-import { format, subDays, isAfter, parseISO, startOfWeek, eachDayOfInterval } from "date-fns";
+import { format, subDays, isAfter, parseISO, eachDayOfInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
