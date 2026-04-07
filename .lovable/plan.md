@@ -1,24 +1,43 @@
+## Plan: Redesign habits section as a single minimalist shareable card
 
+### Concept
 
-## Plan: Fix tooltip clipping in dashboard mini-charts
+Replace the current 2-column grid of individual habit cards with a single unified card containing a clean checklist layout. The design should be "screenshot-worthy" — something users would want to share on social media showing their daily progress.
 
-### Problem
-The `MiniChartTooltip` is positioned absolutely inside chart containers that have `overflow-hidden` (needed to prevent 30-day charts from overflowing). The tooltip renders above the bar/dot with `bottom: 100%`, but gets clipped by the parent's overflow.
+### Design
 
-### Solution
-Remove `overflow-hidden` from the chart wrapper divs and instead move it only to the inner bar/dot containers where needed. Additionally, add `overflow-visible` to the outer card area so tooltips can escape the card boundary.
+A single `Card` with:
 
-**File: `src/components/dashboard/DailyMetricsGrid.tsx`**
+- **Header**: Date (e.g. "07 de abril") + progress ring showing X/Y completed + percentage
+- **Habit list**: Vertical list of rows, each row showing:
+  - Emoji icon (if any) + habit name on the left
+  - For check habits: a circular checkbox (tap to toggle) with animated check mark
+  - For numeric habits: compact value/target display (e.g. "3/5 km") with inline +/- or input
+- **Completed habits**: Get a subtle strikethrough or green tint + check icon, sorted to bottom
+- **Footer**: App branding subtle watermark for screenshots (optional, tiny)
+- Expand/collapse if more than 6 habits
 
-1. **Chart wrappers**: Change `overflow-hidden` to `overflow-visible` on the outermost chart `div` in `MiniBarChart`, `MiniDotChart`, `MiniBarPercentChart`. The bars themselves already have `flex-1 min-w-0` which prevents horizontal overflow — `overflow-hidden` on the parent is redundant for layout but kills tooltips.
+### Visual style
 
-2. **MetricCard**: Add `overflow-visible` to the `CardContent` or the chart section so tooltips positioned above the chart aren't clipped by the card's rounded corners / overflow.
+- Clean white card, subtle border, generous padding
+- Completed rows get a soft green-tinted background with the primary color check
+- Overall progress circle at top-right of the header
+- Minimalist typography — no uppercase headers, just clean sans-serif
 
-3. **MiniLineChart tooltip**: Same fix — ensure the SVG wrapper allows tooltip overflow.
+### Changes
 
-### Files changed
-- `src/components/dashboard/DailyMetricsGrid.tsx` — remove `overflow-hidden` from chart containers, ensure tooltip can render above the card boundary
+**File: `src/components/dashboard/HabitCardGrid.tsx**` — Full rewrite:
+
+1. Replace grid of individual cards with a single `Card` component
+2. Header row: formatted date + circular progress indicator (done/total)
+3. Habit rows as a vertical list with dividers
+4. Check habits: circular toggle button on the right side
+5. Numeric habits: value/target text + compact +/- buttons or input on the right
+6. Completed items get subtle green bg highlight + check icon
+7. "Ver todos" expand button remains at bottom if habits > initialCount
 
 ### Not changed
-- Backend, database, other pages, layout structure, tooltip content/format
 
+- Backend, database, other pages, Dashboard layout structure
+- `getHabitUnit`, `isHabitCompleted` logic stays the same
+- Props interface stays the same (habits, checks, onUpdate, initialCount)
