@@ -170,8 +170,9 @@ export default function MetricsPage() {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
       const weekday = format(day, "EEE", { locale: ptBR });
+      const label = period === "7d" ? weekday : format(day, "dd/MM");
       return {
-        date: format(day, "dd/MM"),
+        date: label,
         fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
         carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
