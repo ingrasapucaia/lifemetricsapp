@@ -242,36 +242,70 @@ export default function GoalDetail() {
 
       {/* Actions section */}
       <Card className="p-5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Ações ({goal.actions.length}/50)
-        </p>
-        <div className="flex gap-2">
-          <Input
-            value={actionTitle}
-            onChange={(e) => setActionTitle(e.target.value)}
-            placeholder="Título da ação"
-            className="flex-1 rounded-xl"
-            onKeyDown={(e) => e.key === "Enter" && handleAddAction()}
-          />
-          <Select value={actionPriority || ""} onValueChange={(v) => setActionPriority(v as any || undefined)}>
-            <SelectTrigger className="w-32 rounded-xl">
-              <SelectValue placeholder="Prioridade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Nenhuma</SelectItem>
-              {PRIORITIES.map((p) => (
-                <SelectItem key={p} value={p}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: `hsl(${GOAL_PRIORITY_COLORS[p].hsl})` }} />
-                    {p}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
-            <Plus size={16} />
-          </Button>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Ações ({goal.actions.length}/50)
+          </p>
+          {goal.actions.length > 1 && (
+            <Button
+              variant={sortPending ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 text-xs rounded-lg"
+              onClick={() => setSortPending((prev) => !prev)}
+            >
+              <ArrowUpDown size={13} />
+              Reordenar
+            </Button>
+          )}
+        </div>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={actionTitle}
+              onChange={(e) => setActionTitle(e.target.value)}
+              placeholder="Título da ação"
+              className="flex-1 rounded-xl"
+              onKeyDown={(e) => e.key === "Enter" && handleAddAction()}
+            />
+            <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
+              <Plus size={16} />
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Select value={actionPriority || ""} onValueChange={(v) => setActionPriority(v as any || undefined)}>
+              <SelectTrigger className="flex-1 rounded-xl">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma</SelectItem>
+                {PRIORITIES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: `hsl(${GOAL_PRIORITY_COLORS[p].hsl})` }} />
+                      {p}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("flex-1 justify-start text-left font-normal rounded-xl text-xs", !actionDeadline && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {actionDeadline ? format(new Date(actionDeadline + "T12:00:00"), "dd MMM", { locale: pt }) : "Prazo"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={actionDeadline ? new Date(actionDeadline + "T12:00:00") : undefined}
+                  onSelect={(date) => setActionDeadline(date ? format(date, "yyyy-MM-dd") : "")}
+                  locale={pt}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </Card>
 
