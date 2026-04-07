@@ -1,31 +1,44 @@
 
 
-## Plan: Fix stretched charts on desktop and add responsive grid layout
-
-### Problem
-On desktop, the metric cards stretch full-width across a wide viewport (~1000px content area), making charts look distorted and wasting space. The app is mobile-first but should look organized on desktop.
+## Plan: Move Refeições into Meus Registros and RegisterSheet
 
 ### Changes
 
-**File: `src/components/dashboard/DailyMetricsGrid.tsx`**
+**File: `src/components/AppSidebar.tsx`**
+- Remove the `{ to: "/refeicoes", label: "Refeições", icon: UtensilsCrossed }` entry from `mainLinks` array
+- Remove the `UtensilsCrossed` import if unused elsewhere
 
-1. **Responsive grid for metric cards** (line 544):
-   - Mobile: keep single column (`flex-col`)
-   - Desktop (md+): switch to a 2-column grid so cards fill the space side by side
-   - Replace `<div className="flex flex-col gap-3">` with `<div className="grid grid-cols-1 md:grid-cols-2 gap-3">`
+**File: `src/pages/Records.tsx`**
+- Import `useMeals`, `MealModal`, `MEAL_TYPE_LABELS`, `MEAL_TYPE_ORDER`, `MealType`, `Meal`, plus `UtensilsCrossed` icon
+- Import `useAuth` for accessing `profile` and kcal goal
+- Add a third tab "Refeições" to the existing `Tabs` component (alongside Calendário and Lista)
+- The Refeições tab content reuses the same layout from `Meals.tsx`:
+  - Kcal goal card (with save to profiles)
+  - Calendar with meal-date dots
+  - Day panel with meals grouped by type, add/edit/delete actions
+  - `MealModal` for adding/editing
+- In the `DayPanel` component (calendar tab), add a "Refeições" section after Habits showing meals for that date with total kcal and a quick "Adicionar refeição" button
 
-2. **Fix SVG line chart stretching** (MiniLineChart, line 129):
-   - Remove `preserveAspectRatio="none"` which causes distortion
-   - Change to `preserveAspectRatio="xMidYMid meet"` so the chart scales proportionally
-   - Use a proper viewBox and let the SVG scale naturally with `height: auto` instead of a fixed pixel height
-
-3. **Constrain chart heights on desktop**:
-   - Bar charts and dot charts: keep current flex-based approach (already responsive)
-   - Line chart SVG: set `className="w-full h-auto"` with a `max-height` via style to prevent excessive vertical stretching
+**File: `src/components/dashboard/RegisterSheet.tsx`**
+- Import `useMeals`, `MealModal`, `MEAL_TYPE_LABELS`, `MEAL_TYPE_ORDER`, `MealType`, `Meal`, `UtensilsCrossed`, `Plus`, `Pencil`, `Trash2`, `MoreVertical`
+- Import `DropdownMenu` components for meal item actions
+- Add a new section after `HabitCardGrid` (after line 189):
+  - Section header: UtensilsCrossed icon + "Refeições" + total kcal for the day
+  - List of meals for the selected `date`, grouped by type (reusing same card layout from Meals.tsx)
+  - Each meal shows name, kcal, macros, with edit/delete dropdown
+  - "Adicionar refeição" button that opens `MealModal`
+  - `MealModal` rendered inside the drawer, with `defaultDate={date}`
 
 ### What stays the same
-- Mobile layout unchanged (single column, same card sizes)
-- All data logic, period filters, reorder functionality
-- No backend changes
-- No other pages affected
+- Database and backend unchanged
+- `useMeals` hook unchanged
+- `MealModal` component unchanged
+- `MealsCard.tsx` dashboard card unchanged
+- `/refeicoes` route still exists (just hidden from nav)
+- All other pages untouched
+
+### Technical notes
+- `useMeals` is called inside both Records page and RegisterSheet; each manages its own meal state independently via the hook
+- The RegisterSheet needs to call `fetchMeals` after add/update/delete to refresh the list within the drawer
+- Kcal goal editing uses direct supabase update to `profiles.daily_kcal_goal` (same pattern as Meals.tsx)
 
