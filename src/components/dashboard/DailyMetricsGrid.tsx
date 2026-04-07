@@ -1,8 +1,8 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { DailyRecord, Habit, formatSleepHours } from "@/types";
+import { DailyRecord, Habit, formatSleepHours, getMoodTag, moodToNumber } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
-import { format, subDays, isAfter, parseISO } from "date-fns";
+import { format, subDays, isAfter, parseISO, startOfWeek, eachDayOfInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
@@ -79,27 +79,58 @@ function getHabitColor(habit: Habit, index: number): string {
 
 /* ─── Chart Components (pure SVG) ─── */
 
-function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
-  const h = 48;
+function ChartTooltip({ value, label, color, x, y }: { value: string; label: string; color: string; x: number; y: number }) {
   return (
-    <div className="w-full">
+    <div
+      className="absolute z-10 pointer-events-none bg-card border border-border rounded-lg px-2 py-1 shadow-md text-[10px] font-medium whitespace-nowrap"
+      style={{ left: x, top: y - 32, transform: "translateX(-50%)" }}
+    >
+      <span style={{ color }}>{value}</span>
+      <span className="text-muted-foreground ml-1">{label}</span>
+    </div>
+  );
+}
+
+function MiniBarChart({ data, max, color, startDayIndex, unit }: { data: number[]; max: number; color: string; startDayIndex: number; unit?: string }) {
+  const h = 48;
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  return (
+    <div className="w-full relative">
       <div className="flex items-end justify-between gap-[6px]" style={{ height: h }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center gap-1 cursor-pointer"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              onTouchStart={() => setHovered(i)}
+              onTouchEnd={() => setHovered(null)}
+            >
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  animation: `barGrow 0.5s ease-out ${i * 0.05}s both`,
                 }}
               />
             </div>
           );
         })}
       </div>
+      {hovered !== null && (
+        <ChartTooltip
+          value={`${data[hovered]}${unit ? ` ${unit}` : ""}`}
+          label={DAY_LABELS[(startDayIndex + hovered) % 7]}
+          color={color}
+          x={(hovered / (data.length - 1 || 1)) * 100}
+          y={0}
+        />
+      )}
       <div className="flex justify-between mt-1">
         {data.map((_, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
@@ -111,21 +142,23 @@ function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max
   );
 }
 
-function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
+function MiniLineChart({ data, max, color, startDayIndex, unit }: { data: number[]; max: number; color: string; startDayIndex: number; unit?: string }) {
   const w = 280;
   const h = 48;
   const pad = 8;
   const effW = w - pad * 2;
   const effH = h - pad * 2;
+  const [hovered, setHovered] = useState<number | null>(null);
+
   const points = data.map((v, i) => ({
-    x: pad + (i / (data.length - 1)) * effW,
+    x: pad + (i / (data.length - 1 || 1)) * effW,
     y: pad + effH - (max > 0 ? (v / max) * effH : 0),
   }));
   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaD = `${pathD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id={`grad-${color.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
@@ -134,12 +167,43 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
           </linearGradient>
         </defs>
         <path d={areaD} fill={`url(#grad-${color.replace(/[^a-z0-9]/gi, "")})`} />
-        <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d={pathD}
+          fill="none"
+          stroke={color}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            strokeDasharray: 500,
+            strokeDashoffset: 500,
+            animation: "lineDrawIn 1s ease-out forwards",
+          }}
+        />
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={i === data.length - 1 ? 4 : 2.5}
-            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5} />
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r={hovered === i ? 5 : i === data.length - 1 ? 4 : 2.5}
+            fill={i === data.length - 1 || hovered === i ? color : "white"}
+            stroke={color}
+            strokeWidth={1.5}
+            style={{ animation: `dotScaleIn 0.3s ease-out ${i * 0.05}s both`, cursor: "pointer" }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
         ))}
       </svg>
+      {hovered !== null && (
+        <ChartTooltip
+          value={`${data[hovered]}${unit ? ` ${unit}` : ""}`}
+          label={DAY_LABELS[(startDayIndex + hovered) % 7]}
+          color={color}
+          x={(points[hovered].x / w) * 100}
+          y={0}
+        />
+      )}
       <div className="flex justify-between mt-1">
         {data.map((_, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
@@ -153,29 +217,46 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
 
 function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data: number[]; max: number; color: string; target: number; startDayIndex: number }) {
   const h = 48;
+  const [hovered, setHovered] = useState<number | null>(null);
+
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <div className="flex items-end justify-between gap-[6px]" style={{ height: h + 14 }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const pct = target > 0 ? Math.round((v / target) * 100) : 0;
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex flex-col items-center">
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center cursor-pointer"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <span className="text-[8px] font-semibold mb-0.5" style={{ color: isLast ? color : "hsl(var(--muted-foreground))" }}>
                 {v > 0 ? `${pct}%` : ""}
               </span>
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  animation: `barGrow 0.5s ease-out ${i * 0.05}s both`,
                 }}
               />
             </div>
           );
         })}
       </div>
+      {hovered !== null && (
+        <ChartTooltip
+          value={`${data[hovered]}`}
+          label={`(${target > 0 ? Math.round((data[hovered] / target) * 100) : 0}%)`}
+          color={color}
+          x={(hovered / (data.length - 1 || 1)) * 100}
+          y={0}
+        />
+      )}
       <div className="flex justify-between mt-1">
         {data.map((_, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
@@ -187,19 +268,26 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
   );
 }
 
-function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
+function MiniDotChart({ data, max, color, startDayIndex, unit }: { data: number[]; max: number; color: string; startDayIndex: number; unit?: string }) {
   const maxR = 12;
   const minR = 4;
+  const [hovered, setHovered] = useState<number | null>(null);
+
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <div className="flex items-center justify-between py-2" style={{ minHeight: 48 }}>
         {data.map((v, i) => {
           const r = max > 0 ? minR + ((v / max) * (maxR - minR)) : minR;
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex justify-center">
+            <div
+              key={i}
+              className="flex-1 flex justify-center cursor-pointer"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <div
-                className="rounded-full transition-all duration-300"
+                className="rounded-full"
                 style={{
                   width: v > 0 ? r * 2 : 6,
                   height: v > 0 ? r * 2 : 6,
@@ -207,12 +295,22 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
                     ? isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
                     : "hsl(var(--muted))",
                   border: v === 0 ? `1.5px dashed hsl(var(--muted-foreground) / 0.3)` : "none",
+                  animation: `dotScaleIn 0.3s ease-out ${i * 0.06}s both`,
                 }}
               />
             </div>
           );
         })}
       </div>
+      {hovered !== null && (
+        <ChartTooltip
+          value={`${data[hovered]}${unit ? ` ${unit}` : ""}`}
+          label={DAY_LABELS[(startDayIndex + hovered) % 7]}
+          color={color}
+          x={(hovered / (data.length - 1 || 1)) * 100}
+          y={10}
+        />
+      )}
       <div className="flex justify-between">
         {data.map((_, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
@@ -234,14 +332,110 @@ function MiniProgressBar({ value, target, color }: { value: number; target: numb
       </div>
       <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, backgroundColor: color, animation: "barGrow 0.6s ease-out forwards" }}
         />
       </div>
       <p className="text-center text-[10px] font-semibold" style={{ color }}>
         {Math.round(pct)}%
       </p>
     </div>
+  );
+}
+
+/* ─── Sleep + Mood Combined Card ─── */
+
+function SleepMoodCard({ records, chartDates, startDayIndex }: { records: DailyRecord[]; chartDates: string[]; startDayIndex: number }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const data = chartDates.map((d) => {
+    const r = records.find((rec) => rec.date === d);
+    return {
+      sleep: r?.sleepHours || 0,
+      mood: r?.mood || "",
+    };
+  });
+  const maxSleep = Math.max(...data.map((d) => d.sleep), 1);
+  const h = 48;
+
+  return (
+    <Card className="border-border/40 shadow-sm rounded-2xl">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Moon size={16} className="text-[hsl(250,55%,55%)]" />
+          <p className="text-sm font-semibold text-foreground">Sono & Humor</p>
+        </div>
+        <div className="relative">
+          <div className="flex items-end justify-between gap-[6px]" style={{ height: h + 24 }}>
+            {data.map((d, i) => {
+              const barH = maxSleep > 0 ? Math.max((d.sleep / maxSleep) * h, 3) : 3;
+              const moodTag = d.mood ? getMoodTag(d.mood) : null;
+              const isLast = i === data.length - 1;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-1 cursor-pointer"
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  {/* Mood emoji/dot above bar */}
+                  <div className="h-4 flex items-center justify-center">
+                    {moodTag ? (
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: `hsl(${moodTag.hsl})`,
+                          animation: `dotScaleIn 0.3s ease-out ${i * 0.06}s both`,
+                        }}
+                      />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-muted" />
+                    )}
+                  </div>
+                  {/* Sleep bar */}
+                  <div
+                    className="w-full rounded-t-md"
+                    style={{
+                      height: barH,
+                      backgroundColor: isLast ? "hsl(250, 55%, 55%)" : "hsl(250, 55%, 55%, 0.3)",
+                      animation: `barGrow 0.5s ease-out ${i * 0.05}s both`,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {hovered !== null && (() => {
+            const d = data[hovered];
+            const moodTag = d.mood ? getMoodTag(d.mood) : null;
+            return (
+              <div
+                className="absolute z-10 pointer-events-none bg-card border border-border rounded-lg px-2 py-1 shadow-md text-[10px] whitespace-nowrap"
+                style={{
+                  left: `${(hovered / (data.length - 1 || 1)) * 100}%`,
+                  top: -8,
+                  transform: "translateX(-50%)",
+                }}
+              >
+                <span className="font-medium text-[hsl(250,55%,55%)]">{formatSleepHours(d.sleep)}</span>
+                {moodTag && (
+                  <span className="ml-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full mr-0.5" style={{ backgroundColor: `hsl(${moodTag.hsl})` }} />
+                    <span className="text-muted-foreground">{moodTag.label}</span>
+                  </span>
+                )}
+              </div>
+            );
+          })()}
+          <div className="flex justify-between mt-1">
+            {data.map((_, i) => (
+              <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
+                {DAY_LABELS[(startDayIndex + i) % 7]}
+              </span>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -308,16 +502,16 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
 
         {/* Chart */}
         {metric.chartType === "line" && (
-          <MiniLineChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniLineChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} unit={metric.unit} />
         )}
         {metric.chartType === "bar" && (
-          <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} unit={metric.unit} />
         )}
         {metric.chartType === "bar-percent" && (
           <MiniBarPercentChart data={metric.last7} max={metric.max7} color={metric.color} target={metric.target} startDayIndex={startDayIndex} />
         )}
         {metric.chartType === "dot" && (
-          <MiniDotChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} />
+          <MiniDotChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} unit={metric.unit} />
         )}
         {metric.chartType === "progress" && (
           <MiniProgressBar value={metric.last7[metric.last7.length - 1] || 0} target={metric.target} color={metric.color} />
@@ -337,20 +531,36 @@ const PERIOD_OPTIONS: { value: MetricPeriod; label: string }[] = [
 
 function getRecordSlice(records: DailyRecord[], period: MetricPeriod): DailyRecord[] {
   if (period === "total") return records;
-  const days = period === "7d" ? 7 : 30;
-  const cutoff = subDays(new Date(), days);
+  if (period === "7d") {
+    const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    return records.filter((r) => isAfter(parseISO(r.date), subDays(monday, 1)));
+  }
+  const cutoff = subDays(new Date(), 30);
   return records.filter((r) => isAfter(parseISO(r.date), cutoff));
 }
 
-function getChartDates(selectedDate: string, period: MetricPeriod): string[] {
-  const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
-  return Array.from({ length: count }, (_, i) =>
-    format(subDays(new Date(selectedDate + "T12:00:00"), count - 1 - i), "yyyy-MM-dd")
-  );
+function getChartDates(selectedDate: string, period: MetricPeriod, records: DailyRecord[]): string[] {
+  if (period === "7d") {
+    const monday = startOfWeek(new Date(selectedDate + "T12:00:00"), { weekStartsOn: 1 });
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return eachDayOfInterval({ start: monday, end: sunday }).map((d) => format(d, "yyyy-MM-dd"));
+  }
+  if (period === "30d") {
+    return Array.from({ length: 30 }, (_, i) =>
+      format(subDays(new Date(selectedDate + "T12:00:00"), 29 - i), "yyyy-MM-dd")
+    );
+  }
+  // total: from earliest record to today
+  if (records.length === 0) return [];
+  const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+  const earliest = parseISO(sorted[0].date);
+  const today = new Date();
+  return eachDayOfInterval({ start: earliest, end: today }).map((d) => format(d, "yyyy-MM-dd"));
 }
 
 function getPeriodLabel(period: MetricPeriod): string {
-  if (period === "7d") return "Últimos 7 dias";
+  if (period === "7d") return "Semana atual";
   if (period === "30d") return "Últimos 30 dias";
   return "Todo o período";
 }
@@ -368,6 +578,31 @@ function saveOrder(ids: string[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
 }
 
+/* ─── CSS Keyframes (injected once) ─── */
+
+const CHART_STYLES = `
+@keyframes barGrow {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to { transform: scaleY(1); transform-origin: bottom; }
+}
+@keyframes dotScaleIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes lineDrawIn {
+  to { stroke-dashoffset: 0; }
+}
+`;
+
+let stylesInjected = false;
+function injectStyles() {
+  if (stylesInjected) return;
+  stylesInjected = true;
+  const style = document.createElement("style");
+  style.textContent = CHART_STYLES;
+  document.head.appendChild(style);
+}
+
 /* ─── Main Grid ─── */
 
 export default function DailyMetricsGrid({ todayRecord, records, habits, selectedDate }: Props) {
@@ -375,13 +610,14 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   const [reordering, setReordering] = useState(false);
   const [customOrder, setCustomOrder] = useState<string[] | null>(() => loadOrder());
 
-  // Save order on change
+  useEffect(() => { injectStyles(); }, []);
+
   useEffect(() => {
     if (customOrder) saveOrder(customOrder);
   }, [customOrder]);
 
   const filteredRecords = useMemo(() => getRecordSlice(records, period), [records, period]);
-  const chartDates = useMemo(() => getChartDates(selectedDate, period), [selectedDate, period]);
+  const chartDates = useMemo(() => getChartDates(selectedDate, period, records), [selectedDate, period, records]);
   const periodLabel = getPeriodLabel(period);
 
   const metrics = useMemo((): (MetricItem & { id: string })[] => {
@@ -482,13 +718,16 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
         map.delete(id);
       }
     });
-    // Append any new metrics not in saved order
     map.forEach((item) => ordered.push(item));
     return ordered;
   }, [metrics, customOrder]);
 
   const startDayIndex = useMemo(() => {
-    const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
+    if (period === "7d") {
+      const monday = startOfWeek(new Date(selectedDate + "T12:00:00"), { weekStartsOn: 1 });
+      return monday.getDay();
+    }
+    const count = period === "30d" ? 30 : 7;
     const d = subDays(new Date(selectedDate + "T12:00:00"), count - 1);
     return d.getDay();
   }, [selectedDate, period]);
@@ -555,6 +794,9 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
           />
         ))}
       </div>
+
+      {/* Sleep + Mood combined card */}
+      <SleepMoodCard records={filteredRecords} chartDates={chartDates} startDayIndex={startDayIndex} />
     </div>
   );
 }
