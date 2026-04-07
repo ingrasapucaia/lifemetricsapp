@@ -6,7 +6,7 @@ import MealModal from "@/components/meals/MealModal";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from "@/components/ui/drawer";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -165,7 +165,7 @@ export default function RegisterSheet({ open, onOpenChange, date, record, habits
             <DrawerTitle className="text-lg capitalize">{dateLabel}</DrawerTitle>
           </DrawerHeader>
 
-          <ScrollArea className="flex-1 px-4 overflow-y-auto" style={{ maxHeight: "calc(85vh - 140px)" }}>
+          <div className="flex-1 px-4 overflow-y-auto" style={{ maxHeight: "calc(85vh - 140px)" }}>
             <div className="space-y-6 pb-4">
               {/* Mood */}
               <div className="space-y-3">
@@ -297,7 +297,7 @@ export default function RegisterSheet({ open, onOpenChange, date, record, habits
                 )}
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
           <DrawerFooter className="pt-2">
             <Button
