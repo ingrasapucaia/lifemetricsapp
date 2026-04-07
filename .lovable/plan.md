@@ -1,41 +1,46 @@
 
 
-## Plan: Enhance Goals Section
+## Plan: Add deadline to subtasks + reorder button
 
-### 1. Add GoalsInProgress to Dashboard
+### 1. Database migration — add `deadline` column to `goal_actions`
 
-**File: `src/pages/Dashboard.tsx`**
-- Import `GoalsInProgress` from `@/components/dashboard/GoalsInProgress`
-- Add `<GoalsInProgress />` after the `HabitCardGrid` section (before the floating button)
-
-### 2. Enhance goal cards in Goals page with progress bar, pending tasks count, and reward
-
-**File: `src/pages/Goals.tsx`** (lines 362-418, the goal card rendering)
-- Add a green progress bar (`bg-primary` / lime green) below the status badge, showing action completion percentage
-- Add pending tasks count text: e.g. "3 tarefas pendentes" 
-- The reward line already exists (lines 414-418) — keep it as-is
-
-The card layout becomes:
-```text
-┌─────────────────────────────────┐
-│ 🎯 Goal title              ⋮   │
-│ [Em progresso ▾]                │
-│ ████████░░░░░░░░░░░░  45%       │
-│ 3 tarefas pendentes             │
-│ Prazo: 12 de abril de 2026      │
-│ 🎁 Recompensa text              │
-└─────────────────────────────────┘
+```sql
+ALTER TABLE public.goal_actions ADD COLUMN deadline date DEFAULT NULL;
 ```
 
-### 3. Move "Metas de Vida" higher in sidebar menu
+### 2. Update TypeScript type
 
-**File: `src/components/AppSidebar.tsx`** (lines 9-20)
-- Move the `{ to: "/metas", ... }` entry from position 7 to position 4 (after Insights, before Roda da Vida)
+**File: `src/types/index.ts`**
+- Add `deadline?: string` to `GoalAction` interface
 
-New order: Dashboard, Métricas, Insights, **Metas de Vida**, Roda da Vida, Meus Registros, Controle de hábitos, Minhas Conquistas
+### 3. Update store layer
+
+**File: `src/hooks/useStore.tsx`**
+- `mapGoalActionRow`: map `row.deadline` to the action
+- `addGoalAction`: include `deadline` in the insert
+- `updateGoalAction`: handle `deadline` in `dbUpdates`
+
+### 4. Update GoalDetail UI — date picker on subtasks + reorder button
+
+**File: `src/pages/GoalDetail.tsx`**
+
+**Add action form**: Add an optional date picker (Popover + Calendar) next to the priority selector when creating a new action.
+
+**Action cards**: Show the deadline date next to the priority badge (small text, e.g. "12 abr").
+
+**Edit action dialog**: Add a date field so users can set/change deadline on existing actions.
+
+**Reorder button**: Add a button (e.g. `ArrowUpDown` icon) next to the "Ações (X/50)" header. When clicked, it sorts the actions list: pending first, completed last — applied visually via local state sort, not changing DB order.
+
+### 5. Update Deadlines panel to include subtask deadlines
+
+**File: `src/pages/Deadlines.tsx`**
+- In `fetchData`, also query `goal_actions` with non-null deadlines within the filter range
+- Add these as individual `DeadlineItem` entries (type: `"acao"`) with the parent goal title as context
+- Update `DeadlineItem` type to support `"acao"` type and add `parentTitle` field
+- Update `getItemKey` to handle the new type
 
 ### Technical notes
-- Progress bar uses the existing `Progress` component with primary/lime color
-- GoalsInProgress component already exists and is self-contained
-- No backend changes needed
+- Single migration: one column addition, no RLS changes needed (existing policies on `goal_actions` already cover this)
+- No changes to any other pages
 
