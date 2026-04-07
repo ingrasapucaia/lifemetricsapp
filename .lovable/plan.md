@@ -1,21 +1,24 @@
 
 
-## Plan: Add white background to meals card in RegisterSheet
+## Plan: Move Prazos e Lembretes to Bell Icon on Dashboard
 
-### Change
+### Changes
 
-**File: `src/components/dashboard/RegisterSheet.tsx`** (line 236)
+**File: `src/pages/Dashboard.tsx`**
+- Import `Sheet`, `SheetContent`, `SheetTrigger`, `SheetHeader`, `SheetTitle` from UI
+- Import `Deadlines` component from `@/pages/Deadlines`
+- Add state `deadlinesOpen` to control the sheet
+- Replace the static bell `<button>` with a `SheetTrigger` that opens a right-side `Sheet` containing the `Deadlines` component
+- Optionally show a badge dot on the bell if there are upcoming deadlines
 
-Wrap the meals section in a white card container. Change:
-```
-<div className="space-y-3">
-```
-to:
-```
-<div className="rounded-2xl bg-white border border-border/60 p-4 space-y-3">
-```
+**File: `src/components/AppSidebar.tsx`**
+- Remove the `{ to: "/prazos", label: "Prazos e lembretes", icon: Bell }` entry from `mainLinks`
+- Remove `Bell` from the lucide import if unused elsewhere
 
-This gives the Refeições section its own distinct white card background, matching the visual style of other cards in the app and making it stand out from the drawer background.
+**File: `src/App.tsx`**
+- Keep the `/prazos` route for direct URL access (optional, low cost to keep)
 
-Also update the inner meal-type containers (line 261) from `rounded-xl border border-border/40 p-3` to `rounded-xl bg-muted/30 p-3` to create subtle visual separation within the white card without double-bordering.
+### Technical notes
+- The `Deadlines` component is self-contained (fetches its own data), so it renders cleanly inside a Sheet without any prop changes
+- No backend or database changes needed
 
