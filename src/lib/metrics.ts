@@ -8,10 +8,9 @@ export function getMonday(date: Date): Date {
 
 /** Returns the Monday-based cutoff for a period. */
 export function getPeriodCutoff(period: "7d" | "30d"): Date {
-  const monday = getMonday(new Date());
-  if (period === "7d") return monday;
-  // 30d: go back 3 more weeks (4 weeks total from current Monday)
-  return subDays(monday, 21);
+  const today = new Date();
+  if (period === "7d") return subDays(today, 6);
+  return subDays(today, 29);
 }
 
 export function getRecordsForPeriod(records: DailyRecord[], period: Period): DailyRecord[] {
