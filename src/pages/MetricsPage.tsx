@@ -418,9 +418,9 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
                 <Line
-                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5}
+                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5} animationDuration={500} animationEasing="ease-out"
                   stroke="hsl(var(--metric-mood))"
                   dot={(props: any) => {
                     const tag = getMoodTag(props.payload?.moodTag);
@@ -475,8 +475,20 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p>{d.kcal} kcal</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" animationDuration={500} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -493,11 +505,24 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm space-y-1">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p><span style={{ color: "#22c55e" }}>Carb: {d.carbs}g</span></p>
+                        <p><span style={{ color: "#f97316" }}>Prot: {d.protein}g</span></p>
+                        <p><span style={{ color: "#3b82f6" }}>Gord: {d.fat}g</span></p>
+                      </div>
+                    );
+                  }}
+                />
                 <Legend />
-                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} />
-                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} />
-                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
