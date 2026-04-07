@@ -176,6 +176,7 @@ export type Database = {
         Row: {
           completed: boolean
           created_at: string
+          deadline: string | null
           goal_id: string
           id: string
           priority: string | null
@@ -184,6 +185,7 @@ export type Database = {
         Insert: {
           completed?: boolean
           created_at?: string
+          deadline?: string | null
           goal_id: string
           id?: string
           priority?: string | null
@@ -192,6 +194,7 @@ export type Database = {
         Update: {
           completed?: boolean
           created_at?: string
+          deadline?: string | null
           goal_id?: string
           id?: string
           priority?: string | null

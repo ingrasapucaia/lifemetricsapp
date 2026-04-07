@@ -69,6 +69,7 @@ export interface GoalAction {
   title: string;
   completed: boolean;
   priority?: "importante" | "urgente" | "atrasado" | "proximo";
+  deadline?: string;
   createdAt: string;
 }
 
