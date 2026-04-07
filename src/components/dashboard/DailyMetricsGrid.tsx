@@ -528,10 +528,12 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   }, [metrics, customOrder]);
 
   const startDayIndex = useMemo(() => {
-    const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
-    const d = subDays(new Date(selectedDate + "T12:00:00"), count - 1);
-    return d.getDay();
-  }, [selectedDate, period]);
+    if (chartDates.length > 0) {
+      const d = new Date(chartDates[0] + "T12:00:00");
+      return d.getDay();
+    }
+    return 1; // Monday
+  }, [chartDates]);
 
   const moveMetric = useCallback((fromIdx: number, dir: -1 | 1) => {
     const toIdx = fromIdx + dir;
