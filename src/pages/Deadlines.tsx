@@ -58,7 +58,7 @@ export default function Deadlines() {
     const today = format(new Date(), "yyyy-MM-dd");
     const end = format(addDays(new Date(), filter), "yyyy-MM-dd");
 
-    const [goalsRes, acksRes, actionsRes, actionDeadlinesRes] = await Promise.all([
+    const [goalsRes, acksRes, actionsRes, actionDeadlinesRes, tasksRes] = await Promise.all([
       supabase
         .from("goals")
         .select("id, title, life_area, deadline, status")
@@ -81,6 +81,13 @@ export default function Deadlines() {
         .not("deadline", "is", null)
         .gte("deadline", today)
         .lte("deadline", end),
+      supabase
+        .from("tasks")
+        .select("id, title, date, completed, priority, life_area")
+        .eq("user_id", user.id)
+        .eq("completed", false)
+        .gte("date", today)
+        .lte("date", end),
     ]);
 
     const ackSet = new Set(
@@ -133,7 +140,17 @@ export default function Deadlines() {
       parentTitle: goalTitleMap[a.goal_id] || "Meta",
     }));
 
-    const all = [...goalItems, ...actionItems]
+    const taskItems: DeadlineItem[] = (tasksRes.data || []).map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      type: "acao" as const,
+      deadline: t.date,
+      lifeAreas: t.life_area ? [t.life_area] : [],
+      priority: t.priority || undefined,
+      parentTitle: "Agenda",
+    }));
+
+    const all = [...goalItems, ...actionItems, ...taskItems]
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     setItems(all);
