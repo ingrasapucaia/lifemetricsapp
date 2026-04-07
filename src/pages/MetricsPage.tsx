@@ -121,30 +121,33 @@ export default function MetricsPage() {
 
   // Chart: habits per day
   const habitChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
       const done = r ? activeHabits.filter((h) => isHabitCompleted(h, r.habitChecks[h.id])).length : 0;
-      return { date: format(day, "dd/MM"), count: done };
+      const weekday = format(day, "EEE", { locale: ptBR });
+      return { date: format(day, "dd/MM"), fullDate: `${weekday}, ${format(day, "dd/MM")}`, count: done };
     });
-  }, [filteredRecords, activeHabits, period, customStart, customEnd]);
+  }, [filteredRecords, activeHabits, period, customStart, customEnd, records]);
 
 
   // Sleep & Mood chart
   const sleepMoodChart = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
+      const weekday = format(day, "EEE", { locale: ptBR });
       return {
         date: format(day, "dd/MM"),
+        fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         sleep: r?.sleepHours || 0,
         mood: r ? moodToNumber(r.mood) : 0,
         moodTag: r?.mood || "",
       };
     });
-  }, [filteredRecords, period, customStart, customEnd]);
+  }, [filteredRecords, period, customStart, customEnd, records]);
 
   // Habit consistency
   const consistency = useMemo(() => getHabitConsistency(filteredRecords, activeHabits.length > 0 ? activeHabits : []), [filteredRecords, activeHabits]);
@@ -161,19 +164,21 @@ export default function MetricsPage() {
 
   // Nutrition chart data
   const nutritionChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
+      const weekday = format(day, "EEE", { locale: ptBR });
       return {
         date: format(day, "dd/MM"),
+        fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
         carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
         protein: dayMeals.reduce((s, m) => s + (m.protein_g || 0), 0),
         fat: dayMeals.reduce((s, m) => s + (m.fat_g || 0), 0),
       };
     });
-  }, [meals, period, customStart, customEnd]);
+  }, [meals, period, customStart, customEnd, records]);
 
   const avgKcal = useMemo(() => {
     const withData = nutritionChartData.filter((d) => d.kcal > 0);
