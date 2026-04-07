@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getPeriodCutoff } from "@/lib/metrics";
 
