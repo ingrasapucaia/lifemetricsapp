@@ -18,7 +18,7 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
@@ -52,11 +52,8 @@ export default function MetricsPage() {
                (isBefore(d, e) || d.getTime() === e.getTime());
       });
     }
-    if (period === "7d") {
-      const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
-      return records.filter((r) => isAfter(parseISO(r.date), subDays(monday, 1)));
-    }
-    const cutoff = subDays(new Date(), 30);
+    const days = period === "7d" ? 7 : 30;
+    const cutoff = subDays(new Date(), days);
     return records.filter((r) => isAfter(parseISO(r.date), cutoff));
   }, [records, period, customStart, customEnd]);
 
@@ -124,7 +121,7 @@ export default function MetricsPage() {
 
   // Chart: habits per day
   const habitChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd, records);
+    const days = getDaysInPeriod(period, customStart, customEnd);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
@@ -136,7 +133,7 @@ export default function MetricsPage() {
 
   // Sleep & Mood chart
   const sleepMoodChart = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd, records);
+    const days = getDaysInPeriod(period, customStart, customEnd);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
@@ -164,7 +161,7 @@ export default function MetricsPage() {
 
   // Nutrition chart data
   const nutritionChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd, records);
+    const days = getDaysInPeriod(period, customStart, customEnd);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
@@ -290,6 +287,7 @@ export default function MetricsPage() {
         <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
         <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
         <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
+        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
         <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
       </div>
 
@@ -342,7 +340,7 @@ export default function MetricsPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} isAnimationActive={true} animationDuration={800} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -403,7 +401,7 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={800} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} />
                 <Line
                   yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5}
                   stroke="hsl(var(--metric-mood))"
@@ -461,7 +459,7 @@ export default function MetricsPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" isAnimationActive={true} animationDuration={800} />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -480,9 +478,9 @@ export default function MetricsPage() {
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
                 <Legend />
-                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} isAnimationActive={true} animationDuration={800} />
-                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} isAnimationActive={true} animationDuration={800} />
-                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} isAnimationActive={true} animationDuration={800} />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -536,25 +534,16 @@ export default function MetricsPage() {
 
 // ─── Helpers ────────────────────────────────
 
-function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date, records?: DailyRecord[]): Date[] {
+function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date): Date[] {
   const today = new Date();
   if (period === "custom" && customStart && customEnd) {
     return eachDayOfInterval({ start: customStart, end: customEnd });
   }
   if (period === "total") {
-    if (records && records.length > 0) {
-      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
-      return eachDayOfInterval({ start: parseISO(sorted[0].date), end: today });
-    }
     return eachDayOfInterval({ start: subDays(today, 30), end: today });
   }
-  if (period === "7d") {
-    const monday = startOfWeek(today, { weekStartsOn: 1 });
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return eachDayOfInterval({ start: monday, end: sunday > today ? today : sunday });
-  }
-  return eachDayOfInterval({ start: subDays(today, 29), end: today });
+  const days = period === "7d" ? 7 : 30;
+  return eachDayOfInterval({ start: subDays(today, days - 1), end: today });
 }
 
 function SummaryCard({ icon, label, value, bgColor, iconColor }: {
