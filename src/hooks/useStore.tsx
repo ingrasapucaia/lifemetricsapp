@@ -534,20 +534,89 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  // ── Tasks CRUD ──────────────────────────────
+
+  const addTask = useCallback((task: Omit<Task, "id" | "createdAt" | "userId">) => {
+    if (!user) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: user.id,
+          title: task.title,
+          date: task.date,
+          time: task.time ?? null,
+          completed: task.completed ?? false,
+          priority: task.priority ?? "media",
+          life_area: task.lifeArea ?? null,
+          goal_id: task.goalId ?? null,
+        })
+        .select("*")
+        .single();
+      if (error) { console.error("Error creating task:", error); return; }
+      setTasks((prev) => [...prev, {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        date: data.date,
+        time: data.time || undefined,
+        completed: data.completed,
+        priority: data.priority || "media",
+        lifeArea: data.life_area || undefined,
+        goalId: data.goal_id || undefined,
+        createdAt: data.created_at,
+      }]);
+    })();
+  }, [user]);
+
+  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    if (updates.time !== undefined) dbUpdates.time = updates.time ?? null;
+    if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+    if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
+    if (updates.goalId !== undefined) dbUpdates.goal_id = updates.goalId ?? null;
+
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
+    void supabase.from("tasks").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
+  const deleteTask = useCallback((id: string) => {
+    if (!user) return;
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    void supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
+  const toggleTask = useCallback((id: string) => {
+    if (!user) return;
+    let newCompleted = false;
+    setTasks((prev) => prev.map((t) => {
+      if (t.id !== id) return t;
+      newCompleted = !t.completed;
+      return { ...t, completed: newCompleted };
+    }));
+    void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
     setGoals([]);
+    setTasks([]);
   }, []);
 
   return (
     <StoreContext.Provider
       value={{
-        habits, records, goals,
+        habits, records, goals, tasks,
         upsertRecord, deleteRecord,
         addHabit, updateHabit, deleteHabit, reorderHabit,
         addGoal, updateGoal, deleteGoal,
         addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction,
+        addTask, updateTask, deleteTask, toggleTask,
         clearAll,
       }}
     >
