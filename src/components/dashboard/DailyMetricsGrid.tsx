@@ -3,6 +3,7 @@ import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
 import { format, subDays, isAfter, parseISO, eachDayOfInterval } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
