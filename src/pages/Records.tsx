@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useMeals, MEAL_TYPE_LABELS, MEAL_TYPE_ORDER, MealType, Meal } from "@/hooks/useMeals";
+import { supabase } from "@/integrations/supabase/client";
 import { DailyRecord, MOOD_TAGS, getMoodTag, moodToNumber, formatSleepHours } from "@/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -9,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,12 +22,19 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import MealModal from "@/components/meals/MealModal";
 import { calculateDailyAdherence, isHabitCompleted } from "@/lib/metrics";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3 } from "lucide-react";
+import { Plus, Trash2, Search, X, CalendarDays, List, Moon, Droplets, Dumbbell, BarChart3, UtensilsCrossed, MoreVertical, Pencil, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Records() {
   const { records, habits, upsertRecord, deleteRecord } = useStore();
+  const { user, profile, refreshProfile } = useAuth();
+  const { meals, addMeal, updateMeal, deleteMeal, getMealsForDate, getDatesWithMeals } = useMeals();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const [search, setSearch] = useState("");
@@ -104,6 +115,7 @@ export default function Records() {
         <TabsList className="rounded-xl">
           <TabsTrigger value="calendar" className="gap-2 rounded-lg"><CalendarDays size={14} /> Calendário</TabsTrigger>
           <TabsTrigger value="list" className="gap-2 rounded-lg"><List size={14} /> Lista</TabsTrigger>
+          <TabsTrigger value="meals" className="gap-2 rounded-lg"><UtensilsCrossed size={14} /> Refeições</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendar">
@@ -180,6 +192,14 @@ export default function Records() {
           )}
         </TabsContent>
 
+        <TabsContent value="meals">
+          <MealsTab
+            user={user}
+            profile={profile}
+            refreshProfile={refreshProfile}
+          />
+        </TabsContent>
+
       </Tabs>
 
       {/* New record */}
@@ -217,6 +237,272 @@ export default function Records() {
     </div>
   );
 }
+
+/* ─── Meals Tab ─── */
+function MealsTab({ user, profile, refreshProfile }: { user: any; profile: any; refreshProfile: () => Promise<void> }) {
+  const { meals, addMeal, updateMeal, deleteMeal, getMealsForDate, getDatesWithMeals } = useMeals();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editMeal, setEditMeal] = useState<Meal | null>(null);
+  const [defaultMealType, setDefaultMealType] = useState<MealType | undefined>();
+  const [kcalGoal, setKcalGoal] = useState<string>("");
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  useEffect(() => {
+    setKcalGoal(profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "");
+  }, [profile?.daily_kcal_goal]);
+
+  const handleSaveGoal = async () => {
+    if (!user) return;
+    setSavingGoal(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ daily_kcal_goal: kcalGoal ? Number(kcalGoal) : null })
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error("Erro ao salvar meta");
+    } else {
+      toast("Meta calórica atualizada!");
+      await refreshProfile();
+    }
+    setSavingGoal(false);
+  };
+
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const dayMeals = useMemo(() => getMealsForDate(dateStr), [getMealsForDate, dateStr]);
+  const datesWithMeals = useMemo(() => getDatesWithMeals(), [getDatesWithMeals]);
+
+  const grouped = useMemo(() => {
+    const map: Record<string, Meal[]> = {};
+    dayMeals.forEach((m) => {
+      if (!map[m.meal_type]) map[m.meal_type] = [];
+      map[m.meal_type].push(m);
+    });
+    return map;
+  }, [dayMeals]);
+
+  const totalKcal = dayMeals.reduce((s, m) => s + (m.kcal || 0), 0);
+  const totalCarbs = dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0);
+  const totalProtein = dayMeals.reduce((s, m) => s + (m.protein_g || 0), 0);
+  const totalFat = dayMeals.reduce((s, m) => s + (m.fat_g || 0), 0);
+
+  const handleSave = async (meal: { date: string; meal_type: string; name: string; kcal: number | null; carbs_g: number | null; protein_g: number | null; fat_g: number | null }) => {
+    if (editMeal) {
+      await updateMeal(editMeal.id, meal);
+    } else {
+      await addMeal(meal);
+    }
+    setEditMeal(null);
+    setDefaultMealType(undefined);
+  };
+
+  const openAddForType = (type: MealType) => {
+    setEditMeal(null);
+    setDefaultMealType(type);
+    setModalOpen(true);
+  };
+
+  const openAdd = () => {
+    setEditMeal(null);
+    setDefaultMealType(undefined);
+    setModalOpen(true);
+  };
+
+  const openEdit = (meal: Meal) => {
+    setEditMeal(meal);
+    setDefaultMealType(undefined);
+    setModalOpen(true);
+  };
+
+  return (
+    <div className="space-y-4 mt-4">
+      {/* Kcal Goal */}
+      <Card>
+        <CardContent className="p-4">
+          <Label className="text-sm">Meta calórica diária (kcal)</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              type="number"
+              min={0}
+              value={kcalGoal}
+              onChange={(e) => setKcalGoal(e.target.value)}
+              placeholder="Ex: 2000"
+              className="flex-1 rounded-xl"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveGoal}
+              disabled={savingGoal || kcalGoal === (profile?.daily_kcal_goal ? String(profile.daily_kcal_goal) : "")}
+              className="rounded-xl gap-1"
+            >
+              <Check size={14} />
+              Salvar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar */}
+      <Card>
+        <CardContent className="p-3">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(d) => d && setSelectedDate(d)}
+            locale={ptBR}
+            className="p-0 pointer-events-auto"
+            modifiers={{ hasMeals: datesWithMeals.map((d) => parseISO(d)) }}
+            modifiersClassNames={{ hasMeals: "has-meals-dot" }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Day panel */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold capitalize">
+            {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </h2>
+          {dayMeals.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {totalKcal} kcal · {totalCarbs}g carb · {totalProtein}g proteína · {totalFat}g gordura
+            </p>
+          )}
+        </div>
+        <Button onClick={openAdd} className="rounded-xl gap-1.5" size="sm">
+          <Plus size={14} />
+          Adicionar
+        </Button>
+      </div>
+
+      {dayMeals.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center space-y-3">
+            <UtensilsCrossed size={32} className="mx-auto text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">Nenhuma refeição registrada</p>
+            <Button variant="outline" onClick={openAdd} className="rounded-xl gap-1.5">
+              <Plus size={14} />
+              Registrar primeira refeição
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {MEAL_TYPE_ORDER.filter((t) => grouped[t]?.length).map((type) => {
+            const items = grouped[type];
+            const groupKcal = items.reduce((s, m) => s + (m.kcal || 0), 0);
+            return (
+              <Card key={type}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">{MEAL_TYPE_LABELS[type as MealType]}</h3>
+                      <span className="text-xs text-muted-foreground">({groupKcal} kcal)</span>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <MoreVertical size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openAddForType(type as MealType)}>
+                          <Plus size={14} className="mr-2" />
+                          Adicionar item
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {items.map((meal) => (
+                    <div key={meal.id} className="flex items-start gap-3 py-2 border-t border-border/40">
+                      <div className="w-[4px] rounded-full self-stretch bg-primary/30 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">{meal.name}</p>
+                          <div className="flex items-center gap-1">
+                            {meal.kcal != null && (
+                              <span className="text-sm text-muted-foreground">{meal.kcal} kcal</span>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                  <MoreVertical size={12} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEdit(meal)}>
+                                  <Pencil size={14} className="mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteMeal(meal.id)} className="text-destructive">
+                                  <Trash2 size={14} className="mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                        {(meal.carbs_g || meal.protein_g || meal.fat_g) && (
+                          <div className="flex items-center gap-3 mt-1">
+                            {meal.carbs_g != null && meal.carbs_g > 0 && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#4CAF50" }} />
+                                {meal.carbs_g}g carb
+                              </span>
+                            )}
+                            {meal.protein_g != null && meal.protein_g > 0 && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#FF9800" }} />
+                                {meal.protein_g}g proteína
+                              </span>
+                            )}
+                            {meal.fat_g != null && meal.fat_g > 0 && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: "#2196F3" }} />
+                                {meal.fat_g}g gordura
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <MealModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSave={handleSave}
+        defaultDate={dateStr}
+        defaultMealType={defaultMealType}
+        editMeal={editMeal}
+      />
+
+      <style>{`
+        .has-meals-dot { position: relative; }
+        .has-meals-dot::after {
+          content: '';
+          position: absolute;
+          bottom: 2px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background-color: hsl(var(--primary));
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ─── Helper components ─── */
 
 function calculateSleepDuration(sleepTime: string, wakeTime: string): number {
   if (!sleepTime || !wakeTime) return 0;
