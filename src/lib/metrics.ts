@@ -1,11 +1,23 @@
 import { DailyRecord, Habit, Period, moodToNumber } from "@/types";
-import { subDays, parseISO, isAfter, format } from "date-fns";
+import { subDays, parseISO, isAfter, format, startOfWeek } from "date-fns";
+
+/** Returns the Monday of the week containing `date`. */
+export function getMonday(date: Date): Date {
+  return startOfWeek(date, { weekStartsOn: 1 });
+}
+
+/** Returns the Monday-based cutoff for a period. */
+export function getPeriodCutoff(period: "7d" | "30d"): Date {
+  const monday = getMonday(new Date());
+  if (period === "7d") return monday;
+  // 30d: go back 3 more weeks (4 weeks total from current Monday)
+  return subDays(monday, 21);
+}
 
 export function getRecordsForPeriod(records: DailyRecord[], period: Period): DailyRecord[] {
   if (period === "total") return records;
-  const days = period === "7d" ? 7 : 30;
-  const cutoff = subDays(new Date(), days);
-  return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+  const cutoff = getPeriodCutoff(period);
+  return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
 }
 
 export function isHabitCompleted(habit: Habit, value: boolean | number | undefined): boolean {

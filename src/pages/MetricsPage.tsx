@@ -18,8 +18,9 @@ import {
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
+import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getPeriodCutoff } from "@/lib/metrics";
 
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
 
@@ -52,9 +53,8 @@ export default function MetricsPage() {
                (isBefore(d, e) || d.getTime() === e.getTime());
       });
     }
-    const days = period === "7d" ? 7 : 30;
-    const cutoff = subDays(new Date(), days);
-    return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+    const cutoff = getPeriodCutoff(period as "7d" | "30d");
+    return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
   }, [records, period, customStart, customEnd]);
 
   // Active habits filtered by area
@@ -121,30 +121,33 @@ export default function MetricsPage() {
 
   // Chart: habits per day
   const habitChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
       const done = r ? activeHabits.filter((h) => isHabitCompleted(h, r.habitChecks[h.id])).length : 0;
-      return { date: format(day, "dd/MM"), count: done };
+      const weekday = format(day, "EEE", { locale: ptBR });
+      return { date: format(day, "dd/MM"), fullDate: `${weekday}, ${format(day, "dd/MM")}`, count: done };
     });
-  }, [filteredRecords, activeHabits, period, customStart, customEnd]);
+  }, [filteredRecords, activeHabits, period, customStart, customEnd, records]);
 
 
   // Sleep & Mood chart
   const sleepMoodChart = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
+      const weekday = format(day, "EEE", { locale: ptBR });
       return {
         date: format(day, "dd/MM"),
+        fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         sleep: r?.sleepHours || 0,
         mood: r ? moodToNumber(r.mood) : 0,
         moodTag: r?.mood || "",
       };
     });
-  }, [filteredRecords, period, customStart, customEnd]);
+  }, [filteredRecords, period, customStart, customEnd, records]);
 
   // Habit consistency
   const consistency = useMemo(() => getHabitConsistency(filteredRecords, activeHabits.length > 0 ? activeHabits : []), [filteredRecords, activeHabits]);
@@ -161,19 +164,21 @@ export default function MetricsPage() {
 
   // Nutrition chart data
   const nutritionChartData = useMemo(() => {
-    const days = getDaysInPeriod(period, customStart, customEnd);
+    const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayMeals = meals.filter((m) => m.date === dateStr);
+      const weekday = format(day, "EEE", { locale: ptBR });
       return {
         date: format(day, "dd/MM"),
+        fullDate: `${weekday}, ${format(day, "dd/MM")}`,
         kcal: dayMeals.reduce((s, m) => s + (m.kcal || 0), 0),
         carbs: dayMeals.reduce((s, m) => s + (m.carbs_g || 0), 0),
         protein: dayMeals.reduce((s, m) => s + (m.protein_g || 0), 0),
         fat: dayMeals.reduce((s, m) => s + (m.fat_g || 0), 0),
       };
     });
-  }, [meals, period, customStart, customEnd]);
+  }, [meals, period, customStart, customEnd, records]);
 
   const avgKcal = useMemo(() => {
     const withData = nutritionChartData.filter((d) => d.kcal > 0);
@@ -339,8 +344,20 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p>{d.count} hábitos concluídos</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -401,9 +418,9 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
                 <Line
-                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5}
+                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5} animationDuration={500} animationEasing="ease-out"
                   stroke="hsl(var(--metric-mood))"
                   dot={(props: any) => {
                     const tag = getMoodTag(props.payload?.moodTag);
@@ -458,8 +475,20 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p>{d.kcal} kcal</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill="hsl(145, 50%, 45%)" animationDuration={500} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -476,11 +505,24 @@ export default function MetricsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px" }} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm space-y-1">
+                        <p className="font-medium capitalize">{d.fullDate}</p>
+                        <p><span style={{ color: "#22c55e" }}>Carb: {d.carbs}g</span></p>
+                        <p><span style={{ color: "#f97316" }}>Prot: {d.protein}g</span></p>
+                        <p><span style={{ color: "#3b82f6" }}>Gord: {d.fat}g</span></p>
+                      </div>
+                    );
+                  }}
+                />
                 <Legend />
-                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} />
-                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} />
-                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -534,16 +576,21 @@ export default function MetricsPage() {
 
 // ─── Helpers ────────────────────────────────
 
-function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date): Date[] {
+function getDaysInPeriod(period: ExtPeriod, customStart?: Date, customEnd?: Date, records?: DailyRecord[]): Date[] {
   const today = new Date();
   if (period === "custom" && customStart && customEnd) {
     return eachDayOfInterval({ start: customStart, end: customEnd });
   }
   if (period === "total") {
+    if (records && records.length > 0) {
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      return eachDayOfInterval({ start: parseISO(sorted[0].date), end: today });
+    }
     return eachDayOfInterval({ start: subDays(today, 30), end: today });
   }
-  const days = period === "7d" ? 7 : 30;
-  return eachDayOfInterval({ start: subDays(today, days - 1), end: today });
+  const monday = startOfWeek(today, { weekStartsOn: 1 });
+  const start = period === "7d" ? monday : subDays(monday, 21);
+  return eachDayOfInterval({ start, end: today });
 }
 
 function SummaryCard({ icon, label, value, bgColor, iconColor }: {

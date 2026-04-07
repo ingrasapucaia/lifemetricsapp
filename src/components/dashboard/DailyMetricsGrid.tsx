@@ -1,8 +1,8 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { DailyRecord, Habit, formatSleepHours } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Moon, Minus, ArrowUpDown, ChevronUp, ChevronDown, Check } from "lucide-react";
-import { format, subDays, isAfter, parseISO } from "date-fns";
+import { format, subDays, isAfter, parseISO, startOfWeek, eachDayOfInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type MetricPeriod = "7d" | "30d" | "total";
@@ -90,10 +90,12 @@ function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  transformOrigin: "bottom",
+                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
                 }}
               />
             </div>
@@ -124,6 +126,15 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaD = `${pathD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
 
+  const pathRef = useRef<SVGPathElement>(null);
+  const [lineLength, setLineLength] = useState(0);
+
+  useEffect(() => {
+    if (pathRef.current) {
+      setLineLength(pathRef.current.getTotalLength());
+    }
+  }, [data]);
+
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
@@ -134,10 +145,26 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
           </linearGradient>
         </defs>
         <path d={areaD} fill={`url(#grad-${color.replace(/[^a-z0-9]/gi, "")})`} />
-        <path d={pathD} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          ref={pathRef}
+          d={pathD}
+          fill="none"
+          stroke={color}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={lineLength > 0 ? {
+            strokeDasharray: lineLength,
+            strokeDashoffset: lineLength,
+            animation: `draw-line 500ms ease-out forwards`,
+            ["--line-length" as any]: lineLength,
+          } : undefined}
+        />
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={i === data.length - 1 ? 4 : 2.5}
-            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5} />
+            fill={i === data.length - 1 ? color : "white"} stroke={color} strokeWidth={1.5}
+            style={{ transformOrigin: `${p.x}px ${p.y}px`, animation: `dot-pop 300ms ease-out ${200 + i * 50}ms both` }}
+          />
         ))}
       </svg>
       <div className="flex justify-between mt-1">
@@ -166,10 +193,12 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
                 {v > 0 ? `${pct}%` : ""}
               </span>
               <div
-                className="w-full rounded-t-md transition-all duration-300"
+                className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
+                  transformOrigin: "bottom",
+                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
                 }}
               />
             </div>
@@ -199,7 +228,7 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
           return (
             <div key={i} className="flex-1 flex justify-center">
               <div
-                className="rounded-full transition-all duration-300"
+                className="rounded-full"
                 style={{
                   width: v > 0 ? r * 2 : 6,
                   height: v > 0 ? r * 2 : 6,
@@ -207,6 +236,7 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
                     ? isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
                     : "hsl(var(--muted))",
                   border: v === 0 ? `1.5px dashed hsl(var(--muted-foreground) / 0.3)` : "none",
+                  animation: `dot-pop 300ms ease-out ${i * 60}ms both`,
                 }}
               />
             </div>
@@ -337,16 +367,26 @@ const PERIOD_OPTIONS: { value: MetricPeriod; label: string }[] = [
 
 function getRecordSlice(records: DailyRecord[], period: MetricPeriod): DailyRecord[] {
   if (period === "total") return records;
-  const days = period === "7d" ? 7 : 30;
-  const cutoff = subDays(new Date(), days);
-  return records.filter((r) => isAfter(parseISO(r.date), cutoff));
+  const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const cutoff = period === "7d" ? monday : subDays(monday, 21);
+  return records.filter((r) => isAfter(parseISO(r.date), subDays(cutoff, 1)));
 }
 
-function getChartDates(selectedDate: string, period: MetricPeriod): string[] {
-  const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
-  return Array.from({ length: count }, (_, i) =>
-    format(subDays(new Date(selectedDate + "T12:00:00"), count - 1 - i), "yyyy-MM-dd")
-  );
+function getChartDates(selectedDate: string, period: MetricPeriod, records?: DailyRecord[]): string[] {
+  const today = new Date(selectedDate + "T12:00:00");
+  const monday = startOfWeek(today, { weekStartsOn: 1 });
+
+  if (period === "total") {
+    if (records && records.length > 0) {
+      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+      const firstDate = parseISO(sorted[0].date);
+      return eachDayOfInterval({ start: firstDate, end: today }).map((d) => format(d, "yyyy-MM-dd"));
+    }
+    return Array.from({ length: 7 }, (_, i) => format(subDays(today, 6 - i), "yyyy-MM-dd"));
+  }
+
+  const start = period === "7d" ? monday : subDays(monday, 21);
+  return eachDayOfInterval({ start, end: today }).map((d) => format(d, "yyyy-MM-dd"));
 }
 
 function getPeriodLabel(period: MetricPeriod): string {
@@ -381,7 +421,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   }, [customOrder]);
 
   const filteredRecords = useMemo(() => getRecordSlice(records, period), [records, period]);
-  const chartDates = useMemo(() => getChartDates(selectedDate, period), [selectedDate, period]);
+  const chartDates = useMemo(() => getChartDates(selectedDate, period, records), [selectedDate, period, records]);
   const periodLabel = getPeriodLabel(period);
 
   const metrics = useMemo((): (MetricItem & { id: string })[] => {
@@ -434,7 +474,7 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
       if (isCheck) {
         numericToday = todayVal === true ? 1 : 0;
         numericYesterday = yVal === true ? 1 : 0;
-        displayValue = numericToday ? "✓" : "—";
+        displayValue = numericToday ? "✓" : "✗";
       } else {
         numericToday = typeof todayVal === "number" ? todayVal : 0;
         numericYesterday = typeof yVal === "number" ? yVal : 0;
@@ -488,10 +528,12 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   }, [metrics, customOrder]);
 
   const startDayIndex = useMemo(() => {
-    const count = period === "7d" ? 7 : period === "30d" ? 30 : 7;
-    const d = subDays(new Date(selectedDate + "T12:00:00"), count - 1);
-    return d.getDay();
-  }, [selectedDate, period]);
+    if (chartDates.length > 0) {
+      const d = new Date(chartDates[0] + "T12:00:00");
+      return d.getDay();
+    }
+    return 1; // Monday
+  }, [chartDates]);
 
   const moveMetric = useCallback((fromIdx: number, dir: -1 | 1) => {
     const toIdx = fromIdx + dir;
