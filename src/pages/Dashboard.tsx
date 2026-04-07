@@ -119,7 +119,9 @@ export default function Dashboard() {
             <SheetTitle>Prazos e lembretes</SheetTitle>
             <SheetDescription>Visualize seus prazos e lembretes</SheetDescription>
           </SheetHeader>
-          <Deadlines />
+          <div className="p-5 pt-8">
+            <Deadlines />
+          </div>
         </SheetContent>
       </Sheet>
 
