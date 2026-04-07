@@ -428,9 +428,9 @@ export default function Profile() {
             <ChipSelect options={LIFE_AREAS} selected={lifeAreas} onToggle={toggleMulti(lifeAreas, setLifeAreas)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Seus objetivos de vida</Label>
-            <Textarea value={lifeGoals} onChange={(e) => setLifeGoals(e.target.value)} rows={3} placeholder="Escreva livremente..." />
-            <p className="text-[10px] text-muted-foreground">Revisitar isso quando precisar de motivação</p>
+            <Label>Meu objetivo atual</Label>
+            <Input value={lifeGoals} onChange={(e) => setLifeGoals(e.target.value)} placeholder="Ex: emagrecer 10kg, lançar minha marca..." />
+            <p className="text-[10px] text-muted-foreground">Descreva em uma frase curta o que você quer conquistar nos próximos 6 meses.</p>
           </div>
         </CardContent>
       </Card>

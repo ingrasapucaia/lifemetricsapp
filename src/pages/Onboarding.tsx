@@ -589,9 +589,10 @@ export default function Onboarding() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Quais são seus maiores objetivos de vida?</Label>
-              <Textarea value={lifeGoals} onChange={(e) => setLifeGoals(e.target.value)} rows={3} placeholder="Escreva livremente..." />
-              <p className="text-[10px] text-muted-foreground">Ficará salvo em Meu Perfil para revisitar quando precisar de motivação.</p>
+              <Label>Meu objetivo atual com o app</Label>
+              <p className="text-xs text-muted-foreground">Descreva em uma frase curta e específica o que você quer conquistar nos próximos 6 meses.</p>
+              <Input value={lifeGoals} onChange={(e) => setLifeGoals(e.target.value)} placeholder="Ex: emagrecer 10kg" />
+              <p className="text-[10px] text-muted-foreground italic">Ex: emagrecer 10kg, passar em um concurso, lançar minha marca, completar um triathlon</p>
             </div>
 
             <Button className="w-full rounded-full" onClick={handleNextStep1}>
