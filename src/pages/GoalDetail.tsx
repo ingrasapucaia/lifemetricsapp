@@ -4,7 +4,7 @@ import { useStore } from "@/hooks/useStore";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getLifeArea } from "@/types";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown, CalendarIcon, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -40,10 +40,13 @@ export default function GoalDetail() {
 
   const [actionTitle, setActionTitle] = useState("");
   const [actionPriority, setActionPriority] = useState<GoalAction["priority"]>(undefined);
+  const [actionDeadline, setActionDeadline] = useState<string>("");
   const [editingAction, setEditingAction] = useState<GoalAction | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editPriority, setEditPriority] = useState<GoalAction["priority"]>(undefined);
+  const [editDeadline2, setEditDeadline2] = useState<string>("");
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [sortPending, setSortPending] = useState(false);
 
   // Edit goal form
   const [editIcon, setEditIcon] = useState("");
@@ -69,14 +72,15 @@ export default function GoalDetail() {
 
   function handleAddAction() {
     if (!actionTitle.trim() || goal!.actions.length >= 50) return;
-    addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority });
+    addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority, deadline: actionDeadline || undefined });
     setActionTitle("");
     setActionPriority(undefined);
+    setActionDeadline("");
   }
 
   function handleSaveEdit() {
     if (!editingAction || !editTitle.trim()) return;
-    updateGoalAction(goal!.id, editingAction.id, { title: editTitle.trim(), priority: editPriority });
+    updateGoalAction(goal!.id, editingAction.id, { title: editTitle.trim(), priority: editPriority, deadline: editDeadline2 || undefined });
     setEditingAction(null);
   }
 
