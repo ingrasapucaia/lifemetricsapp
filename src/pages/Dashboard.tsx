@@ -83,7 +83,7 @@ export default function Dashboard() {
       />
 
       {/* Weekly Streak Card */}
-      <WeeklyStreakCard records={records} />
+      <WeeklyStreakCard records={records} objective={authProfile?.life_goals} />
 
       {/* Daily Metrics */}
       <DailyMetricsGrid

@@ -1,20 +1,22 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { DailyRecord } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { format, startOfWeek, addDays } from "date-fns";
-import { Zap } from "lucide-react";
+import { format, differenceInCalendarDays, parseISO } from "date-fns";
+import { Target } from "lucide-react";
 
 interface Props {
   records: DailyRecord[];
+  objective?: string | null;
 }
 
-const DAY_LABELS = ["S", "T", "Q", "Q", "S", "S", "D"];
+const TOTAL_DAYS = 183; // ~6 months
 
-function DonutChart({ value, total, size = 64 }: { value: number; total: number; size?: number }) {
+function StreakDonut({ value, total, size = 68 }: { value: number; total: number; size?: number }) {
   const strokeWidth = 5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const pct = total > 0 ? (value / total) * 100 : 0;
+  const pct = total > 0 ? Math.min((value / total) * 100, 100) : 0;
   const offset = circumference - (pct / 100) * circumference;
 
   return (
@@ -23,7 +25,7 @@ function DonutChart({ value, total, size = 64 }: { value: number; total: number;
         <circle
           cx={size / 2} cy={size / 2} r={radius}
           fill="white"
-          stroke="hsl(0 0% 0% / 0.1)"
+          stroke="hsl(0 0% 0% / 0.08)"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -34,59 +36,85 @@ function DonutChart({ value, total, size = 64 }: { value: number; total: number;
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500 ease-out"
+          className="transition-all duration-1000 ease-out"
+          style={{
+            animation: "donut-fill 1.2s ease-out forwards",
+          }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold leading-none" style={{ color: "hsl(var(--foreground))" }}>{value}</span>
-        <span className="text-[9px] font-medium text-muted-foreground leading-none mt-0.5">dias</span>
+        <span className="text-base font-bold leading-none" style={{ color: "hsl(var(--foreground))" }}>{value}</span>
+        <span className="text-[8px] font-medium text-muted-foreground leading-none mt-0.5">/ {total}</span>
       </div>
+      <style>{`
+        @keyframes donut-fill {
+          from { stroke-dashoffset: ${circumference}; }
+          to { stroke-dashoffset: ${offset}; }
+        }
+      `}</style>
     </div>
   );
 }
 
-export default function WeeklyStreakCard({ records }: Props) {
-  const { weekDays, streakCount } = useMemo(() => {
-    const now = new Date();
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
-    const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-
-    const recordSet = new Set<string>();
+export default function WeeklyStreakCard({ records, objective }: Props) {
+  const streakCount = useMemo(() => {
+    const today = new Date();
+    const recordDates = new Set<string>();
     records.forEach((r) => {
       const hasData =
         r.mood ||
         r.waterIntake > 0 ||
         r.sleepHours > 0 ||
         Object.keys(r.habitChecks).length > 0;
-      if (hasData) recordSet.add(r.date);
+      if (hasData) recordDates.add(r.date);
     });
 
-    const weekDays = days.map((d) => ({
-      label: DAY_LABELS[days.indexOf(d)],
-      date: d,
-      hasRecord: recordSet.has(format(d, "yyyy-MM-dd")),
-      isFuture: d > now,
-    }));
+    // Count consecutive days ending today (or yesterday)
+    let count = 0;
+    let checkDate = today;
+    // If today has no record yet, start from yesterday
+    if (!recordDates.has(format(today, "yyyy-MM-dd"))) {
+      checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    while (recordDates.has(format(checkDate, "yyyy-MM-dd"))) {
+      count++;
+      checkDate = new Date(checkDate);
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
 
-    const streakCount = weekDays.filter((d) => d.hasRecord).length;
-
-    return { weekDays, streakCount };
+    return count;
   }, [records]);
+
+  const navigate = useNavigate();
 
   return (
     <Card className="border-0 overflow-hidden bg-primary" style={{ borderRadius: 20 }}>
       <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
-              <Zap size={14} className="text-primary-foreground/70" fill="currentColor" />
-              <span className="text-xs font-medium text-primary-foreground/70">Registro diário</span>
+              <Target size={13} className="text-primary-foreground/70 shrink-0" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary-foreground/70">
+                Objetivo atual
+              </span>
             </div>
-            <p className="text-lg font-bold text-primary-foreground leading-tight">
-              Seu progresso<br />semanal
-            </p>
+            {objective ? (
+              <p className="text-base font-bold text-primary-foreground leading-snug line-clamp-2">
+                {objective}
+              </p>
+            ) : (
+              <button
+                onClick={() => navigate("/perfil")}
+                className="text-sm font-semibold text-primary-foreground/90 hover:text-primary-foreground transition-colors underline underline-offset-2"
+              >
+                Adicione seu objetivo →
+              </button>
+            )}
           </div>
-          <DonutChart value={streakCount} total={7} />
+          <div className="shrink-0">
+            <StreakDonut value={streakCount} total={TOTAL_DAYS} />
+          </div>
         </div>
       </CardContent>
     </Card>
