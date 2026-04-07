@@ -72,47 +72,71 @@ function CheckToggle({ completed, onToggle }: { completed: boolean; onToggle: ()
   const handleClick = () => {
     if (!completed) {
       setAnimating(true);
-      setTimeout(() => setAnimating(false), 600);
+      // Delay toggle so animation is visible before re-sort
+      setTimeout(() => {
+        onToggle();
+        setTimeout(() => setAnimating(false), 100);
+      }, 500);
+    } else {
+      onToggle();
     }
-    onToggle();
   };
 
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0" style={{ overflow: "visible" }}>
       <button
         type="button"
         onClick={handleClick}
+        disabled={animating}
         className={cn(
-          "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 active:scale-90",
-          completed
+          "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+          completed || animating
             ? "bg-primary border-primary"
             : "border-muted-foreground/30 hover:border-primary/50",
-          animating && "animate-[bounce-check_0.4s_ease-out]"
+          animating && "animate-bounce-check"
         )}
       >
-        {completed && (
+        {(completed || animating) && (
           <Check
-            size={14}
-            className={cn("text-primary-foreground", animating && "animate-[draw-check_0.3s_ease-out]")}
+            size={16}
+            className={cn("text-primary-foreground", animating && "animate-draw-check")}
             strokeWidth={3}
           />
         )}
       </button>
-      {/* Confetti dots */}
+      {/* Confetti particles */}
       {animating && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <span
-              key={i}
-              className="absolute w-1.5 h-1.5 rounded-full bg-primary animate-[confetti-dot_0.6s_ease-out_forwards]"
-              style={{
-                left: "50%",
-                top: "50%",
-                // @ts-ignore
-                "--angle": `${i * 60}deg`,
-              } as React.CSSProperties}
-            />
-          ))}
+        <div className="absolute inset-0 pointer-events-none" style={{ overflow: "visible" }}>
+          {[0, 60, 120, 180, 240, 300].map((angle, i) => {
+            const rad = (angle * Math.PI) / 180;
+            const x = Math.cos(rad) * 22;
+            const y = Math.sin(rad) * 22;
+            const colors = [
+              "hsl(var(--primary))",
+              "hsl(80 70% 60%)",
+              "hsl(45 90% 65%)",
+              "hsl(var(--primary))",
+              "hsl(160 60% 55%)",
+              "hsl(30 85% 60%)",
+            ];
+            return (
+              <span
+                key={i}
+                className="absolute rounded-full animate-confetti-dot"
+                style={{
+                  width: 5,
+                  height: 5,
+                  left: "50%",
+                  top: "50%",
+                  marginLeft: -2.5,
+                  marginTop: -2.5,
+                  backgroundColor: colors[i],
+                  "--confetti-x": `${x}px`,
+                  "--confetti-y": `${y}px`,
+                } as React.CSSProperties}
+              />
+            );
+          })}
         </div>
       )}
     </div>
