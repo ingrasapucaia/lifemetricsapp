@@ -425,8 +425,6 @@ export default function DailyMetricsGrid({ todayRecord, records, habits, selecte
   const periodLabel = getPeriodLabel(period);
 
   const metrics = useMemo((): (MetricItem & { id: string })[] => {
-    const yesterday = format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd");
-    const yesterdayRecord = filteredRecords.find((r) => r.date === yesterday);
     const chartRecords = chartDates.map((d) => filteredRecords.find((r) => r.date === d));
 
     const trend = (a: number, b: number): "up" | "down" | "same" =>
