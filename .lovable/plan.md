@@ -1,46 +1,55 @@
+## Plan: Fix Charts, Data Consistency, and Add Sleep+Mood Dashboard Card
 
+### Changes
 
-## Plan: Add deadline to subtasks + reorder button
+#### 1. Fix "7d" period to align to Monday (both files)
 
-### 1. Database migration — add `deadline` column to `goal_actions`
+`**src/components/dashboard/DailyMetricsGrid.tsx**` — `getRecordSlice` and `getChartDates`:
 
-```sql
-ALTER TABLE public.goal_actions ADD COLUMN deadline date DEFAULT NULL;
-```
+- Use `startOfWeek(new Date(), { weekStartsOn: 1 })` as the start for "7d" instead of `subDays(today, 7)`.
 
-### 2. Update TypeScript type
+`**src/pages/MetricsPage.tsx**` — `getDaysInPeriod` and `filteredRecords`:
 
-**File: `src/types/index.ts`**
-- Add `deadline?: string` to `GoalAction` interface
+- Same Monday-aligned logic for "7d".
 
-### 3. Update store layer
+#### 2. Fix "total" filter
 
-**File: `src/hooks/useStore.tsx`**
-- `mapGoalActionRow`: map `row.deadline` to the action
-- `addGoalAction`: include `deadline` in the insert
-- `updateGoalAction`: handle `deadline` in `dbUpdates`
+`**src/components/dashboard/DailyMetricsGrid.tsx**` — `getChartDates`:
 
-### 4. Update GoalDetail UI — date picker on subtasks + reorder button
+- For "total", generate dates from the earliest record to today (currently hardcoded to 7 points).
 
-**File: `src/pages/GoalDetail.tsx`**
+`**src/pages/MetricsPage.tsx**` — `getDaysInPeriod`:
 
-**Add action form**: Add an optional date picker (Popover + Calendar) next to the priority selector when creating a new action.
+- For "total", use all records' date range (currently caps at 30 days).
 
-**Action cards**: Show the deadline date next to the priority badge (small text, e.g. "12 abr").
+#### 3. Add animations to charts
 
-**Edit action dialog**: Add a date field so users can set/change deadline on existing actions.
+**Dashboard mini-charts**: Add CSS keyframe animations (bars grow up, dots scale in) via inline styles with `animation` property on mount.
 
-**Reorder button**: Add a button (e.g. `ArrowUpDown` icon) next to the "Ações (X/50)" header. When clicked, it sorts the actions list: pending first, completed last — applied visually via local state sort, not changing DB order.
+**MetricsPage Recharts**: Add `isAnimationActive={true} animationDuration={800}` to all `<Bar>` and `<Line>` components.
 
-### 5. Update Deadlines panel to include subtask deadlines
+#### 4. Improve interactivity (hover tooltips on dashboard mini-charts)
 
-**File: `src/pages/Deadlines.tsx`**
-- In `fetchData`, also query `goal_actions` with non-null deadlines within the filter range
-- Add these as individual `DeadlineItem` entries (type: `"acao"`) with the parent goal title as context
-- Update `DeadlineItem` type to support `"acao"` type and add `parentTitle` field
-- Update `getItemKey` to handle the new type
+Add `hoveredIndex` state to each mini-chart component. On hover/touch of a bar/dot/point, show a small tooltip with the value. Simple absolute-positioned div.
 
-### Technical notes
-- Single migration: one column addition, no RLS changes needed (existing policies on `goal_actions` already cover this)
-- No changes to any other pages
+#### 5. Add Sleep + Mood combined card to Dashboard
 
+`**src/components/dashboard/DailyMetricsGrid.tsx**`:
+
+- Add a new special card after the Sleep metric card: "Sono & Humor"
+- Uses the same period filter and chart dates as other metrics
+
+#### 6. Remove duplicate "Dias consecutivos" summary card
+
+`**src/pages/MetricsPage.tsx**` (line 290): Delete the duplicate `SummaryCard`.
+
+#### 7. Keep MetricsPage Sleep & Mood chart as-is
+
+The existing dual-line chart in MetricsPage stays unchanged — it's the detailed view.
+
+### Files modified
+
+- `src/components/dashboard/DailyMetricsGrid.tsx`
+- `src/pages/MetricsPage.tsx`
+
+### No backend changes needed
