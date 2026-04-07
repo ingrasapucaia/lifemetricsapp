@@ -4,6 +4,8 @@ import { format, isAfter, startOfDay } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import Deadlines from "@/pages/Deadlines";
 
 import WeekCalendar from "@/components/dashboard/WeekCalendar";
 import WeeklyStreakCard from "@/components/dashboard/WeeklyStreakCard";
@@ -27,6 +29,7 @@ export default function Dashboard() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetDate, setSheetDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [deadlinesOpen, setDeadlinesOpen] = useState(false);
 
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -62,7 +65,10 @@ export default function Dashboard() {
             {getGreeting()}{displayName ? `, ${displayName}` : ""}
           </h1>
         </div>
-        <button className="p-2 rounded-full hover:bg-muted/60 transition-colors">
+        <button
+          onClick={() => setDeadlinesOpen(true)}
+          className="p-2 rounded-full hover:bg-muted/60 transition-colors"
+        >
           <Bell size={22} className="text-muted-foreground" />
         </button>
       </div>
@@ -105,6 +111,17 @@ export default function Dashboard() {
           Registrar meu dia
         </Button>
       </div>
+
+      {/* Deadlines Sheet */}
+      <Sheet open={deadlinesOpen} onOpenChange={setDeadlinesOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 overflow-y-auto">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Prazos e lembretes</SheetTitle>
+            <SheetDescription>Visualize seus prazos e lembretes</SheetDescription>
+          </SheetHeader>
+          <Deadlines />
+        </SheetContent>
+      </Sheet>
 
       {/* Bottom Sheet */}
       <RegisterSheet
