@@ -1,6 +1,6 @@
 // Store provider — all data from Supabase, zero localStorage
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Habit, DailyRecord, Achievement, Goal, GoalAction, LIFE_AREAS } from "@/types";
+import { Habit, DailyRecord, Achievement, Goal, GoalAction, Task, LIFE_AREAS } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -151,6 +151,7 @@ interface StoreType {
   habits: Habit[];
   records: DailyRecord[];
   goals: Goal[];
+  tasks: Task[];
   upsertRecord: (updates: Partial<DailyRecord> & { date: string }) => void;
   deleteRecord: (id: string) => void;
   addHabit: (habit: Omit<Habit, "id" | "createdAt">) => void;
@@ -164,6 +165,10 @@ interface StoreType {
   updateGoalAction: (goalId: string, actionId: string, updates: Partial<GoalAction>) => void;
   deleteGoalAction: (goalId: string, actionId: string) => void;
   toggleGoalAction: (goalId: string, actionId: string) => void;
+  addTask: (task: Omit<Task, "id" | "createdAt" | "userId">) => void;
+  updateTask: (id: string, updates: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
+  toggleTask: (id: string) => void;
   clearAll: () => void;
 }
 
@@ -174,6 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [records, setRecords] = useState<DailyRecord[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // ── Fetch all data on login ──────────────────
   useEffect(() => {
@@ -186,13 +192,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setHabits([]);
         setRecords([]);
         setGoals([]);
+        setTasks([]);
         return;
       }
 
-      const [habitsRes, recordsRes, goalsRes] = await Promise.all([
+      const [habitsRes, recordsRes, goalsRes, tasksRes] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
         supabase.from("daily_records").select("*").eq("user_id", user.id).order("date", { ascending: true }),
         supabase.from("goals").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
+        supabase.from("tasks").select("*").eq("user_id", user.id).order("date", { ascending: true }),
       ]);
 
       const goalRows = goalsRes.data || [];
@@ -204,12 +212,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return;
 
-      if (habitsRes.error || recordsRes.error || goalsRes.error || actionsRes.error) {
+      if (habitsRes.error || recordsRes.error || goalsRes.error || actionsRes.error || tasksRes.error) {
         console.error("Error fetching app data:", {
           habits: habitsRes.error,
           records: recordsRes.error,
           goals: goalsRes.error,
           actions: actionsRes.error,
+          tasks: tasksRes.error,
         });
       }
 
@@ -222,6 +231,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           .map(mapGoalActionRow);
         return mapGoalRow(g, gActions);
       }));
+
+      setTasks((tasksRes.data || []).map((t: any): Task => ({
+        id: t.id,
+        userId: t.user_id,
+        title: t.title,
+        date: t.date,
+        time: t.time || undefined,
+        completed: t.completed,
+        priority: t.priority || "media",
+        lifeArea: t.life_area || undefined,
+        goalId: t.goal_id || undefined,
+        createdAt: t.created_at,
+      })));
     };
 
     void fetchAll();
@@ -512,20 +534,89 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  // ── Tasks CRUD ──────────────────────────────
+
+  const addTask = useCallback((task: Omit<Task, "id" | "createdAt" | "userId">) => {
+    if (!user) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: user.id,
+          title: task.title,
+          date: task.date,
+          time: task.time ?? null,
+          completed: task.completed ?? false,
+          priority: task.priority ?? "media",
+          life_area: task.lifeArea ?? null,
+          goal_id: task.goalId ?? null,
+        })
+        .select("*")
+        .single();
+      if (error) { console.error("Error creating task:", error); return; }
+      setTasks((prev) => [...prev, {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        date: data.date,
+        time: data.time || undefined,
+        completed: data.completed,
+        priority: (data.priority || "media") as Task["priority"],
+        lifeArea: data.life_area || undefined,
+        goalId: data.goal_id || undefined,
+        createdAt: data.created_at,
+      } as Task]);
+    })();
+  }, [user]);
+
+  const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+    if (!user) return;
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    if (updates.time !== undefined) dbUpdates.time = updates.time ?? null;
+    if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+    if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
+    if (updates.goalId !== undefined) dbUpdates.goal_id = updates.goalId ?? null;
+
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
+    void supabase.from("tasks").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
+  const deleteTask = useCallback((id: string) => {
+    if (!user) return;
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    void supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
+  const toggleTask = useCallback((id: string) => {
+    if (!user) return;
+    let newCompleted = false;
+    setTasks((prev) => prev.map((t) => {
+      if (t.id !== id) return t;
+      newCompleted = !t.completed;
+      return { ...t, completed: newCompleted };
+    }));
+    void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
+  }, [user]);
+
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
     setGoals([]);
+    setTasks([]);
   }, []);
 
   return (
     <StoreContext.Provider
       value={{
-        habits, records, goals,
+        habits, records, goals, tasks,
         upsertRecord, deleteRecord,
         addHabit, updateHabit, deleteHabit, reorderHabit,
         addGoal, updateGoal, deleteGoal,
         addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction,
+        addTask, updateTask, deleteTask, toggleTask,
         clearAll,
       }}
     >

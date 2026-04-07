@@ -220,6 +220,29 @@ export const HABIT_PASTEL_COLORS = [
   "hsl(217 60% 72%)", "hsl(0 60% 75%)",
 ];
 
+// ──────────────── Tasks ────────────────
+
+export type TaskPriority = "alta" | "media" | "baixa";
+
+export interface Task {
+  id: string;
+  userId: string;
+  title: string;
+  date: string;
+  time?: string;
+  completed: boolean;
+  priority: TaskPriority;
+  lifeArea?: string;
+  goalId?: string;
+  createdAt: string;
+}
+
+export const TASK_PRIORITY_COLORS: Record<TaskPriority, { bg: string; text: string }> = {
+  alta: { bg: "#D1F0E0", text: "#0F6E56" },
+  media: { bg: "#FDF3DC", text: "#7A5C00" },
+  baixa: { bg: "#FCEBEB", text: "#A32D2D" },
+};
+
 export function formatSleepHours(hours: number): string {
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);

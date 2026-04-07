@@ -504,6 +504,53 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          date: string
+          goal_id: string | null
+          id: string
+          life_area: string | null
+          priority: string | null
+          time: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          date: string
+          goal_id?: string | null
+          id?: string
+          life_area?: string | null
+          priority?: string | null
+          time?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          date?: string
+          goal_id?: string | null
+          id?: string
+          life_area?: string | null
+          priority?: string | null
+          time?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
