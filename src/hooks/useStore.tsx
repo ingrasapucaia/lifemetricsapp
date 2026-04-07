@@ -140,6 +140,7 @@ function mapGoalActionRow(row: any): GoalAction {
     title: row.title,
     completed: row.completed,
     priority: row.priority || undefined,
+    deadline: row.deadline || undefined,
     createdAt: row.created_at,
   };
 }
@@ -451,6 +452,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           goal_id: goalId,
           title: action.title,
           priority: action.priority ?? null,
+          deadline: action.deadline ?? null,
         })
         .select("*")
         .single();
@@ -468,6 +470,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
     if (updates.priority !== undefined) dbUpdates.priority = updates.priority ?? null;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline ?? null;
 
     setGoals((prev) =>
       prev.map((g) =>

@@ -4,7 +4,7 @@ import { useStore } from "@/hooks/useStore";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { GOAL_PRIORITY_COLORS, GOAL_STATUSES, GoalAction, GoalStatus, LIFE_AREAS, getLifeArea } from "@/types";
-import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Check, Gift, Target, MoreVertical, ChevronDown, CalendarIcon, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -40,10 +40,13 @@ export default function GoalDetail() {
 
   const [actionTitle, setActionTitle] = useState("");
   const [actionPriority, setActionPriority] = useState<GoalAction["priority"]>(undefined);
+  const [actionDeadline, setActionDeadline] = useState<string>("");
   const [editingAction, setEditingAction] = useState<GoalAction | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editPriority, setEditPriority] = useState<GoalAction["priority"]>(undefined);
+  const [editDeadline2, setEditDeadline2] = useState<string>("");
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [sortPending, setSortPending] = useState(false);
 
   // Edit goal form
   const [editIcon, setEditIcon] = useState("");
@@ -69,14 +72,15 @@ export default function GoalDetail() {
 
   function handleAddAction() {
     if (!actionTitle.trim() || goal!.actions.length >= 50) return;
-    addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority });
+    addGoalAction(goal!.id, { title: actionTitle.trim(), priority: actionPriority, deadline: actionDeadline || undefined });
     setActionTitle("");
     setActionPriority(undefined);
+    setActionDeadline("");
   }
 
   function handleSaveEdit() {
     if (!editingAction || !editTitle.trim()) return;
-    updateGoalAction(goal!.id, editingAction.id, { title: editTitle.trim(), priority: editPriority });
+    updateGoalAction(goal!.id, editingAction.id, { title: editTitle.trim(), priority: editPriority, deadline: editDeadline2 || undefined });
     setEditingAction(null);
   }
 
@@ -238,36 +242,70 @@ export default function GoalDetail() {
 
       {/* Actions section */}
       <Card className="p-5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Ações ({goal.actions.length}/50)
-        </p>
-        <div className="flex gap-2">
-          <Input
-            value={actionTitle}
-            onChange={(e) => setActionTitle(e.target.value)}
-            placeholder="Título da ação"
-            className="flex-1 rounded-xl"
-            onKeyDown={(e) => e.key === "Enter" && handleAddAction()}
-          />
-          <Select value={actionPriority || ""} onValueChange={(v) => setActionPriority(v as any || undefined)}>
-            <SelectTrigger className="w-32 rounded-xl">
-              <SelectValue placeholder="Prioridade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Nenhuma</SelectItem>
-              {PRIORITIES.map((p) => (
-                <SelectItem key={p} value={p}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: `hsl(${GOAL_PRIORITY_COLORS[p].hsl})` }} />
-                    {p}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
-            <Plus size={16} />
-          </Button>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Ações ({goal.actions.length}/50)
+          </p>
+          {goal.actions.length > 1 && (
+            <Button
+              variant={sortPending ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 gap-1.5 text-xs rounded-lg"
+              onClick={() => setSortPending((prev) => !prev)}
+            >
+              <ArrowUpDown size={13} />
+              Reordenar
+            </Button>
+          )}
+        </div>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={actionTitle}
+              onChange={(e) => setActionTitle(e.target.value)}
+              placeholder="Título da ação"
+              className="flex-1 rounded-xl"
+              onKeyDown={(e) => e.key === "Enter" && handleAddAction()}
+            />
+            <Button size="icon" className="rounded-xl" onClick={handleAddAction} disabled={!actionTitle.trim() || goal.actions.length >= 50}>
+              <Plus size={16} />
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Select value={actionPriority || ""} onValueChange={(v) => setActionPriority(v as any || undefined)}>
+              <SelectTrigger className="flex-1 rounded-xl">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma</SelectItem>
+                {PRIORITIES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: `hsl(${GOAL_PRIORITY_COLORS[p].hsl})` }} />
+                      {p}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("flex-1 justify-start text-left font-normal rounded-xl text-xs", !actionDeadline && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {actionDeadline ? format(new Date(actionDeadline + "T12:00:00"), "dd MMM", { locale: pt }) : "Prazo"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={actionDeadline ? new Date(actionDeadline + "T12:00:00") : undefined}
+                  onSelect={(date) => setActionDeadline(date ? format(date, "yyyy-MM-dd") : "")}
+                  locale={pt}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </Card>
 
@@ -276,28 +314,46 @@ export default function GoalDetail() {
         {goal.actions.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">Adicione ações para acompanhar seu progresso</p>
         )}
-        {goal.actions.map((action) => {
+        {(sortPending
+          ? [...goal.actions].sort((a, b) => {
+              if (a.completed === b.completed) return 0;
+              return a.completed ? 1 : -1;
+            })
+          : goal.actions
+        ).map((action) => {
           const pColor = action.priority ? GOAL_PRIORITY_COLORS[action.priority] : null;
           return (
-            <Card key={action.id} className="p-4 flex items-center gap-3 hover:shadow-card-hover transition-all duration-200">
-              <Checkbox checked={action.completed} onCheckedChange={() => toggleGoalAction(goal.id, action.id)} />
-              <span className={`flex-1 text-sm ${action.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                {action.title}
-              </span>
-              {action.priority && pColor && (
-                <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full"
-                  style={{ background: `hsl(${pColor.bgHsl})`, color: `hsl(${pColor.hsl})` }}>
-                  {action.priority}
-                </Badge>
+            <Card key={action.id} className="p-4 space-y-1.5 hover:shadow-card-hover transition-all duration-200">
+              <div className="flex items-center gap-3">
+                <Checkbox checked={action.completed} onCheckedChange={() => toggleGoalAction(goal.id, action.id)} />
+                <span className={`flex-1 text-sm ${action.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  {action.title}
+                </span>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg"
+                  onClick={() => { setEditingAction(action); setEditTitle(action.title); setEditPriority(action.priority); setEditDeadline2(action.deadline || ""); }}>
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg"
+                  onClick={() => deleteGoalAction(goal.id, action.id)}>
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+              {(action.priority || action.deadline) && (
+                <div className="flex items-center gap-2 ml-9">
+                  {action.priority && pColor && (
+                    <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full"
+                      style={{ background: `hsl(${pColor.bgHsl})`, color: `hsl(${pColor.hsl})` }}>
+                      {action.priority}
+                    </Badge>
+                  )}
+                  {action.deadline && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <CalendarIcon size={10} />
+                      {format(new Date(action.deadline + "T12:00:00"), "dd MMM", { locale: pt })}
+                    </span>
+                  )}
+                </div>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg"
-                onClick={() => { setEditingAction(action); setEditTitle(action.title); setEditPriority(action.priority); }}>
-                <Pencil size={14} />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg"
-                onClick={() => deleteGoalAction(goal.id, action.id)}>
-                <Trash2 size={14} />
-              </Button>
             </Card>
           );
         })}
@@ -321,6 +377,26 @@ export default function GoalDetail() {
                   {PRIORITIES.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prazo</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal rounded-xl", !editDeadline2 && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editDeadline2 ? format(new Date(editDeadline2 + "T12:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDeadline2 ? new Date(editDeadline2 + "T12:00:00") : undefined}
+                    onSelect={(date) => setEditDeadline2(date ? format(date, "yyyy-MM-dd") : "")}
+                    locale={pt}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <Button onClick={handleSaveEdit} className="w-full rounded-xl">Salvar</Button>
           </div>

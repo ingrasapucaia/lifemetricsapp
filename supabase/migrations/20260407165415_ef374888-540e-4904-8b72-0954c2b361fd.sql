@@ -1,0 +1,1 @@
+ALTER TABLE public.goal_actions ADD COLUMN deadline date DEFAULT NULL;
