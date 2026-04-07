@@ -314,28 +314,46 @@ export default function GoalDetail() {
         {goal.actions.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">Adicione ações para acompanhar seu progresso</p>
         )}
-        {goal.actions.map((action) => {
+        {(sortPending
+          ? [...goal.actions].sort((a, b) => {
+              if (a.completed === b.completed) return 0;
+              return a.completed ? 1 : -1;
+            })
+          : goal.actions
+        ).map((action) => {
           const pColor = action.priority ? GOAL_PRIORITY_COLORS[action.priority] : null;
           return (
-            <Card key={action.id} className="p-4 flex items-center gap-3 hover:shadow-card-hover transition-all duration-200">
-              <Checkbox checked={action.completed} onCheckedChange={() => toggleGoalAction(goal.id, action.id)} />
-              <span className={`flex-1 text-sm ${action.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                {action.title}
-              </span>
-              {action.priority && pColor && (
-                <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full"
-                  style={{ background: `hsl(${pColor.bgHsl})`, color: `hsl(${pColor.hsl})` }}>
-                  {action.priority}
-                </Badge>
+            <Card key={action.id} className="p-4 space-y-1.5 hover:shadow-card-hover transition-all duration-200">
+              <div className="flex items-center gap-3">
+                <Checkbox checked={action.completed} onCheckedChange={() => toggleGoalAction(goal.id, action.id)} />
+                <span className={`flex-1 text-sm ${action.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  {action.title}
+                </span>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg"
+                  onClick={() => { setEditingAction(action); setEditTitle(action.title); setEditPriority(action.priority); setEditDeadline2(action.deadline || ""); }}>
+                  <Pencil size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg"
+                  onClick={() => deleteGoalAction(goal.id, action.id)}>
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+              {(action.priority || action.deadline) && (
+                <div className="flex items-center gap-2 ml-9">
+                  {action.priority && pColor && (
+                    <Badge variant="secondary" className="text-[10px] px-2.5 py-0.5 rounded-full"
+                      style={{ background: `hsl(${pColor.bgHsl})`, color: `hsl(${pColor.hsl})` }}>
+                      {action.priority}
+                    </Badge>
+                  )}
+                  {action.deadline && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <CalendarIcon size={10} />
+                      {format(new Date(action.deadline + "T12:00:00"), "dd MMM", { locale: pt })}
+                    </span>
+                  )}
+                </div>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg"
-                onClick={() => { setEditingAction(action); setEditTitle(action.title); setEditPriority(action.priority); }}>
-                <Pencil size={14} />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive rounded-lg"
-                onClick={() => deleteGoalAction(goal.id, action.id)}>
-                <Trash2 size={14} />
-              </Button>
             </Card>
           );
         })}
@@ -359,6 +377,26 @@ export default function GoalDetail() {
                   {PRIORITIES.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prazo</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal rounded-xl", !editDeadline2 && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editDeadline2 ? format(new Date(editDeadline2 + "T12:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: pt }) : "Selecionar data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDeadline2 ? new Date(editDeadline2 + "T12:00:00") : undefined}
+                    onSelect={(date) => setEditDeadline2(date ? format(date, "yyyy-MM-dd") : "")}
+                    locale={pt}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <Button onClick={handleSaveEdit} className="w-full rounded-xl">Salvar</Button>
           </div>
