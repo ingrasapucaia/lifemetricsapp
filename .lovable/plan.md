@@ -1,24 +1,12 @@
 
 
-## Plan: Move Prazos e Lembretes to Bell Icon on Dashboard
+## Plan: Add padding to Deadlines panel inside the Sheet
 
-### Changes
+### Problem
+The Deadlines component renders inside the Sheet with `p-0` on the `SheetContent`, so the content is flush against the edges with no spacing.
 
-**File: `src/pages/Dashboard.tsx`**
-- Import `Sheet`, `SheetContent`, `SheetTrigger`, `SheetHeader`, `SheetTitle` from UI
-- Import `Deadlines` component from `@/pages/Deadlines`
-- Add state `deadlinesOpen` to control the sheet
-- Replace the static bell `<button>` with a `SheetTrigger` that opens a right-side `Sheet` containing the `Deadlines` component
-- Optionally show a badge dot on the bell if there are upcoming deadlines
+### Change
 
-**File: `src/components/AppSidebar.tsx`**
-- Remove the `{ to: "/prazos", label: "Prazos e lembretes", icon: Bell }` entry from `mainLinks`
-- Remove `Bell` from the lucide import if unused elsewhere
-
-**File: `src/App.tsx`**
-- Keep the `/prazos` route for direct URL access (optional, low cost to keep)
-
-### Technical notes
-- The `Deadlines` component is self-contained (fetches its own data), so it renders cleanly inside a Sheet without any prop changes
-- No backend or database changes needed
+**File: `src/pages/Dashboard.tsx`** (line 122)
+- Wrap the `<Deadlines />` component in a `<div className="p-5 pt-8">` to add internal padding, keeping `p-0` on the SheetContent to avoid double-padding with the close button area.
 
