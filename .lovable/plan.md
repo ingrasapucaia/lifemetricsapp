@@ -1,21 +1,41 @@
 
 
-## Plan: Fix meals content being cut off in RegisterSheet
+## Plan: Enhance Goals Section
 
-### Problem
-The `ScrollArea` component has a fixed `maxHeight` of `calc(85vh - 140px)` which doesn't account for content growth when many meals are added. The meals section overflows and gets clipped.
+### 1. Add GoalsInProgress to Dashboard
 
-### Change
+**File: `src/pages/Dashboard.tsx`**
+- Import `GoalsInProgress` from `@/components/dashboard/GoalsInProgress`
+- Add `<GoalsInProgress />` after the `HabitCardGrid` section (before the floating button)
 
-**File: `src/components/dashboard/RegisterSheet.tsx`**
+### 2. Enhance goal cards in Goals page with progress bar, pending tasks count, and reward
 
-1. **Line 168**: Replace `ScrollArea` with a plain scrollable `div` to ensure native scrolling works reliably within the Drawer:
-   ```tsx
-   <div className="flex-1 px-4 overflow-y-auto" style={{ maxHeight: "calc(85vh - 140px)" }}>
-   ```
-   The `ScrollArea` component from Radix can sometimes clip content inside drawers. Using a native scrollable div is more reliable here.
+**File: `src/pages/Goals.tsx`** (lines 362-418, the goal card rendering)
+- Add a green progress bar (`bg-primary` / lime green) below the status badge, showing action completion percentage
+- Add pending tasks count text: e.g. "3 tarefas pendentes" 
+- The reward line already exists (lines 414-418) — keep it as-is
 
-2. Remove the `ScrollArea` import if no longer used elsewhere in the file.
+The card layout becomes:
+```text
+┌─────────────────────────────────┐
+│ 🎯 Goal title              ⋮   │
+│ [Em progresso ▾]                │
+│ ████████░░░░░░░░░░░░  45%       │
+│ 3 tarefas pendentes             │
+│ Prazo: 12 de abril de 2026      │
+│ 🎁 Recompensa text              │
+└─────────────────────────────────┘
+```
 
-This is a single-line fix — replacing `<ScrollArea>` with a native `<div>` (and updating the closing tag) to ensure all meal cards are scrollable without being cut off.
+### 3. Move "Metas de Vida" higher in sidebar menu
+
+**File: `src/components/AppSidebar.tsx`** (lines 9-20)
+- Move the `{ to: "/metas", ... }` entry from position 7 to position 4 (after Insights, before Roda da Vida)
+
+New order: Dashboard, Métricas, Insights, **Metas de Vida**, Roda da Vida, Meus Registros, Controle de hábitos, Minhas Conquistas
+
+### Technical notes
+- Progress bar uses the existing `Progress` component with primary/lime color
+- GoalsInProgress component already exists and is self-contained
+- No backend changes needed
 
