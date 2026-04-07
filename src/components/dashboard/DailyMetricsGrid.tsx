@@ -79,23 +79,32 @@ function getHabitColor(habit: Habit, index: number): string {
 
 /* ─── Chart Components (pure SVG) ─── */
 
+function sparseLabels(data: any[], startDayIndex: number) {
+  const len = data.length;
+  if (len <= 7) return data.map((_, i) => DAY_LABELS[(startDayIndex + i) % 7]);
+  const step = Math.max(Math.ceil(len / 6), 2);
+  return data.map((_, i) => (i % step === 0 || i === len - 1) ? DAY_LABELS[(startDayIndex + i) % 7] : "");
+}
+
 function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
   const h = 48;
+  const gapClass = data.length > 15 ? "gap-px" : data.length > 7 ? "gap-[2px]" : "gap-[6px]";
+  const labels = sparseLabels(data, startDayIndex);
   return (
-    <div className="w-full">
-      <div className="flex items-end justify-between gap-[6px]" style={{ height: h }}>
+    <div className="w-full overflow-hidden">
+      <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1">
               <div
                 className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
                   transformOrigin: "bottom",
-                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
+                  animation: `grow-bar 400ms ease-out ${i * (data.length > 15 ? 15 : 40)}ms both`,
                 }}
               />
             </div>
@@ -103,9 +112,9 @@ function MiniBarChart({ data, max, color, startDayIndex }: { data: number[]; max
         })}
       </div>
       <div className="flex justify-between mt-1">
-        {data.map((_, i) => (
+        {labels.map((l, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
-            {DAY_LABELS[(startDayIndex + i) % 7]}
+            {l}
           </span>
         ))}
       </div>
@@ -167,38 +176,45 @@ function MiniLineChart({ data, max, color, startDayIndex }: { data: number[]; ma
           />
         ))}
       </svg>
+      {(() => { const labels = sparseLabels(data, startDayIndex); return (
       <div className="flex justify-between mt-1">
-        {data.map((_, i) => (
+        {labels.map((l, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
-            {DAY_LABELS[(startDayIndex + i) % 7]}
+            {l}
           </span>
         ))}
       </div>
+      ); })()}
     </div>
   );
 }
 
 function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data: number[]; max: number; color: string; target: number; startDayIndex: number }) {
   const h = 48;
+  const showLabels = data.length <= 10;
+  const gapClass = data.length > 15 ? "gap-px" : data.length > 7 ? "gap-[2px]" : "gap-[6px]";
+  const labels = sparseLabels(data, startDayIndex);
   return (
-    <div className="w-full">
-      <div className="flex items-end justify-between gap-[6px]" style={{ height: h + 14 }}>
+    <div className="w-full overflow-hidden">
+      <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h + (showLabels ? 14 : 0) }}>
         {data.map((v, i) => {
           const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
           const pct = target > 0 ? Math.round((v / target) * 100) : 0;
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex flex-col items-center">
-              <span className="text-[8px] font-semibold mb-0.5" style={{ color: isLast ? color : "hsl(var(--muted-foreground))" }}>
-                {v > 0 ? `${pct}%` : ""}
-              </span>
+            <div key={i} className="flex-1 min-w-0 flex flex-col items-center">
+              {showLabels && (
+                <span className="text-[8px] font-semibold mb-0.5" style={{ color: isLast ? color : "hsl(var(--muted-foreground))" }}>
+                  {v > 0 ? `${pct}%` : ""}
+                </span>
+              )}
               <div
                 className="w-full rounded-t-md"
                 style={{
                   height: barH,
                   backgroundColor: isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
                   transformOrigin: "bottom",
-                  animation: `grow-bar 400ms ease-out ${i * 40}ms both`,
+                  animation: `grow-bar 400ms ease-out ${i * (data.length > 15 ? 15 : 40)}ms both`,
                 }}
               />
             </div>
@@ -206,9 +222,9 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
         })}
       </div>
       <div className="flex justify-between mt-1">
-        {data.map((_, i) => (
+        {labels.map((l, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
-            {DAY_LABELS[(startDayIndex + i) % 7]}
+            {l}
           </span>
         ))}
       </div>
@@ -217,26 +233,28 @@ function MiniBarPercentChart({ data, max, color, target, startDayIndex }: { data
 }
 
 function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max: number; color: string; startDayIndex: number }) {
-  const maxR = 12;
-  const minR = 4;
+  const cappedMaxR = data.length > 15 ? 6 : data.length > 7 ? 8 : 12;
+  const minR = data.length > 15 ? 2 : 4;
+  const labels = sparseLabels(data, startDayIndex);
   return (
-    <div className="w-full">
+    <div className="w-full overflow-hidden">
       <div className="flex items-center justify-between py-2" style={{ minHeight: 48 }}>
         {data.map((v, i) => {
-          const r = max > 0 ? minR + ((v / max) * (maxR - minR)) : minR;
+          const r = max > 0 ? minR + ((v / max) * (cappedMaxR - minR)) : minR;
           const isLast = i === data.length - 1;
+          const emptySize = data.length > 15 ? 4 : 6;
           return (
-            <div key={i} className="flex-1 flex justify-center">
+            <div key={i} className="flex-1 min-w-0 flex justify-center">
               <div
-                className="rounded-full"
+                className="rounded-full shrink-0"
                 style={{
-                  width: v > 0 ? r * 2 : 6,
-                  height: v > 0 ? r * 2 : 6,
+                  width: v > 0 ? r * 2 : emptySize,
+                  height: v > 0 ? r * 2 : emptySize,
                   backgroundColor: v > 0
                     ? isLast ? color : `color-mix(in srgb, ${color} 40%, transparent)`
                     : "hsl(var(--muted))",
                   border: v === 0 ? `1.5px dashed hsl(var(--muted-foreground) / 0.3)` : "none",
-                  animation: `dot-pop 300ms ease-out ${i * 60}ms both`,
+                  animation: `dot-pop 300ms ease-out ${i * (data.length > 15 ? 20 : 60)}ms both`,
                 }}
               />
             </div>
@@ -244,9 +262,9 @@ function MiniDotChart({ data, max, color, startDayIndex }: { data: number[]; max
         })}
       </div>
       <div className="flex justify-between">
-        {data.map((_, i) => (
+        {labels.map((l, i) => (
           <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
-            {DAY_LABELS[(startDayIndex + i) % 7]}
+            {l}
           </span>
         ))}
       </div>
