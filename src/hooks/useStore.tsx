@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useCallback, useEffect, ReactNode 
 import { Habit, DailyRecord, Achievement, Goal, GoalAction, Task, LIFE_AREAS } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/use-toast";
 
 // ── Row mappers ──────────────────────────────────
 
@@ -586,20 +587,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deleteTask = useCallback((id: string) => {
     if (!user) return;
+    const taskToDelete = tasks.find((t) => t.id === id);
+    if (!taskToDelete) return;
+
     setTasks((prev) => prev.filter((t) => t.id !== id));
-    void supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
-  }, [user]);
+
+    void (async () => {
+      const { error } = await supabase.from("tasks").delete().eq("id", id).eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error deleting task:", error);
+        setTasks((prev) => {
+          if (prev.some((t) => t.id === id)) return prev;
+          return [...prev, taskToDelete].sort((a, b) => {
+            const byDate = a.date.localeCompare(b.date);
+            if (byDate !== 0) return byDate;
+            if (a.time && b.time) return a.time.localeCompare(b.time);
+            if (a.time) return -1;
+            if (b.time) return 1;
+            return (a.createdAt || "").localeCompare(b.createdAt || "");
+          });
+        });
+        toast({
+          variant: "destructive",
+          title: "Não foi possível excluir a tarefa",
+          description: "Tente novamente.",
+        });
+      }
+    })();
+  }, [tasks, user]);
 
   const toggleTask = useCallback((id: string) => {
     if (!user) return;
-    setTasks((prev) => {
-      const task = prev.find((t) => t.id === id);
-      if (!task) return prev;
-      const newCompleted = !task.completed;
-      void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
-      return prev.map((t) => t.id === id ? { ...t, completed: newCompleted } : t);
-    });
-  }, [user]);
+    const currentTask = tasks.find((t) => t.id === id);
+    if (!currentTask) return;
+
+    const newCompleted = !currentTask.completed;
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: newCompleted } : t));
+
+    void (async () => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ completed: newCompleted })
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error toggling task:", error);
+        setTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: currentTask.completed } : t));
+        toast({
+          variant: "destructive",
+          title: "Não foi possível salvar a tarefa",
+          description: "Tente novamente.",
+        });
+      }
+    })();
+  }, [tasks, user]);
 
   const clearAll = useCallback(() => {
     setHabits([]);
