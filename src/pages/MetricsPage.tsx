@@ -316,25 +316,53 @@ export default function MetricsPage() {
               const barColor = "hsl(var(--primary))";
               const isNumeric = h.targetType !== "check";
 
-              // Format aggregated value based on target type
+              // Format aggregated value based on metricType (preferred) or legacy targetType
               let formattedValue = "";
               if (isNumeric) {
-                switch (h.targetType) {
-                  case "hours_minutes":
-                    formattedValue = `${Math.floor(aggregatedValue / 60)}h ${aggregatedValue % 60}min`;
-                    break;
-                  case "minutes":
-                    formattedValue = `${aggregatedValue}min`;
-                    break;
-                  case "km":
-                    formattedValue = `${+aggregatedValue.toFixed(1)} km`;
-                    break;
-                  case "miles":
-                    formattedValue = `${+aggregatedValue.toFixed(1)} mi`;
-                    break;
-                  default:
-                    formattedValue = String(aggregatedValue);
-                    break;
+                if (h.metricType === "tempo") {
+                  if (h.metricTimeUnit === "horas") {
+                    const hours = Math.floor(aggregatedValue);
+                    const mins = Math.round((aggregatedValue % 1) * 60);
+                    formattedValue = mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+                  } else if (h.metricTimeUnit === "segundos") {
+                    formattedValue = `${aggregatedValue}s`;
+                  } else {
+                    // minutos (default for tempo)
+                    if (aggregatedValue >= 60) {
+                      formattedValue = `${Math.floor(aggregatedValue / 60)}h ${aggregatedValue % 60}min`;
+                    } else {
+                      formattedValue = `${aggregatedValue}min`;
+                    }
+                  }
+                } else if (h.metricType === "km" || h.targetType === "km") {
+                  formattedValue = `${+aggregatedValue.toFixed(1)} km`;
+                } else if (h.metricType === "milhas" || h.targetType === "miles") {
+                  formattedValue = `${+aggregatedValue.toFixed(1)} mi`;
+                } else if (h.metricType === "calorias") {
+                  formattedValue = `${Math.round(aggregatedValue)} kcal`;
+                } else if (h.metricType === "litros") {
+                  formattedValue = `${+aggregatedValue.toFixed(1)} L`;
+                } else if (h.metricType === "reais") {
+                  formattedValue = `R$ ${+aggregatedValue.toFixed(2)}`;
+                } else if (h.metricType === "dolar") {
+                  formattedValue = `$ ${+aggregatedValue.toFixed(2)}`;
+                } else if (h.metricType === "euro") {
+                  formattedValue = `€ ${+aggregatedValue.toFixed(2)}`;
+                } else if (h.metricType === "personalizado") {
+                  formattedValue = `${aggregatedValue}${h.metricUnit ? ` ${h.metricUnit}` : ""}`;
+                } else {
+                  // Legacy fallback or numero type
+                  switch (h.targetType) {
+                    case "hours_minutes":
+                      formattedValue = `${Math.floor(aggregatedValue / 60)}h ${aggregatedValue % 60}min`;
+                      break;
+                    case "minutes":
+                      formattedValue = `${aggregatedValue}min`;
+                      break;
+                    default:
+                      formattedValue = String(aggregatedValue);
+                      break;
+                  }
                 }
               }
 
