@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { format, addDays, startOfWeek, getWeek, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStore } from "@/hooks/useStore";
 import { LIFE_AREAS, Task, TaskPriority, TASK_PRIORITY_COLORS, getLifeArea } from "@/types";
 import { cn } from "@/lib/utils";
+import TimePicker from "@/components/agenda/TimePicker";
 
 const WEEKDAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
@@ -20,10 +21,11 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
 ];
 
 export default function Agenda() {
-  const { tasks, goals, toggleTask, addTask, deleteTask } = useStore();
+  const { tasks, goals, toggleTask, addTask, updateTask, deleteTask } = useStore();
   const [weekOffset, setWeekOffset] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetDate, setSheetDate] = useState("");
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -37,9 +39,7 @@ export default function Agenda() {
     return addDays(base, weekOffset * 7);
   }, [weekOffset]);
 
-  const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [weekStart]);
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
   const weekNumber = getWeek(weekStart, { weekStartsOn: 1 });
   const monthLabel = format(weekStart, "MMMM", { locale: ptBR }).toUpperCase();
@@ -50,7 +50,6 @@ export default function Agenda() {
       if (!map[t.date]) map[t.date] = [];
       map[t.date].push(t);
     }
-    // Sort by time then by creation
     for (const key in map) {
       map[key].sort((a, b) => {
         if (a.time && b.time) return a.time.localeCompare(b.time);
@@ -62,27 +61,54 @@ export default function Agenda() {
     return map;
   }, [tasks]);
 
-  const openSheet = (dateStr: string) => {
-    setSheetDate(dateStr);
+  const resetForm = () => {
     setTitle("");
     setTime("");
     setPriority("media");
     setLifeArea("");
     setGoalId("");
+    setEditingTask(null);
+  };
+
+  const openCreate = (dateStr: string) => {
+    resetForm();
+    setSheetDate(dateStr);
+    setSheetOpen(true);
+  };
+
+  const openEdit = (task: Task) => {
+    setEditingTask(task);
+    setSheetDate(task.date);
+    setTitle(task.title);
+    setTime(task.time ? task.time.slice(0, 5) : "");
+    setPriority(task.priority);
+    setLifeArea(task.lifeArea || "");
+    setGoalId(task.goalId || "");
     setSheetOpen(true);
   };
 
   const handleSave = () => {
     if (!title.trim()) return;
-    addTask({
-      title: title.trim(),
-      date: sheetDate,
-      time: time || undefined,
-      completed: false,
-      priority,
-      lifeArea: lifeArea || undefined,
-      goalId: goalId || undefined,
-    });
+    if (editingTask) {
+      updateTask(editingTask.id, {
+        title: title.trim(),
+        date: sheetDate,
+        time: time || undefined,
+        priority,
+        lifeArea: lifeArea && lifeArea !== "none" ? lifeArea : undefined,
+        goalId: goalId && goalId !== "none" ? goalId : undefined,
+      });
+    } else {
+      addTask({
+        title: title.trim(),
+        date: sheetDate,
+        time: time || undefined,
+        completed: false,
+        priority,
+        lifeArea: lifeArea && lifeArea !== "none" ? lifeArea : undefined,
+        goalId: goalId && goalId !== "none" ? goalId : undefined,
+      });
+    }
     setSheetOpen(false);
   };
 
@@ -105,12 +131,7 @@ export default function Agenda() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((p) => p - 1)}>
             <ChevronLeft size={18} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs h-8 px-3"
-            onClick={() => setWeekOffset(0)}
-          >
+          <Button variant="ghost" size="sm" className="text-xs h-8 px-3" onClick={() => setWeekOffset(0)}>
             Hoje
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((p) => p + 1)}>
@@ -128,37 +149,21 @@ export default function Agenda() {
           const completedCount = dayTasks.filter((t) => t.completed).length;
 
           return (
-            <Card
-              key={dateStr}
-              className={cn(
-                "overflow-hidden transition-all",
-                isToday && "ring-1 ring-primary/30"
-              )}
-            >
+            <Card key={dateStr} className={cn("overflow-hidden transition-all", isToday && "ring-1 ring-primary/30")}>
               {/* Day header */}
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="text-center min-w-[36px]">
-                    <p className={cn(
-                      "text-2xl font-bold leading-none",
-                      isToday ? "text-primary" : "text-foreground"
-                    )}>
+                    <p className={cn("text-2xl font-bold leading-none", isToday ? "text-primary" : "text-foreground")}>
                       {format(day, "dd")}
                     </p>
-                    <p className="text-[10px] font-medium text-muted-foreground mt-0.5">
-                      {WEEKDAYS[day.getDay()]}
-                    </p>
+                    <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{WEEKDAYS[day.getDay()]}</p>
                   </div>
                   <div>
-                    <p className={cn(
-                      "text-sm font-medium",
-                      isToday ? "text-primary" : "text-foreground"
-                    )}>
+                    <p className={cn("text-sm font-medium", isToday ? "text-primary" : "text-foreground")}>
                       {format(day, "EEEE", { locale: ptBR })}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {format(day, "d 'de' MMMM", { locale: ptBR })}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">{format(day, "d 'de' MMMM", { locale: ptBR })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -168,7 +173,7 @@ export default function Agenda() {
                     </span>
                   )}
                   <button
-                    onClick={() => openSheet(dateStr)}
+                    onClick={() => openCreate(dateStr)}
                     className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                   >
                     <Plus size={14} strokeWidth={2.5} />
@@ -192,10 +197,7 @@ export default function Agenda() {
                         )}
                       >
                         {/* Priority dot */}
-                        <div
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: priorityColor.text }}
-                        />
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: priorityColor.text }} />
 
                         {/* Check toggle */}
                         <button
@@ -210,12 +212,12 @@ export default function Agenda() {
                           {task.completed && <Check size={10} strokeWidth={3} />}
                         </button>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            "text-sm leading-snug",
-                            task.completed && "line-through text-muted-foreground"
-                          )}>
+                        {/* Content - clickable for edit */}
+                        <button
+                          onClick={() => openEdit(task)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <p className={cn("text-sm leading-snug", task.completed && "line-through text-muted-foreground")}>
                             {task.title}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -234,7 +236,15 @@ export default function Agenda() {
                               </span>
                             )}
                           </div>
-                        </div>
+                        </button>
+
+                        {/* Edit icon */}
+                        <button
+                          onClick={() => openEdit(task)}
+                          className="text-muted-foreground/40 hover:text-primary transition-colors shrink-0"
+                        >
+                          <Pencil size={13} />
+                        </button>
 
                         {/* Delete */}
                         <button
@@ -257,17 +267,16 @@ export default function Agenda() {
         })}
       </div>
 
-      {/* Add task sheet */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      {/* Add/Edit task sheet */}
+      <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
         <SheetContent side="bottom" className="rounded-t-2xl px-5 pb-8">
           <SheetHeader className="mb-5">
             <SheetTitle className="text-base">
-              Nova tarefa — {sheetDate && format(new Date(sheetDate + "T00:00:00"), "d 'de' MMMM", { locale: ptBR })}
+              {editingTask ? "Editar tarefa" : "Nova tarefa"} — {sheetDate && format(new Date(sheetDate + "T00:00:00"), "d 'de' MMMM", { locale: ptBR })}
             </SheetTitle>
           </SheetHeader>
 
           <div className="space-y-4">
-            {/* Title */}
             <Input
               placeholder="O que precisa fazer?"
               value={title}
@@ -276,15 +285,10 @@ export default function Agenda() {
               autoFocus
             />
 
-            {/* Time */}
+            {/* Custom Time Picker */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Horário (opcional)</label>
-              <Input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="text-sm"
-              />
+              <TimePicker value={time} onChange={setTime} />
             </div>
 
             {/* Priority */}
@@ -299,14 +303,9 @@ export default function Agenda() {
                       onClick={() => setPriority(p.value)}
                       className={cn(
                         "flex-1 py-2 rounded-lg text-xs font-medium border-2 transition-all",
-                        priority === p.value
-                          ? "border-current shadow-sm"
-                          : "border-transparent"
+                        priority === p.value ? "border-current shadow-sm" : "border-transparent"
                       )}
-                      style={{
-                        backgroundColor: colors.bg,
-                        color: colors.text,
-                      }}
+                      style={{ backgroundColor: colors.bg, color: colors.text }}
                     >
                       {p.label}
                     </button>
@@ -325,9 +324,7 @@ export default function Agenda() {
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
                   {LIFE_AREAS.map((a) => (
-                    <SelectItem key={a.value} value={a.value}>
-                      {a.label}
-                    </SelectItem>
+                    <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -344,18 +341,15 @@ export default function Agenda() {
                   <SelectContent>
                     <SelectItem value="none">Nenhuma</SelectItem>
                     {activeGoals.map((g) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        {g.title}
-                      </SelectItem>
+                      <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            {/* Save */}
             <Button onClick={handleSave} className="w-full" disabled={!title.trim()}>
-              Adicionar tarefa
+              {editingTask ? "Salvar alterações" : "Adicionar tarefa"}
             </Button>
           </div>
         </SheetContent>
