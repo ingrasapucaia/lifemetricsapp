@@ -154,26 +154,19 @@ function NumericControls({
   unit: string;
   onChange: (v: number) => void;
 }) {
-  const useLargeInput = target > 10;
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  if (useLargeInput) {
-    return (
-      <div className="flex items-center gap-1.5 shrink-0">
-        <input
-          type="number"
-          inputMode="numeric"
-          value={value || ""}
-          placeholder="0"
-          onChange={(e) => {
-            const v = parseFloat(e.target.value);
-            onChange(isNaN(v) ? 0 : v);
-          }}
-          className="w-12 h-7 text-center text-xs font-semibold rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        />
-        <span className="text-[10px] text-muted-foreground">/{target}{unit && ` ${unit}`}</span>
-      </div>
-    );
-  }
+  const handleStartEdit = () => {
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleBlur = () => setEditing(false);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") setEditing(false);
+  };
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
@@ -184,9 +177,32 @@ function NumericControls({
       >
         <Minus size={12} className="text-muted-foreground" />
       </button>
-      <span className="text-xs font-semibold text-foreground min-w-[2.5rem] text-center">
-        {value}/{target}{unit && <span className="text-muted-foreground font-normal ml-0.5">{unit}</span>}
-      </span>
+
+      {editing ? (
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="numeric"
+          value={value || ""}
+          placeholder="0"
+          onChange={(e) => {
+            const v = parseFloat(e.target.value);
+            onChange(isNaN(v) ? 0 : v);
+          }}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          className="w-12 h-7 text-center text-xs font-semibold rounded-lg border border-primary/40 bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={handleStartEdit}
+          className="text-xs font-semibold text-foreground min-w-[2.5rem] text-center hover:bg-muted/60 rounded-md px-1 py-0.5 transition-colors"
+        >
+          {value}/{target}{unit && <span className="text-muted-foreground font-normal ml-0.5">{unit}</span>}
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => onChange(value + 1)}
