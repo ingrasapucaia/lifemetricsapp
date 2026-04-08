@@ -1,53 +1,29 @@
 
 
-## Plan: Fix task toggle bug + Add edit task + Custom time picker
+## Plan: Redesign time picker as a clean white card
 
-### Bug Fix: Task completion not persisting
+### Problem
+The current scroll-based time picker with `bg-muted/40` columns and green highlighted items feels out of place. The user wants a simple, clean white card with rounded corners matching the app's aesthetic.
 
-**Root cause**: In `toggleTask` (useStore.tsx line 593-602), `newCompleted` is set inside the `setTasks` functional updater callback. With React 18 automatic batching, this callback may execute after the `supabase.update()` call on line 601, so `newCompleted` stays `false`. Confirmed: all tasks in DB show `completed: false`.
+### Solution
 
-**Fix in `src/hooks/useStore.tsx`**: Find the task first from current state, compute `newCompleted` before calling `setTasks`:
+**File: `src/components/agenda/TimePicker.tsx`** — Replace the current scroll columns with a simpler design:
 
-```tsx
-const toggleTask = useCallback((id: string) => {
-  if (!user) return;
-  setTasks((prev) => {
-    const task = prev.find((t) => t.id === id);
-    if (!task) return prev;
-    const newCompleted = !task.completed;
-    void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
-    return prev.map((t) => t.id === id ? { ...t, completed: newCompleted } : t);
-  });
-}, [user]);
-```
+- Wrap the entire picker in a white `Card`-style container (`bg-white rounded-2xl border border-border/60 shadow-sm p-4`)
+- Two side-by-side columns still scrollable, but with a cleaner white background
+- Selected item: subtle rounded pill with `bg-muted` and bold dark text instead of the green `bg-primary`
+- Unselected items: light gray text, clean and minimal
+- Keep the colon separator centered between columns
+- "Limpar horário" button stays below as a subtle ghost link
+- Overall height stays compact (~144px visible area per column)
 
----
-
-### Feature: Edit existing task
-
-**File: `src/pages/Agenda.tsx`**
-
-- Add an `editingTask` state (null or Task)
-- Clicking a task row (not the check or delete buttons) opens the same bottom Sheet pre-filled with the task's current values
-- Sheet title changes to "Editar tarefa" when editing
-- Save button calls `updateTask(id, updates)` instead of `addTask`
-- The `updateTask` function already exists in the store
-
----
-
-### Feature: Custom time picker matching app design
-
-**File: `src/pages/Agenda.tsx`**
-
-Replace the native `<input type="time">` with a custom inline time picker:
-- Two side-by-side scroll selectors (hour 00-23, minute 00-59 in 5-min steps)
-- Styled with the app's rounded cards, primary color highlights, and soft backgrounds
-- Compact design fitting the bottom sheet layout
-- A "Limpar" button to remove the time selection
-
----
+### Visual style
+- Card: `bg-white rounded-2xl border border-border/60 p-3`
+- Selected item: `bg-muted rounded-xl font-semibold text-foreground`
+- Unselected: `text-muted-foreground/60`
+- Separator: muted colon
 
 ### Not changed
-- No database or backend changes
-- No changes to other pages
+- Functionality (hour/minute selection, clear button) stays identical
+- No changes to Agenda.tsx or other files
 
