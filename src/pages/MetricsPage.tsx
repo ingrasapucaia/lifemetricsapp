@@ -159,7 +159,15 @@ export default function MetricsPage() {
       const total = filteredRecords.length;
       const completed = filteredRecords.filter((r) => isHabitCompleted(h, r.habitChecks[h.id])).length;
       const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
-      return { habit: h, completed, total, rate };
+      // Aggregate numeric value for non-check habits
+      let aggregatedValue = 0;
+      if (h.targetType !== "check") {
+        aggregatedValue = filteredRecords.reduce((sum, r) => {
+          const val = r.habitChecks[h.id];
+          return sum + (typeof val === "number" ? val : 0);
+        }, 0);
+      }
+      return { habit: h, completed, total, rate, aggregatedValue };
     });
   }, [activeHabits, filteredRecords]);
 
