@@ -592,13 +592,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const toggleTask = useCallback((id: string) => {
     if (!user) return;
-    let newCompleted = false;
-    setTasks((prev) => prev.map((t) => {
-      if (t.id !== id) return t;
-      newCompleted = !t.completed;
-      return { ...t, completed: newCompleted };
-    }));
-    void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
+    setTasks((prev) => {
+      const task = prev.find((t) => t.id === id);
+      if (!task) return prev;
+      const newCompleted = !task.completed;
+      void supabase.from("tasks").update({ completed: newCompleted }).eq("id", id).eq("user_id", user.id);
+      return prev.map((t) => t.id === id ? { ...t, completed: newCompleted } : t);
+    });
   }, [user]);
 
   const clearAll = useCallback(() => {
