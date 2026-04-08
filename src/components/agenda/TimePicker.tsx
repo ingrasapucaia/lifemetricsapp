@@ -1,71 +1,68 @@
-import { useRef, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-const MINUTES = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, "0"));
 
 interface TimePickerProps {
   value: string;
   onChange: (val: string) => void;
 }
 
-function ScrollColumn({ items, selected, onSelect }: { items: string[]; selected: string; onSelect: (v: string) => void }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const ITEM_H = 36;
-
-  useEffect(() => {
-    const idx = items.indexOf(selected);
-    if (idx >= 0 && containerRef.current) {
-      containerRef.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
-    }
-  }, [selected, items]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="h-[144px] overflow-y-auto snap-y snap-mandatory flex-1"
-      style={{ scrollbarWidth: "none" }}
-    >
-      {items.map((item) => (
-        <button
-          key={item}
-          type="button"
-          onClick={() => onSelect(item)}
-          className={cn(
-            "w-full h-9 flex items-center justify-center text-sm snap-start transition-all",
-            selected === item
-              ? "bg-muted rounded-xl font-semibold text-foreground"
-              : "text-muted-foreground/60 hover:text-muted-foreground"
-          )}
-        >
-          {item}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function TimePicker({ value, onChange }: TimePickerProps) {
-  const [hour, minute] = value ? value.split(":") : ["08", "00"];
+  const [hour, minute] = value ? value.split(":") : ["", ""];
+  const minuteRef = useRef<HTMLInputElement>(null);
 
-  const setHour = useCallback((h: string) => {
+  const clamp = (v: number, max: number) => Math.max(0, Math.min(max, v));
+
+  const handleHour = useCallback((raw: string) => {
+    const n = raw.replace(/\D/g, "").slice(0, 2);
+    if (n === "") { onChange(""); return; }
+    const h = clamp(Number(n), 23).toString().padStart(2, "0");
     onChange(`${h}:${minute || "00"}`);
   }, [minute, onChange]);
 
-  const setMinute = useCallback((m: string) => {
+  const handleMinute = useCallback((raw: string) => {
+    const n = raw.replace(/\D/g, "").slice(0, 2);
+    if (n === "") { onChange(`${hour || "08"}:00`); return; }
+    const m = clamp(Number(n), 59).toString().padStart(2, "0");
     onChange(`${hour || "08"}:${m}`);
   }, [hour, onChange]);
 
+  const onHourKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ":" || e.key === "Tab") {
+      e.preventDefault();
+      minuteRef.current?.focus();
+      minuteRef.current?.select();
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-3">
-        <div className="flex items-center gap-2">
-          <ScrollColumn items={HOURS} selected={hour || "08"} onSelect={setHour} />
-          <span className="text-lg font-bold text-muted-foreground/40">:</span>
-          <ScrollColumn items={MINUTES} selected={minute || "00"} onSelect={setMinute} />
-        </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          placeholder="08"
+          value={hour}
+          onChange={(e) => handleHour(e.target.value)}
+          onBlur={(e) => { if (e.target.value && value) handleHour(e.target.value); }}
+          onFocus={(e) => e.target.select()}
+          onKeyDown={onHourKeyDown}
+          className="w-14 h-10 rounded-md border border-input bg-background text-center text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+        <span className="text-base font-semibold text-muted-foreground">:</span>
+        <input
+          ref={minuteRef}
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          placeholder="00"
+          value={minute}
+          onChange={(e) => handleMinute(e.target.value)}
+          onBlur={(e) => { if (e.target.value && value) handleMinute(e.target.value); }}
+          onFocus={(e) => e.target.select()}
+          className="w-14 h-10 rounded-md border border-input bg-background text-center text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
       </div>
       {value && (
         <Button
