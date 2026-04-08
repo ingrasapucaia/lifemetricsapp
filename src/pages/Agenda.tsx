@@ -52,6 +52,8 @@ export default function Agenda() {
     }
     for (const key in map) {
       map[key].sort((a, b) => {
+        // Completed tasks first
+        if (a.completed !== b.completed) return a.completed ? -1 : 1;
         if (a.time && b.time) return a.time.localeCompare(b.time);
         if (a.time) return -1;
         if (b.time) return 1;
