@@ -311,9 +311,33 @@ export default function MetricsPage() {
 
         {habitStats.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {habitStats.map(({ habit: h, completed, total, rate }) => {
+            {habitStats.map(({ habit: h, completed, total, rate, aggregatedValue }) => {
               const area = getLifeArea(h.lifeArea);
               const barColor = "hsl(var(--primary))";
+              const isNumeric = h.targetType !== "check";
+
+              // Format aggregated value based on target type
+              let formattedValue = "";
+              if (isNumeric) {
+                switch (h.targetType) {
+                  case "hours_minutes":
+                    formattedValue = `${Math.floor(aggregatedValue / 60)}h ${aggregatedValue % 60}min`;
+                    break;
+                  case "minutes":
+                    formattedValue = `${aggregatedValue}min`;
+                    break;
+                  case "km":
+                    formattedValue = `${+aggregatedValue.toFixed(1)} km`;
+                    break;
+                  case "miles":
+                    formattedValue = `${+aggregatedValue.toFixed(1)} mi`;
+                    break;
+                  default:
+                    formattedValue = String(aggregatedValue);
+                    break;
+                }
+              }
+
               return (
                 <Card key={h.id}>
                   <CardContent className="p-4">
@@ -323,9 +347,15 @@ export default function MetricsPage() {
                         <p className="text-sm font-medium truncate">{h.name}</p>
                         {area && <LifeAreaBadge value={h.lifeArea} size="sm" className="mt-0.5" />}
                       </div>
-                      <span className="text-xl font-bold shrink-0">{rate}%</span>
+                      <span className="text-xl font-bold shrink-0">
+                        {isNumeric ? formattedValue : `${rate}%`}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2">{completed}/{total} dias concluídos</p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {isNumeric
+                        ? `${rate}% concluído · ${completed}/${total} dias`
+                        : `${completed}/${total} dias concluídos`}
+                    </p>
                     <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-300" style={{ width: `${rate}%`, backgroundColor: barColor }} />
                     </div>
