@@ -7,7 +7,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")
 const MINUTES = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, "0"));
 
 interface TimePickerProps {
-  value: string; // "HH:mm" or ""
+  value: string;
   onChange: (val: string) => void;
 }
 
@@ -25,7 +25,7 @@ function ScrollColumn({ items, selected, onSelect }: { items: string[]; selected
   return (
     <div
       ref={containerRef}
-      className="h-[144px] overflow-y-auto snap-y snap-mandatory scrollbar-hide flex-1 rounded-xl bg-muted/40"
+      className="h-[144px] overflow-y-auto snap-y snap-mandatory flex-1"
       style={{ scrollbarWidth: "none" }}
     >
       {items.map((item) => (
@@ -34,10 +34,10 @@ function ScrollColumn({ items, selected, onSelect }: { items: string[]; selected
           type="button"
           onClick={() => onSelect(item)}
           className={cn(
-            "w-full h-9 flex items-center justify-center text-sm font-medium snap-start transition-all",
+            "w-full h-9 flex items-center justify-center text-sm snap-start transition-all",
             selected === item
-              ? "bg-primary text-primary-foreground rounded-lg"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-muted rounded-xl font-semibold text-foreground"
+              : "text-muted-foreground/60 hover:text-muted-foreground"
           )}
         >
           {item}
@@ -60,10 +60,12 @@ export default function TimePicker({ value, onChange }: TimePickerProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <ScrollColumn items={HOURS} selected={hour || "08"} onSelect={setHour} />
-        <span className="text-lg font-bold text-muted-foreground">:</span>
-        <ScrollColumn items={MINUTES} selected={minute || "00"} onSelect={setMinute} />
+      <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-3">
+        <div className="flex items-center gap-2">
+          <ScrollColumn items={HOURS} selected={hour || "08"} onSelect={setHour} />
+          <span className="text-lg font-bold text-muted-foreground/40">:</span>
+          <ScrollColumn items={MINUTES} selected={minute || "00"} onSelect={setMinute} />
+        </div>
       </div>
       {value && (
         <Button
