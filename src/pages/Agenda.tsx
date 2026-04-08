@@ -289,6 +289,35 @@ export default function Agenda() {
               autoFocus
             />
 
+            {/* Date picker (edit mode only) */}
+            {editingTask && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn("w-full justify-start text-left text-sm font-normal")}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {sheetDate
+                        ? format(new Date(sheetDate + "T00:00:00"), "d 'de' MMMM 'de' yyyy", { locale: ptBR })
+                        : "Selecione uma data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={sheetDate ? new Date(sheetDate + "T00:00:00") : undefined}
+                      onSelect={(date) => date && setSheetDate(format(date, "yyyy-MM-dd"))}
+                      className={cn("p-3 pointer-events-auto")}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             {/* Custom Time Picker */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Horário (opcional)</label>
