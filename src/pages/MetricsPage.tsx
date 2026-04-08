@@ -358,7 +358,7 @@ export default function MetricsPage() {
                     );
                   }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
