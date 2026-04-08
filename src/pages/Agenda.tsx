@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, addDays, startOfWeek, getWeek, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
