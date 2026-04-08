@@ -298,7 +298,7 @@ export default function MetricsPage() {
       </div>
 
       {/* Habits section */}
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
         <h2 className="text-lg font-semibold">Hábitos</h2>
 
         {habitStats.length > 0 ? (
