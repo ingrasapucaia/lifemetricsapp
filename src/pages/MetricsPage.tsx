@@ -291,10 +291,10 @@ export default function MetricsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
-        <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
-        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
-        <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
+        <div className="animate-fade-in" style={{ animationDelay: "0ms" }}><SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "100ms" }}><SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "200ms" }}><SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "300ms" }}><SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" /></div>
       </div>
 
       {/* Habits section */}
