@@ -1,23 +1,25 @@
 
 
-## Plan: Add text input for all numeric habit controls
+## Plan: Add animations to Metrics page charts and elements
 
-### Problem
-Numeric habits with a daily goal of 10 or less only show `-/+` buttons — no way to type a value directly. If someone needs to enter a large number (e.g., 500), tapping `+` repeatedly is impractical.
+### Overview
+Add smooth entrance animations to all charts and visual elements on the Metrics page so they animate in when scrolled into view or on mount.
 
-### Root cause
-In `src/components/dashboard/HabitCardGrid.tsx`, line 157: `const useLargeInput = target > 10`. Habits with targets ≤ 10 get only the `-/+` buttons without a text input.
+### Changes
 
-### Solution
-**File: `src/components/dashboard/HabitCardGrid.tsx`** — Redesign `NumericControls` to always show a tappable value that opens an inline text input on click, combined with `-/+` buttons for quick adjustments.
+**File: `src/pages/MetricsPage.tsx`**
 
-- Replace the two-branch render (large input vs small buttons) with a single layout: `[ - ] [value/target unit] [ + ]`
-- Make the center value area tappable — clicking it turns the value into an editable `<input>` field
-- On blur or Enter, the input reverts to display mode
-- Keep the `-/+` buttons for quick ±1 adjustments
-- This works for all numeric habits regardless of target size
+1. **Staggered fade-in on sections**: Wrap each chart `<Card>` and section in a container with CSS animation classes using inline `style={{ animationDelay }}` for staggered entrance. Use the existing `animate-fade-in` utility from the project's Tailwind config.
 
-### Not changed
-- Check-type habits (toggle behavior unchanged)
-- No database, backend, or other page changes
+2. **Recharts animation props**: The Bar and Line charts already have `animationDuration={500}`. Increase to `800ms` and add `animationBegin={200}` for a slight delay that syncs with the card fade-in, making the bars/lines draw after the card appears.
+
+3. **Progress bars (habit stats + consistency)**: Add a CSS transition on the `<Progress>` value width and on the consistency pixel squares with staggered delays per row using `animation-delay`.
+
+4. **Summary stat cards at top**: Add fade-in with stagger (0ms, 100ms, 200ms, 300ms) to the metric summary cards.
+
+### Implementation detail
+- Use `animate-fade-in` class (already defined in tailwind config) on Cards with increasing `animationDelay` style
+- Set `animation-fill-mode: both` so elements stay hidden until their delay triggers
+- Bump Recharts `animationDuration` from 500 to 800 and add `animationBegin={300}`
+- No new dependencies or backend changes
 
