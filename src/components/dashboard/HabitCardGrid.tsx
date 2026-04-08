@@ -277,7 +277,7 @@ export default function HabitCardGrid({ habits, checks, onUpdate, initialCount =
   const sortedHabits = [...active].sort((a, b) => {
     const aDone = isHabitCompleted(a, checks[a.id]);
     const bDone = isHabitCompleted(b, checks[b.id]);
-    if (aDone !== bDone) return aDone ? 1 : -1;
+    if (aDone !== bDone) return aDone ? -1 : 1;
     return 0;
   });
 
