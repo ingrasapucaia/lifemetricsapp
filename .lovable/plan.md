@@ -1,25 +1,27 @@
 
 
-## Plan: Add animations to Metrics page charts and elements
+## Plan: Improve habit cards with aggregated metrics by type
 
-### Overview
-Add smooth entrance animations to all charts and visual elements on the Metrics page so they animate in when scrolled into view or on mount.
+### Problem
+The habit cards in the Metrics page always show `rate%` and `X/Y dias concluídos` — even for numeric habits like "Horas de trabalho" (hours) or "Vendas do dia" (count). These should show the **sum total** of the metric (e.g. "12h 30min total" or "47 vendas") instead of just a completion percentage.
 
 ### Changes
 
 **File: `src/pages/MetricsPage.tsx`**
 
-1. **Staggered fade-in on sections**: Wrap each chart `<Card>` and section in a container with CSS animation classes using inline `style={{ animationDelay }}` for staggered entrance. Use the existing `animate-fade-in` utility from the project's Tailwind config.
+1. **Enrich `habitStats` computation** (lines 157-164): For each habit, calculate an additional `aggregatedValue` field:
+   - `check` type → keep current behavior (rate% + days)
+   - `minutes` → sum all numeric values, display as `Xmin total`
+   - `hours_minutes` → sum all numeric values, display as `Xh Ymin total`
+   - `count` → sum all numeric values, display as `X total`
+   - `km` / `miles` → sum all numeric values, display as `X.X km` or `X.X mi total`
 
-2. **Recharts animation props**: The Bar and Line charts already have `animationDuration={500}`. Increase to `800ms` and add `animationBegin={200}` for a slight delay that syncs with the card fade-in, making the bars/lines draw after the card appears.
+2. **Update habit card rendering** (lines 306-327): 
+   - For numeric habits: show the aggregated total as the main large value (instead of `rate%`), and show the completion rate as secondary text below
+   - For check habits: keep current layout (rate% as main value)
+   - Add the unit label next to the aggregated value
 
-3. **Progress bars (habit stats + consistency)**: Add a CSS transition on the `<Progress>` value width and on the consistency pixel squares with staggered delays per row using `animation-delay`.
-
-4. **Summary stat cards at top**: Add fade-in with stagger (0ms, 100ms, 200ms, 300ms) to the metric summary cards.
-
-### Implementation detail
-- Use `animate-fade-in` class (already defined in tailwind config) on Cards with increasing `animationDelay` style
-- Set `animation-fill-mode: both` so elements stay hidden until their delay triggers
-- Bump Recharts `animationDuration` from 500 to 800 and add `animationBegin={300}`
-- No new dependencies or backend changes
+### Not changed
+- Charts, summary cards, consistency tracker, goals, nutrition — untouched
+- No backend or database changes
 
