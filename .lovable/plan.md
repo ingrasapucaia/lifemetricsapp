@@ -1,27 +1,27 @@
 
 
-## Plan: Improve habit cards with aggregated metrics by type
+## Plan: Fix hours-based habit calculation in Metrics page
 
 ### Problem
-The habit cards in the Metrics page always show `rate%` and `X/Y dias concluídos` — even for numeric habits like "Horas de trabalho" (hours) or "Vendas do dia" (count). These should show the **sum total** of the metric (e.g. "12h 30min total" or "47 vendas") instead of just a completion percentage.
+The habit "horas de trabalho" is configured with `metricType: "tempo"` and `metricTimeUnit: "horas"`. The user entered 9 hours, which is stored as `9` in `habitChecks`. However, the Metrics page uses the legacy `targetType: "hours_minutes"` to format the value, which assumes the stored value is in **minutes** — so it does `Math.floor(9 / 60)h 9%60min` = `0h 9min`. Over multiple days, small hour values sum to something like 13, displayed as `0h 13min`.
 
-### Changes
+### Root cause
+`src/pages/Habits.tsx` line 311: `tempo` maps to legacy `targetType: "hours_minutes"`, which the Metrics page interprets as minutes. But when `metricTimeUnit === "horas"`, the stored value is already in hours.
 
-**File: `src/pages/MetricsPage.tsx`**
+### Solution
 
-1. **Enrich `habitStats` computation** (lines 157-164): For each habit, calculate an additional `aggregatedValue` field:
-   - `check` type → keep current behavior (rate% + days)
-   - `minutes` → sum all numeric values, display as `Xmin total`
-   - `hours_minutes` → sum all numeric values, display as `Xh Ymin total`
-   - `count` → sum all numeric values, display as `X total`
-   - `km` / `miles` → sum all numeric values, display as `X.X km` or `X.X mi total`
+**File: `src/pages/MetricsPage.tsx`** — Update the aggregated value formatting (lines 319-338) to check the new `metricType` and `metricTimeUnit` fields instead of relying solely on legacy `targetType`:
 
-2. **Update habit card rendering** (lines 306-327): 
-   - For numeric habits: show the aggregated total as the main large value (instead of `rate%`), and show the completion rate as secondary text below
-   - For check habits: keep current layout (rate% as main value)
-   - Add the unit label next to the aggregated value
+1. If `metricType === "tempo"` and `metricTimeUnit === "horas"`: the aggregated value is in hours → format as `Xh Ymin` using `Math.floor(value)` for hours and `(value % 1) * 60` for remaining minutes
+2. If `metricType === "tempo"` and `metricTimeUnit === "minutos"`: value is in minutes → format as `Xh Ymin` or `Xmin`
+3. If `metricType === "tempo"` and `metricTimeUnit === "segundos"`: format as seconds
+4. For other `metricType` values (`numero`, `calorias`, `litros`, `reais`, `dolar`, `euro`, `personalizado`): show `value + unit`
+5. Fall back to legacy `targetType` switch only if `metricType` is not set
+
+This also fixes the same issue in the `isHabitCompleted` check and the old `Metrics.tsx` component if it's still used.
 
 ### Not changed
-- Charts, summary cards, consistency tracker, goals, nutrition — untouched
+- Dashboard habit cards (already use `metricType`/`metricTimeUnit` correctly)
+- Habit creation/editing logic
 - No backend or database changes
 
