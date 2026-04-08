@@ -291,14 +291,14 @@ export default function MetricsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" />
-        <SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" />
-        <SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" />
-        <SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" />
+        <div className="animate-fade-in" style={{ animationDelay: "0ms" }}><SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "100ms" }}><SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "200ms" }}><SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "300ms" }}><SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" /></div>
       </div>
 
       {/* Habits section */}
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
         <h2 className="text-lg font-semibold">Hábitos</h2>
 
         {habitStats.length > 0 ? (
@@ -358,7 +358,7 @@ export default function MetricsPage() {
                     );
                   }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -366,7 +366,7 @@ export default function MetricsPage() {
       </section>
 
       {/* Goals section */}
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "300ms" }}>
         <h2 className="text-lg font-semibold">Metas</h2>
         {filteredGoals.length > 0 ? (
           areaFilter === "todas" ? (
@@ -387,7 +387,7 @@ export default function MetricsPage() {
 
 
       {/* Sleep & Mood */}
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "400ms" }}>
         <h2 className="text-lg font-semibold">Sono & Humor</h2>
         <Card>
           <CardContent className="pt-6">
@@ -419,9 +419,9 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line yAxisId="sleep" type="monotone" dataKey="sleep" stroke="hsl(var(--metric-sleep))" name="Sono (h)" strokeWidth={2.5} dot={false} animationDuration={800} animationBegin={300} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
                 <Line
-                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5} animationDuration={500} animationEasing="ease-out"
+                  yAxisId="mood" type="monotone" dataKey="mood" name="Humor" strokeWidth={2.5} animationDuration={800} animationBegin={300} animationEasing="ease-out"
                   stroke="hsl(var(--metric-mood))"
                   dot={(props: any) => {
                     const tag = getMoodTag(props.payload?.moodTag);
@@ -435,7 +435,7 @@ export default function MetricsPage() {
       </section>
 
       {/* Nutrition */}
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "500ms" }}>
         <h2 className="text-lg font-semibold">Nutrição</h2>
 
         <div className="grid grid-cols-2 gap-3">
@@ -489,7 +489,7 @@ export default function MetricsPage() {
                     );
                   }}
                 />
-                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill={chartBarColor} animationDuration={500} animationEasing="ease-out" />
+                <Bar dataKey="kcal" radius={[6, 6, 0, 0]} name="Calorias" fill={chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -521,15 +521,15 @@ export default function MetricsPage() {
                   }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
-                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
-                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} animationDuration={500} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="carbs" stroke="#22c55e" strokeWidth={2.5} name="Carb (g)" dot={false} animationDuration={800} animationBegin={300} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="protein" stroke="#f97316" strokeWidth={2.5} name="Proteína (g)" dot={false} animationDuration={800} animationBegin={300} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="fat" stroke="#3b82f6" strokeWidth={2.5} name="Gordura (g)" dot={false} animationDuration={800} animationBegin={300} animationEasing="ease-out" activeDot={{ r: 6, strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </section>
-      <section className="space-y-4">
+      <section className="space-y-4 animate-fade-in" style={{ animationDelay: "600ms" }}>
         <h2 className="text-lg font-semibold">Consistência dos hábitos</h2>
         <Card>
           <CardContent className="pt-6">
