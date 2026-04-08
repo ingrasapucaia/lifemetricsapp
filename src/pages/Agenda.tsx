@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { format, addDays, startOfWeek, getWeek, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useStore } from "@/hooks/useStore";
 import { LIFE_AREAS, Task, TaskPriority, TASK_PRIORITY_COLORS, getLifeArea } from "@/types";
 import { cn } from "@/lib/utils";
@@ -286,6 +288,35 @@ export default function Agenda() {
               className="text-sm"
               autoFocus
             />
+
+            {/* Date picker (edit mode only) */}
+            {editingTask && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn("w-full justify-start text-left text-sm font-normal")}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {sheetDate
+                        ? format(new Date(sheetDate + "T00:00:00"), "d 'de' MMMM 'de' yyyy", { locale: ptBR })
+                        : "Selecione uma data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={sheetDate ? new Date(sheetDate + "T00:00:00") : undefined}
+                      onSelect={(date) => date && setSheetDate(format(date, "yyyy-MM-dd"))}
+                      className={cn("p-3 pointer-events-auto")}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
 
             {/* Custom Time Picker */}
             <div className="space-y-1.5">
