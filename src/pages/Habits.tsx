@@ -94,7 +94,15 @@ export default function Habits() {
     return areaOrder.indexOf(a) - areaOrder.indexOf(b);
   });
 
-  const openCreate = () => { setEditing(null); setModalOpen(true); };
+  const MAX_HABITS = 20;
+  const openCreate = () => {
+    if (habits.length >= MAX_HABITS) {
+      toast.error(`Limite de ${MAX_HABITS} hábitos atingido. Exclua um hábito para criar outro.`);
+      return;
+    }
+    setEditing(null);
+    setModalOpen(true);
+  };
   const openEdit = (h: Habit) => { setEditing(h); setModalOpen(true); };
 
   return (
@@ -102,8 +110,9 @@ export default function Habits() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Controle de hábitos</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{habits.length}/{MAX_HABITS} hábitos</p>
         </div>
-        <Button onClick={openCreate} className="rounded-xl gap-2">
+        <Button onClick={openCreate} className="rounded-xl gap-2" disabled={habits.length >= MAX_HABITS}>
           <Plus size={16} /> Criar novo hábito
         </Button>
       </div>
