@@ -48,7 +48,7 @@ export default function TimePicker({ value, onChange }: TimePickerProps) {
           onBlur={(e) => { if (e.target.value && value) handleHour(e.target.value); }}
           onFocus={(e) => e.target.select()}
           onKeyDown={onHourKeyDown}
-          className="w-14 h-10 rounded-md border border-input bg-background text-center text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-14 h-10 rounded-md border border-input bg-background text-center text-base font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
         <span className="text-base font-semibold text-muted-foreground">:</span>
         <input
@@ -61,7 +61,7 @@ export default function TimePicker({ value, onChange }: TimePickerProps) {
           onChange={(e) => handleMinute(e.target.value)}
           onBlur={(e) => { if (e.target.value && value) handleMinute(e.target.value); }}
           onFocus={(e) => e.target.select()}
-          className="w-14 h-10 rounded-md border border-input bg-background text-center text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-14 h-10 rounded-md border border-input bg-background text-center text-base font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
       </div>
       {value && (
