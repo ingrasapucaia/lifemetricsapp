@@ -586,9 +586,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (updates.lifeArea !== undefined) dbUpdates.life_area = updates.lifeArea ?? null;
     if (updates.goalId !== undefined) dbUpdates.goal_id = updates.goalId ?? null;
 
+    const previousTasks = tasks;
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
-    void supabase.from("tasks").update(dbUpdates).eq("id", id).eq("user_id", user.id);
-  }, [user]);
+
+    void (async () => {
+      const { error } = await supabase.from("tasks").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+      if (error) {
+        console.error("Error updating task:", error);
+        setTasks(previousTasks);
+        toast({
+          variant: "destructive",
+          title: "Não foi possível salvar a tarefa",
+          description: "Tente novamente.",
+        });
+      }
+    })();
+  }, [user, tasks]);
 
   const deleteTask = useCallback((id: string) => {
     if (!user) return;
