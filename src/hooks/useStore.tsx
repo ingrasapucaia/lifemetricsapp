@@ -409,10 +409,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const old = prev.find((goal) => goal.id === id);
       const next = prev.map((goal) => (goal.id === id ? { ...goal, ...updates } : goal));
 
-      // Auto-set completedAt on first completion
-      if (old && !old.completedAt && updates.status === "concluido") {
+      // Always update completedAt when marking as completed
+      if (old && updates.status === "concluido") {
         dbUpdates.completed_at = new Date().toISOString();
         return next.map((goal) => goal.id === id ? { ...goal, completedAt: dbUpdates.completed_at } : goal);
+      }
+      // Clear completedAt when un-completing
+      if (old && old.status === "concluido" && updates.status && updates.status !== "concluido") {
+        dbUpdates.completed_at = null;
+        return next.map((goal) => goal.id === id ? { ...goal, completedAt: undefined } : goal);
       }
       return next;
     });
