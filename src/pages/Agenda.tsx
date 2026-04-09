@@ -273,7 +273,7 @@ export default function Agenda() {
 
       {/* Add/Edit task sheet */}
       <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
-        <SheetContent side="bottom" className="rounded-t-2xl px-5 pb-8">
+        <SheetContent side="bottom" className="rounded-t-2xl px-5 pb-8 max-h-[90vh] overflow-y-auto">
           <SheetHeader className="mb-5">
             <SheetTitle className="text-base">
               {editingTask ? "Editar tarefa" : "Nova tarefa"} — {sheetDate && format(new Date(sheetDate + "T00:00:00"), "d 'de' MMMM", { locale: ptBR })}
@@ -285,7 +285,7 @@ export default function Agenda() {
               placeholder="O que precisa fazer?"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-sm"
+              className="text-base"
               autoFocus
             />
 
@@ -351,7 +351,7 @@ export default function Agenda() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Área da vida (opcional)</label>
               <Select value={lifeArea} onValueChange={setLifeArea}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="text-base">
                   <SelectValue placeholder="Selecione uma área" />
                 </SelectTrigger>
                 <SelectContent>
@@ -368,7 +368,7 @@ export default function Agenda() {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Vincular a meta (opcional)</label>
                 <Select value={goalId} onValueChange={setGoalId}>
-                  <SelectTrigger className="text-sm">
+                  <SelectTrigger className="text-base">
                     <SelectValue placeholder="Selecione uma meta" />
                   </SelectTrigger>
                   <SelectContent>
