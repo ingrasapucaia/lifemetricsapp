@@ -81,7 +81,7 @@ export function AppSidebar() {
       {/* Desktop */}
       <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r border-border/50 bg-sidebar z-30">
         <div className="px-6 py-6 border-b border-border/50">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">metrics</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">life metrics.</h1>
           <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto">
@@ -99,7 +99,7 @@ export function AppSidebar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-60 p-0 flex flex-col">
             <div className="px-6 py-6 border-b border-border/50">
-              <h1 className="text-xl font-bold tracking-tight">metrics</h1>
+              <h1 className="text-xl font-bold tracking-tight">life metrics.</h1>
               <p className="text-[10px] text-muted-foreground/60 mt-0.5 tracking-wide">performance pessoal</p>
             </div>
             <div className="flex flex-col flex-1">
@@ -107,7 +107,7 @@ export function AppSidebar() {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-bold tracking-tight">metrics</span>
+        <span className="text-sm font-bold tracking-tight">life metrics.</span>
       </header>
     </>
   );
