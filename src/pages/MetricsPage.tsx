@@ -122,11 +122,13 @@ export default function MetricsPage() {
     return count;
   }, [records]);
 
-  // Dias ativos no mês atual
-  const activeDaysThisMonth = useMemo(() => {
-    const now = new Date();
-    const yearMonth = format(now, "yyyy-MM");
-    return records.filter(r => r.date.startsWith(yearMonth) && hasAnyData(r)).length;
+  // Total de dias ativos — todas as datas únicas com registro no histórico completo
+  const totalActiveDays = useMemo(() => {
+    const uniqueDates = new Set<string>();
+    records.forEach(r => {
+      if (hasAnyData(r)) uniqueDates.add(r.date);
+    });
+    return uniqueDates.size;
   }, [records]);
 
   // Sleep avg
