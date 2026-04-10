@@ -16,7 +16,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed, CalendarCheck2 } from "lucide-react";
+import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed, CalendarCheck2, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -32,7 +32,7 @@ const AREA_TEXT_COLORS: Record<string, string> = {
 };
 
 export default function MetricsPage() {
-  const { habits, records, goals } = useStore();
+  const { habits, records, goals, tasks } = useStore();
   
   const { meals } = useMeals();
 
@@ -130,6 +130,22 @@ export default function MetricsPage() {
     });
     return uniqueDates.size;
   }, [records]);
+
+  // Tarefas concluídas — respeita filtros de área e período
+  const completedTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (!t.completed) return false;
+      if (areaFilter !== "todas" && t.lifeArea !== areaFilter) return false;
+      if (period === "total") return true;
+      if (period === "custom" && customStart && customEnd) {
+        const d = parseISO(t.date);
+        return (isAfter(d, startOfDay(customStart)) || d.getTime() === startOfDay(customStart).getTime()) &&
+               (isBefore(d, startOfDay(customEnd)) || d.getTime() === startOfDay(customEnd).getTime());
+      }
+      const days = period === "7d" ? 7 : 30;
+      return isAfter(parseISO(t.date), subDays(new Date(), days));
+    }).length;
+  }, [tasks, areaFilter, period, customStart, customEnd]);
 
   // Sleep avg
   const avgSleep = useMemo(() => {
@@ -318,12 +334,13 @@ export default function MetricsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="animate-fade-in" style={{ animationDelay: "0ms" }}><SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "100ms" }}><SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "200ms" }}><SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "300ms" }}><SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "400ms" }}><SummaryCard icon={<CalendarCheck2 size={24} />} label="Dias ativos" value={`${totalActiveDays} dias`} bgColor="hsl(142, 60%, 93%)" iconColor="hsl(142, 50%, 40%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "500ms" }}><SummaryCard icon={<ListChecks size={24} />} label="Tarefas concluídas" value={`${completedTasks}`} bgColor="hsl(330, 60%, 94%)" iconColor="hsl(330, 50%, 45%)" /></div>
       </div>
 
       {/* Habits section */}
