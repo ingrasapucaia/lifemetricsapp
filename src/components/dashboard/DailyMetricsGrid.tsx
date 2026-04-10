@@ -15,7 +15,7 @@ interface Props {
   selectedDate: string;
 }
 
-type ChartType = "bar" | "line" | "bar-percent" | "dot" | "progress";
+type ChartType = "bar" | "line" | "bar-percent" | "dot" | "progress" | "check-grid";
 
 interface MetricItem {
   icon: React.ReactNode;
@@ -40,7 +40,7 @@ function getChartType(habit: Habit): ChartType {
   if (mt === "tempo" || mt === "km" || mt === "milhas") return "line";
   if (mt === "calorias") return "bar-percent";
   if (mt === "litros" || mt === "numero") return "dot";
-  if (mt === "check") return "line";
+  if (mt === "check") return "check-grid";
   if (mt === "reais" || mt === "dolar" || mt === "euro") return "progress";
   return "bar";
 }
@@ -383,6 +383,40 @@ function MiniDotChart({ data, max, color, startDayIndex, dates, unit }: { data: 
   );
 }
 
+function MiniCheckGrid({ data, color, startDayIndex, dates }: { data: number[]; color: string; startDayIndex: number; dates: string[] }) {
+  const DAY_INITIALS_PT = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+  // For longer periods, show last 7 days only for the grid
+  const displayData = data.length > 14 ? data.slice(-7) : data;
+  const displayDates = dates.length > 14 ? dates.slice(-7) : dates;
+  const offset = data.length > 14 ? data.length - 7 : 0;
+
+  return (
+    <div className="w-full py-1">
+      <div className="flex items-center justify-between gap-1">
+        {displayData.map((v, i) => {
+          const dayIdx = (startDayIndex + offset + i) % 7;
+          const completed = v > 0;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="h-6 flex items-center justify-center">
+                {completed ? (
+                  <Check size={14} strokeWidth={3} style={{ color }} />
+                ) : (
+                  <span className="text-[10px] text-muted-foreground/40 font-medium">—</span>
+                )}
+              </div>
+              <span className="text-[9px] text-muted-foreground font-medium">
+                {DAY_INITIALS_PT[dayIdx]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MiniProgressBar({ value, target, color }: { value: number; target: number; color: string }) {
   const pct = target > 0 ? Math.min((value / target) * 100, 100) : 0;
   return (
@@ -480,6 +514,9 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
         )}
         {metric.chartType === "progress" && (
           <MiniProgressBar value={metric.last7[metric.last7.length - 1] || 0} target={metric.target} color={metric.color} />
+        )}
+        {metric.chartType === "check-grid" && (
+          <MiniCheckGrid data={metric.last7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} />
         )}
       </CardContent>
     </Card>
