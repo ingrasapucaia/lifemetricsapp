@@ -37,11 +37,9 @@ const DAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 function getChartType(habit: Habit): ChartType {
   const mt = habit.metricType;
-  if (mt === "tempo" || mt === "km" || mt === "milhas") return "line";
-  if (mt === "calorias") return "bar-percent";
-  if (mt === "litros" || mt === "numero" || mt === "check") return "dot";
-  if (mt === "reais" || mt === "dolar" || mt === "euro") return "progress";
-  return "bar";
+  if (mt === "check") return "dot";
+  if (mt === "personalizado") return "bar";
+  return "line";
 }
 
 function getHabitUnit(habit: Habit): string {
