@@ -522,14 +522,8 @@ function MetricCard({ metric, startDayIndex, reordering, onMoveUp, onMoveDown, i
         </div>
 
         {/* Chart */}
-        {metric.chartType === "line" && (
-          <MiniLineChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
-        )}
-        {metric.chartType === "bar" && (
-          <MiniBarChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
-        )}
-        {metric.chartType === "bar-percent" && (
-          <MiniBarPercentChart data={metric.last7} max={metric.max7} color={metric.color} target={metric.target} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
+        {(metric.chartType === "line" || metric.chartType === "bar" || metric.chartType === "bar-percent") && (
+          <SmoothAreaChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
         )}
         {metric.chartType === "dot" && (
           <MiniDotChart data={metric.last7} max={metric.max7} color={metric.color} startDayIndex={startDayIndex} dates={metric.dates} unit={metric.unit} />
