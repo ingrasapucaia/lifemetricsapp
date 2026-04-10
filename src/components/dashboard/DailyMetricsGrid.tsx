@@ -144,46 +144,103 @@ function sparseLabels(data: any[], startDayIndex: number) {
   return data.map((_, i) => (i % step === 0 || i === len - 1) ? DAY_LABELS[(startDayIndex + i) % 7] : "");
 }
 
-function MiniBarChart({ data, max, color, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; startDayIndex: number; dates: string[]; unit: string }) {
-  const h = 48;
-  const gapClass = data.length > 15 ? "gap-px" : data.length > 7 ? "gap-[2px]" : "gap-[6px]";
-  const labels = sparseLabels(data, startDayIndex);
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return "";
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+    const tension = 0.3;
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+function SmoothAreaChart({ data, max, color, startDayIndex, dates, unit }: { data: number[]; max: number; color: string; startDayIndex: number; dates: string[]; unit: string }) {
+  const w = 280;
+  const h = 56;
+  const pad = 8;
+  const effW = w - pad * 2;
+  const effH = h - pad * 2;
+  const points = data.map((v, i) => ({
+    x: pad + (data.length > 1 ? (i / (data.length - 1)) * effW : effW / 2),
+    y: pad + effH - (max > 0 ? (v / max) * effH : 0),
+  }));
+  const pathD = smoothPath(points);
+  const areaD = `${pathD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
+  const gradId = `area-${color.replace(/[^a-z0-9]/gi, "")}`;
+
+  const pathRef = useRef<SVGPathElement>(null);
+  const [lineLength, setLineLength] = useState(0);
   const { activeIdx, setActiveIdx, containerRef } = useChartTooltip();
+  const labels = sparseLabels(data, startDayIndex);
+
+  useEffect(() => {
+    if (pathRef.current) setLineLength(pathRef.current.getTotalLength());
+  }, [data]);
+
   return (
-    <div className="w-full overflow-visible" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
-      <div className={cn("flex items-end justify-between", gapClass)} style={{ height: h }}>
-        {data.map((v, i) => {
-          const barH = max > 0 ? Math.max((v / max) * h, 3) : 3;
-          const isLast = i === data.length - 1;
-          const isActive = activeIdx === i;
-          return (
-            <div
-              key={i}
-              className="flex-1 min-w-0 flex flex-col items-center gap-1 relative cursor-pointer"
+    <div className="w-full relative" ref={containerRef} onMouseLeave={() => setActiveIdx(null)}>
+      {activeIdx !== null && dates[activeIdx] && (
+        <MiniChartTooltip
+          dateStr={dates[activeIdx]}
+          value={data[activeIdx]}
+          unit={unit}
+          style={{
+            left: `${(points[activeIdx].x / w) * 100}%`,
+            bottom: "auto",
+            top: -6,
+            position: "absolute",
+            marginBottom: 0,
+          }}
+        />
+      )}
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }} preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.65} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill={`url(#${gradId})`} />
+        <path
+          ref={pathRef}
+          d={pathD}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={lineLength > 0 ? {
+            strokeDasharray: lineLength,
+            strokeDashoffset: lineLength,
+            animation: `draw-line 600ms ease-out forwards`,
+          } : undefined}
+        />
+        {points.map((p, i) => (
+          <g key={i}>
+            {activeIdx === i && (
+              <>
+                <line x1={p.x} y1={pad} x2={p.x} y2={h} stroke={color} strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />
+                <circle cx={p.x} cy={p.y} r={4} fill={color} stroke="white" strokeWidth={2} />
+              </>
+            )}
+            <circle cx={p.x} cy={p.y} r={12} fill="transparent" className="cursor-pointer"
               onMouseEnter={() => setActiveIdx(i)}
               onTouchStart={() => setActiveIdx(i)}
-            >
-              {isActive && dates[i] && (
-                <MiniChartTooltip dateStr={dates[i]} value={v} unit={unit} style={{ left: "50%" }} />
-              )}
-              <div
-                className="w-full rounded-t-md transition-opacity duration-150"
-                style={{
-                  height: barH,
-                  backgroundColor: isActive || isLast ? color : `color-mix(in srgb, ${color} 35%, transparent)`,
-                  transformOrigin: "bottom",
-                  animation: `grow-bar 400ms ease-out ${i * (data.length > 15 ? 15 : 40)}ms both`,
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
+            />
+          </g>
+        ))}
+      </svg>
       <div className="flex justify-between mt-1">
         {labels.map((l, i) => (
-          <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">
-            {l}
-          </span>
+          <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground font-medium">{l}</span>
         ))}
       </div>
     </div>
