@@ -1,52 +1,44 @@
 
 
-## Plano: Adicionar card "Dias ativos" e corrigir lógica do streak
-
-### Problema atual do streak (linhas 102-112)
-A lógica atual exige que pelo menos um hábito seja **concluído** (`isHabitCompleted`) para contar o dia. Isso ignora registros de sono, humor, ou hábitos parciais (ex: 4km de uma meta de 5km). Precisa ser corrigido para aceitar **qualquer valor registrado**.
+## Plano: Adicionar card "Tarefas concluídas" na tela de Métricas
 
 ### Mudanças no arquivo `src/pages/MetricsPage.tsx`
 
-**1. Novo card "Dias ativos"** (após linha 305)
-- Calcular via `useMemo`: contar registros do mês atual onde há qualquer dado (mood não vazio, sleepHours > 0, waterIntake > 0, ou qualquer chave em habitChecks com valor truthy/numérico > 0)
-- Exibir como "20 dias" com label "Dias ativos"
-- Mesmo estilo dos outros `SummaryCard`, com ícone `CalendarCheck2` do Lucide
-- Cores: verde claro (similar ao card de hábitos)
+**1. Importar tasks do useStore** (linha 35)
+- Adicionar `tasks` ao destructuring: `const { habits, records, goals, tasks } = useStore();`
 
-**2. Corrigir lógica do streak** (linhas 102-112)
-Substituir a lógica atual que usa `isHabitCompleted` por uma que aceita qualquer registro:
-- Um dia conta se: `mood` não vazio, OU `sleepHours > 0`, OU `waterIntake > 0`, OU qualquer valor em `habitChecks` que seja `true` ou número `> 0`
-- Manter tolerância de 1 dia (começar de ontem se hoje não tem registro)
-- Verificar dias consecutivos reais (checar gaps entre datas)
+**2. Importar ícone** (linha 19)
+- Adicionar `ListChecks` ao import do Lucide
 
+**3. Novo cálculo `completedTasks`** (após linha 132)
 ```typescript
-// Nova lógica do streak
-const streak = useMemo(() => {
-  const recordMap = new Map<string, DailyRecord>();
-  records.forEach(r => {
-    const hasData = r.mood || r.sleepHours > 0 || r.waterIntake > 0 ||
-      Object.values(r.habitChecks).some(v => v === true || (typeof v === 'number' && v > 0));
-    if (hasData) recordMap.set(r.date, r);
-  });
-  
-  const today = format(new Date(), "yyyy-MM-dd");
-  let checkDate = new Date();
-  if (!recordMap.has(today)) {
-    checkDate = subDays(checkDate, 1);
-  }
-  let count = 0;
-  while (recordMap.has(format(checkDate, "yyyy-MM-dd"))) {
-    count++;
-    checkDate = subDays(checkDate, 1);
-  }
-  return count;
-}, [records]);
+const completedTasks = useMemo(() => {
+  return tasks.filter(t => {
+    if (!t.completed) return false;
+    // Filtro de área
+    if (areaFilter !== "todas" && t.lifeArea !== areaFilter) return false;
+    // Filtro de período
+    if (period === "total") return true;
+    if (period === "custom" && customStart && customEnd) {
+      const d = parseISO(t.date);
+      return (isAfter(d, startOfDay(customStart)) || d.getTime() === startOfDay(customStart).getTime()) &&
+             (isBefore(d, startOfDay(customEnd)) || d.getTime() === startOfDay(customEnd).getTime());
+    }
+    const days = period === "7d" ? 7 : 30;
+    return isAfter(parseISO(t.date), subDays(new Date(), days));
+  }).length;
+}, [tasks, areaFilter, period, customStart, customEnd]);
 ```
 
-**3. Ajuste no grid** (linha 301)
-Mudar de `grid-cols-2 md:grid-cols-3` para `grid-cols-2 md:grid-cols-3 lg:grid-cols-5` para acomodar o 5º card.
+**4. Adicionar card no grid** (linha 321)
+- Mudar grid para `lg:grid-cols-6` para 6 cards
+- Inserir novo card após "Dias ativos":
+```tsx
+<SummaryCard icon={<ListChecks size={24} />} label="Tarefas concluídas" value={String(completedTasks)} bgColor="hsl(330, 60%, 94%)" iconColor="hsl(330, 50%, 45%)" />
+```
 
-### Resumo das alterações
+### Resumo
 - **1 arquivo modificado**: `src/pages/MetricsPage.tsx`
-- Nenhuma alteração no backend, banco de dados, ou outras telas
+- O card respeita filtros de área e período existentes
+- Nenhuma alteração no backend ou outras telas
 
