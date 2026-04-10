@@ -1,36 +1,27 @@
 
 
-## Plan: Change check-type habit charts from dots to line with gradient
+## Plan: Replace check-habit charts with minimalist weekly checkmark grid
 
-### Problem
-Habits of type "check" (meditação, treino, leitura, etc.) use `MiniDotChart` which displays bubbles. They should use a line chart with gradient fill, like numeric habits (corrida, horas de trabalho).
-
-### Change
+### What changes
 
 **File: `src/components/dashboard/DailyMetricsGrid.tsx`**
 
-1. **Line 42** — In the `getChartType` function, change `"check"` from mapping to `"dot"` to mapping to `"line"`:
+1. **Add new chart type** `"check-grid"` to the `ChartType` union (line 18)
 
-```typescript
-if (mt === "litros" || mt === "numero") return "dot";
-```
-Remove `"check"` from the dot line. Then ensure check habits fall through to the default `"bar"` — or better, add explicit handling:
+2. **Update `getChartType`** (line 43): change `if (mt === "check") return "line"` to `return "check-grid"`
 
-Actually, looking more carefully: the `getChartType` only applies to habits with a `metricType`. For check habits, `metricType` is likely `"check"` or undefined. The data for check habits is binary (0 or 1), so the `MiniLineChart` will work perfectly — it will show value 1 for completed days and 0 for not completed.
+3. **Create new `MiniCheckGrid` component** — a simple row of 7 day slots:
+   - Each slot shows the day label (S D S T Q Q S) below
+   - Completed day: a small **✓** in the habit's color
+   - Incomplete day: a thin dash `—` in muted color (or empty)
+   - No circles, no lines, no gradients — pure text-based minimalism
+   - Adapts to 7d/30d/total periods by showing the last N days with sparse labels for longer periods
 
-**Single change needed:**
-- Line 42: Remove `"check"` from the dot chart mapping so it doesn't match, and add a new line mapping `"check"` to `"line"`:
-
-```typescript
-if (mt === "litros" || mt === "numero") return "dot";
-if (mt === "check") return "line";
-```
-
-This will route check-type habits to `MiniLineChart`, which already renders a smooth line with gradient fill below it — exactly matching the style of numeric habits like running and work hours.
+4. **Add `"check-grid"` rendering branch** in the `MetricCard` component (around line 465) alongside the existing chart type switch
 
 ### What stays unchanged
-- Sleep chart — untouched
-- Card data/information — untouched  
-- Backend — untouched
-- `MiniLineChart` component — already handles the rendering correctly with gradient
+- Sleep chart (bar type) — untouched
+- Numeric habits (line with gradient) — untouched
+- All card data, values, labels — untouched
+- Backend and database — untouched
 
