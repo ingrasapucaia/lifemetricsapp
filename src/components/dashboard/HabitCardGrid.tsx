@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Habit } from "@/types";
 import { isHabitCompleted } from "@/lib/metrics";
 import { Card, CardContent } from "@/components/ui/card";
@@ -272,6 +273,7 @@ function HabitRow({
 
 export default function HabitCardGrid({ habits, checks, onUpdate, initialCount = 6 }: HabitCardGridProps) {
   const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
 
   const active = habits.filter((h) => h.active);
   const sortedHabits = [...active].sort((a, b) => {
@@ -288,8 +290,16 @@ export default function HabitCardGrid({ habits, checks, onUpdate, initialCount =
   if (active.length === 0) {
     return (
       <Card className="border-border/60">
-        <CardContent className="py-6 text-center">
-          <p className="text-sm text-muted-foreground">Nenhum hábito ativo</p>
+        <CardContent className="py-8 text-center space-y-3">
+          <p className="text-sm text-muted-foreground">Crie seu primeiro hábito</p>
+          <Button
+            variant="outline"
+            className="rounded-xl text-sm gap-1.5"
+            onClick={() => navigate("/habitos")}
+          >
+            <Plus size={16} />
+            Criar hábito
+          </Button>
         </CardContent>
       </Card>
     );

@@ -139,7 +139,7 @@ export default function Records() {
               record={selRecord}
               date={dateStr}
               habits={active}
-              onUpdate={(u) => { upsertRecord({ date: dateStr, ...u }); toast("Salvo"); }}
+              onUpdate={(u) => { upsertRecord({ date: dateStr, ...u }); }}
               onDelete={() => selRecord && setDelTarget(selRecord.id)}
             />
           </div>
