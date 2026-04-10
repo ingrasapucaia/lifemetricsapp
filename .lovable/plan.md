@@ -1,38 +1,52 @@
 
-## Plan: Fix chart type mapping for all numeric habits
 
-### Current Problem
-The `getChartType` function in `DailyMetricsGrid.tsx` only maps `tempo`, `km`, and `milhas` to the "line" chart. Other numeric types like `calorias`, `litros`, `numero`, `reais`, `dolar`, `euro` are mapped to other chart types ("bar-percent", "dot", "progress").
+## Plano: Adicionar card "Dias ativos" e corrigir lógica do streak
 
-### Change Required
-**File: `src/components/dashboard/DailyMetricsGrid.tsx`**, lines 38-45:
+### Problema atual do streak (linhas 102-112)
+A lógica atual exige que pelo menos um hábito seja **concluído** (`isHabitCompleted`) para contar o dia. Isso ignora registros de sono, humor, ou hábitos parciais (ex: 4km de uma meta de 5km). Precisa ser corrigido para aceitar **qualquer valor registrado**.
 
-Update the `getChartType` function to return "line" for all numeric metric types except:
-- `check` → stays as "dot" (checkmark grid)
-- `personalizado` → stays as "bar" (default behavior)
+### Mudanças no arquivo `src/pages/MetricsPage.tsx`
+
+**1. Novo card "Dias ativos"** (após linha 305)
+- Calcular via `useMemo`: contar registros do mês atual onde há qualquer dado (mood não vazio, sleepHours > 0, waterIntake > 0, ou qualquer chave em habitChecks com valor truthy/numérico > 0)
+- Exibir como "20 dias" com label "Dias ativos"
+- Mesmo estilo dos outros `SummaryCard`, com ícone `CalendarCheck2` do Lucide
+- Cores: verde claro (similar ao card de hábitos)
+
+**2. Corrigir lógica do streak** (linhas 102-112)
+Substituir a lógica atual que usa `isHabitCompleted` por uma que aceita qualquer registro:
+- Um dia conta se: `mood` não vazio, OU `sleepHours > 0`, OU `waterIntake > 0`, OU qualquer valor em `habitChecks` que seja `true` ou número `> 0`
+- Manter tolerância de 1 dia (começar de ontem se hoje não tem registro)
+- Verificar dias consecutivos reais (checar gaps entre datas)
 
 ```typescript
-// Before:
-function getChartType(habit: Habit): ChartType {
-  const mt = habit.metricType;
-  if (mt === "tempo" || mt === "km" || mt === "milhas") return "line";
-  if (mt === "calorias") return "bar-percent";
-  if (mt === "litros" || mt === "numero" || mt === "check") return "dot";
-  if (mt === "reais" || mt === "dolar" || mt === "euro") return "progress";
-  return "bar";
-}
-
-// After:
-function getChartType(habit: Habit): ChartType {
-  const mt = habit.metricType;
-  // Check type uses checkmark grid (dot chart)
-  if (mt === "check") return "dot";
-  // Personalizado keeps default behavior
-  if (mt === "personalizado") return "bar";
-  // All numeric metric types use line chart with gradient:
-  // tempo, numero, km, milhas, calorias, litros, reais, dolar, euro
-  return "line";
-}
+// Nova lógica do streak
+const streak = useMemo(() => {
+  const recordMap = new Map<string, DailyRecord>();
+  records.forEach(r => {
+    const hasData = r.mood || r.sleepHours > 0 || r.waterIntake > 0 ||
+      Object.values(r.habitChecks).some(v => v === true || (typeof v === 'number' && v > 0));
+    if (hasData) recordMap.set(r.date, r);
+  });
+  
+  const today = format(new Date(), "yyyy-MM-dd");
+  let checkDate = new Date();
+  if (!recordMap.has(today)) {
+    checkDate = subDays(checkDate, 1);
+  }
+  let count = 0;
+  while (recordMap.has(format(checkDate, "yyyy-MM-dd"))) {
+    count++;
+    checkDate = subDays(checkDate, 1);
+  }
+  return count;
+}, [records]);
 ```
 
-This ensures all numeric habits (km, milhas, minutos, horas, litros, calorias, número/contagem, reais, dólar, euro) display with the line chart with gradient, matching the existing behavior for corrida and horas de trabalho.
+**3. Ajuste no grid** (linha 301)
+Mudar de `grid-cols-2 md:grid-cols-3` para `grid-cols-2 md:grid-cols-3 lg:grid-cols-5` para acomodar o 5º card.
+
+### Resumo das alterações
+- **1 arquivo modificado**: `src/pages/MetricsPage.tsx`
+- Nenhuma alteração no backend, banco de dados, ou outras telas
+
