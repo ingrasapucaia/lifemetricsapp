@@ -16,7 +16,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed } from "lucide-react";
+import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed, CalendarCheck2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, subDays, isAfter, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -99,17 +99,35 @@ export default function MetricsPage() {
     return Math.round((done / total) * 100);
   }, [filteredRecords, activeHabits]);
 
-  // Streak
+  // Helper: check if a record has any data
+  const hasAnyData = (r: DailyRecord) =>
+    r.mood || r.sleepHours > 0 || r.waterIntake > 0 ||
+    Object.values(r.habitChecks).some(v => v === true || (typeof v === 'number' && v > 0));
+
+  // Streak — dias consecutivos com qualquer registro
   const streak = useMemo(() => {
-    const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
+    const recordDates = new Set<string>();
+    records.forEach(r => { if (hasAnyData(r)) recordDates.add(r.date); });
+
+    const today = format(new Date(), "yyyy-MM-dd");
+    let checkDate = new Date();
+    if (!recordDates.has(today)) {
+      checkDate = subDays(checkDate, 1);
+    }
     let count = 0;
-    for (const r of sorted) {
-      const done = allActiveHabits.some((h) => isHabitCompleted(h, r.habitChecks[h.id]));
-      if (done) count++;
-      else break;
+    while (recordDates.has(format(checkDate, "yyyy-MM-dd"))) {
+      count++;
+      checkDate = subDays(checkDate, 1);
     }
     return count;
-  }, [records, allActiveHabits]);
+  }, [records]);
+
+  // Dias ativos no mês atual
+  const activeDaysThisMonth = useMemo(() => {
+    const now = new Date();
+    const yearMonth = format(now, "yyyy-MM");
+    return records.filter(r => r.date.startsWith(yearMonth) && hasAnyData(r)).length;
+  }, [records]);
 
   // Sleep avg
   const avgSleep = useMemo(() => {
@@ -298,11 +316,12 @@ export default function MetricsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="animate-fade-in" style={{ animationDelay: "0ms" }}><SummaryCard icon={<TrendingUp size={24} />} label="Hábitos concluídos" value={`${habitRate}%`} bgColor="hsl(168, 60%, 94%)" iconColor="hsl(168, 64%, 38%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "100ms" }}><SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "200ms" }}><SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "300ms" }}><SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "400ms" }}><SummaryCard icon={<CalendarCheck2 size={24} />} label="Dias ativos" value={`${activeDaysThisMonth} dias`} bgColor="hsl(142, 60%, 93%)" iconColor="hsl(142, 50%, 40%)" /></div>
       </div>
 
       {/* Habits section */}
