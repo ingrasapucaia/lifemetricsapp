@@ -122,11 +122,13 @@ export default function MetricsPage() {
     return count;
   }, [records]);
 
-  // Dias ativos no mês atual
-  const activeDaysThisMonth = useMemo(() => {
-    const now = new Date();
-    const yearMonth = format(now, "yyyy-MM");
-    return records.filter(r => r.date.startsWith(yearMonth) && hasAnyData(r)).length;
+  // Total de dias ativos — todas as datas únicas com registro no histórico completo
+  const totalActiveDays = useMemo(() => {
+    const uniqueDates = new Set<string>();
+    records.forEach(r => {
+      if (hasAnyData(r)) uniqueDates.add(r.date);
+    });
+    return uniqueDates.size;
   }, [records]);
 
   // Sleep avg
@@ -321,7 +323,7 @@ export default function MetricsPage() {
         <div className="animate-fade-in" style={{ animationDelay: "100ms" }}><SummaryCard icon={<Target size={24} />} label="Metas concluídas" value={String(completedGoals.length)} bgColor="hsl(200, 60%, 94%)" iconColor="hsl(200, 60%, 50%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "200ms" }}><SummaryCard icon={<Flame size={24} />} label="Dias consecutivos" value={String(streak)} bgColor="hsl(45, 80%, 93%)" iconColor="hsl(45, 80%, 45%)" /></div>
         <div className="animate-fade-in" style={{ animationDelay: "300ms" }}><SummaryCard icon={<Moon size={24} />} label="Sono médio" value={formatSleepHours(avgSleep)} bgColor="hsl(270, 60%, 95%)" iconColor="hsl(270, 50%, 58%)" /></div>
-        <div className="animate-fade-in" style={{ animationDelay: "400ms" }}><SummaryCard icon={<CalendarCheck2 size={24} />} label="Dias ativos" value={`${activeDaysThisMonth} dias`} bgColor="hsl(142, 60%, 93%)" iconColor="hsl(142, 50%, 40%)" /></div>
+        <div className="animate-fade-in" style={{ animationDelay: "400ms" }}><SummaryCard icon={<CalendarCheck2 size={24} />} label="Dias ativos" value={`${totalActiveDays} dias`} bgColor="hsl(142, 60%, 93%)" iconColor="hsl(142, 50%, 40%)" /></div>
       </div>
 
       {/* Habits section */}
