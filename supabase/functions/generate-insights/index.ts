@@ -239,7 +239,7 @@ Onde:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.0-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: "Gere os insights personalizados para hoje com base nos dados acima." },
@@ -252,18 +252,18 @@ Onde:
       console.error("AI gateway error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "rate_limited" }), {
-          status: 429,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResponse.status === 402) {
         return new Response(JSON.stringify({ error: "payment_required" }), {
-          status: 402,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: "AI generation failed" }), {
-        status: 500,
+      return new Response(JSON.stringify({ error: "ai_failed", detail: errText }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -63,10 +63,11 @@ export default function InsightsPage() {
       const { data: fnData, error } = await supabase.functions.invoke("generate-insights", {
         body: {},
       });
-      if (error) { toast.error("Erro ao gerar insights."); setLoading(false); return; }
+      if (error) { console.error("insights invoke error:", error); toast.error("Erro ao gerar insights."); setLoading(false); return; }
       if (fnData?.error === "rate_limited") { toast.error("Limite atingido. Tente em alguns minutos."); setLoading(false); return; }
       if (fnData?.error === "daily_limit") { toast.error(fnData.message || "Limite diário de insights atingido. Tente novamente amanhã."); setLoading(false); return; }
       if (fnData?.error === "payment_required") { toast.error("Créditos de IA esgotados."); setLoading(false); return; }
+      if (fnData?.error === "ai_failed") { console.error("AI error detail:", fnData.detail); toast.error("Erro na IA: " + (fnData.detail?.slice(0, 120) || "sem detalhe")); setLoading(false); return; }
       if (fnData) {
         setData({
           summary: fnData.summary || [],
