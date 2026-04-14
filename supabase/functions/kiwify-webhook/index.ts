@@ -6,6 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-kiwify-token",
 };
 
+function generateProvisionalPassword(): string {
+  return crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -71,10 +75,12 @@ Deno.serve(async (req) => {
       orderStatus === "approved" ||
       orderStatus === "subscription.renewed"
     ) {
-      action =
-        orderStatus === "subscription.renewed" ? "renewed" : "activated";
+      const premiumExpiresAt = new Date(
+        Date.now() + 93 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
       if (authUser) {
+        // User already exists — just update premium
         await supabase
           .from("profiles")
           .update({
@@ -84,20 +90,46 @@ Deno.serve(async (req) => {
                 ? undefined
                 : new Date().toISOString(),
             premium_plan: "trimestral",
-            premium_expires_at: new Date(
-              Date.now() + 93 * 24 * 60 * 60 * 1000
-            ).toISOString(),
+            premium_expires_at: premiumExpiresAt,
           })
           .eq("user_id", authUser.id);
+
+        action = orderStatus === "subscription.renewed" ? "renewed" : "activated";
       } else {
-        // User not registered yet — save to pending
-        await supabase.from("pending_premium").insert({
-          email: customerEmail,
-          status: orderStatus,
-          premium_plan: "trimestral",
-          kiwify_payload: body,
-        });
-        action = "pending";
+        // User doesn't exist — create account with provisional password
+        const { data: newUser, error: createError } =
+          await supabase.auth.admin.createUser({
+            email: customerEmail,
+            password: generateProvisionalPassword(),
+            email_confirm: true,
+          });
+
+        if (createError || !newUser?.user) {
+          console.error("Error creating user:", createError);
+          return new Response(
+            JSON.stringify({ error: "Failed to create user" }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // Wait briefly for the profile trigger to fire
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Activate premium on the newly created profile
+        await supabase
+          .from("profiles")
+          .update({
+            is_premium: true,
+            premium_since: new Date().toISOString(),
+            premium_plan: "trimestral",
+            premium_expires_at: premiumExpiresAt,
+          })
+          .eq("user_id", newUser.user.id);
+
+        action = "created_and_activated";
       }
     } else if (
       orderStatus === "refunded" ||
@@ -114,15 +146,6 @@ Deno.serve(async (req) => {
             premium_expires_at: new Date().toISOString(),
           })
           .eq("user_id", authUser.id);
-      } else {
-        // Mark any pending as cancelled
-        await supabase.from("pending_premium").insert({
-          email: customerEmail,
-          status: orderStatus,
-          premium_plan: "trimestral",
-          kiwify_payload: body,
-        });
-        action = "pending_cancelled";
       }
     }
 
