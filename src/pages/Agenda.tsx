@@ -145,7 +145,7 @@ export default function Agenda() {
       </div>
 
       {/* Day cards */}
-      <div className="space-y-3">
+      <div className="space-y-5">
         {days.map((day) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const dayTasks = tasksByDate[dateStr] || [];
@@ -153,18 +153,18 @@ export default function Agenda() {
           const completedCount = dayTasks.filter((t) => t.completed).length;
 
           return (
-            <Card key={dateStr} className={cn("overflow-hidden transition-all", isToday && "ring-1 ring-primary/30")}>
+            <Card key={dateStr} className={cn("overflow-hidden transition-all shadow-none border border-[#E5E5EA]", isToday && "ring-1 ring-primary/30")}>
               {/* Day header */}
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="text-center min-w-[36px]">
-                    <p className={cn("text-2xl font-bold leading-none", isToday ? "text-primary" : "text-foreground")}>
+                    <p className={cn("text-2xl font-bold leading-none", isToday ? "text-[#1C1C1E]" : "text-foreground")}>
                       {format(day, "dd")}
                     </p>
                     <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{WEEKDAYS[day.getDay()]}</p>
                   </div>
                   <div>
-                    <p className={cn("text-sm font-medium", isToday ? "text-primary" : "text-foreground")}>
+                    <p className={cn("text-sm font-medium", isToday ? "text-[#1C1C1E]" : "text-foreground")}>
                       {format(day, "EEEE", { locale: ptBR })}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{format(day, "d 'de' MMMM", { locale: ptBR })}</p>
@@ -197,7 +197,7 @@ export default function Agenda() {
                         key={task.id}
                         className={cn(
                           "flex items-center gap-3 px-4 py-2.5 border-b border-border/30 last:border-b-0 transition-colors",
-                          task.completed && "bg-[hsl(142_60%_95%)]"
+                          task.completed && ""
                         )}
                       >
                         {/* Priority dot */}
@@ -233,7 +233,7 @@ export default function Agenda() {
                             )}
                             {area && (
                               <span
-                                className="px-1.5 py-0 rounded text-[9px] font-medium"
+                                className="px-1.5 py-0.5 rounded-full text-[9px] font-medium"
                                 style={{ backgroundColor: area.bgColor, color: area.textColor }}
                               >
                                 {area.label}

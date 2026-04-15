@@ -34,7 +34,7 @@ function Links({ onClick, onLogout }: { onClick?: () => void; onLogout: () => vo
               cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary font-medium shadow-sm"
+                  ? "bg-primary/20 text-[#1a1a1a] font-medium"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )
             }
