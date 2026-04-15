@@ -251,7 +251,7 @@ Onde:
       const errText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "rate_limited" }), {
+        return new Response(JSON.stringify({ error: "rate_limited", detail: errText }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -315,8 +315,8 @@ Onde:
     });
   } catch (err) {
     console.error("Error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: "ai_failed", detail: String(err) }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

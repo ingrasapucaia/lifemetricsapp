@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/lifemetricsapp/(.*)", "destination": "/index.html" },
+    { "source": "/lifemetricsapp", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
