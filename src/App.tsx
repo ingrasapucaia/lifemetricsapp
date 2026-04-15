@@ -34,7 +34,7 @@ const App = () => (
   <AuthProvider>
     <TooltipProvider>
       <Sonner />
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <BrowserRouter>
         <StoreProvider>
           <KeyboardShortcuts />
           <Routes>
