@@ -231,21 +231,23 @@ Onde:
 - orientations: 2-3 sugestões práticas e específicas baseadas nos dados reais
 - patterns: 1-2 padrões identificados nos dados (correlações, tendências)`;
 
-    // Call Google AI Studio
-    const aiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GOOGLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gemini-2.0-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Gere os insights personalizados para hoje com base nos dados acima." },
-        ],
-      }),
-    });
+    // Call Gemini API (native endpoint)
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: systemPrompt + "\n\nGere os insights personalizados para hoje com base nos dados acima." }],
+            },
+          ],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
@@ -269,7 +271,7 @@ Onde:
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     // Parse JSON from AI response
     let parsed: { summary: string[]; orientations: string[]; patterns: string[] };
