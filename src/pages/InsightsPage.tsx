@@ -80,7 +80,7 @@ export default function InsightsPage() {
     setLoading(false);
   }, [user, loadCached]);
 
-  useEffect(() => { generate(false); }, [user]);
+  useEffect(() => { loadCached(); }, [user]);
 
   if (!user) return null;
 

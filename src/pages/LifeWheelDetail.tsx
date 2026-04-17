@@ -137,12 +137,7 @@ export default function LifeWheelDetail() {
       });
   }, [user]);
 
-  // Generate insights on load
-  useEffect(() => {
-    if (assessment && user) {
-      generateAnalysis();
-    }
-  }, [assessment, user]);
+  // Analysis is generated only on user request (button click)
 
   const generateAnalysis = useCallback(async () => {
     if (!id || !user) return;
