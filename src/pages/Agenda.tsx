@@ -1,15 +1,18 @@
 import { useState, useMemo } from "react";
 import { format, addDays, startOfWeek, getWeek, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useStore } from "@/hooks/useStore";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { LIFE_AREAS, Task, TaskPriority, TASK_PRIORITY_COLORS, getLifeArea } from "@/types";
 import { cn } from "@/lib/utils";
 import TimePicker from "@/components/agenda/TimePicker";
@@ -35,6 +38,12 @@ export default function Agenda() {
   const [priority, setPriority] = useState<TaskPriority>("media");
   const [lifeArea, setLifeArea] = useState("");
   const [goalId, setGoalId] = useState("");
+
+  // Paste list state
+  const [pasteSheetOpen, setPasteSheetOpen] = useState(false);
+  const [pasteDate, setPasteDate] = useState("");
+  const [pasteText, setPasteText] = useState("");
+  const [pasteLoading, setPasteLoading] = useState(false);
 
   const weekStart = useMemo(() => {
     const base = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -72,6 +81,27 @@ export default function Agenda() {
     setLifeArea("");
     setGoalId("");
     setEditingTask(null);
+  };
+
+  const openPaste = (dateStr: string) => {
+    setPasteDate(dateStr);
+    setPasteText("");
+    setPasteSheetOpen(true);
+  };
+
+  const handlePaste = async () => {
+    if (!pasteText.trim()) return;
+    setPasteLoading(true);
+    const { data, error } = await supabase.functions.invoke("parse-tasks", {
+      body: { text: pasteText.trim(), date: pasteDate },
+    });
+    setPasteLoading(false);
+    if (error || data?.error) {
+      toast.error("Erro ao organizar tarefas. Tente novamente.");
+      return;
+    }
+    setPasteSheetOpen(false);
+    toast.success(`${data.tasks?.length || 0} tarefas adicionadas!`);
   };
 
   const openCreate = (dateStr: string) => {
@@ -177,6 +207,13 @@ export default function Agenda() {
                     </span>
                   )}
                   <button
+                    onClick={() => openPaste(dateStr)}
+                    className="w-7 h-7 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 transition-colors"
+                    title="Colar lista de tarefas"
+                  >
+                    <ClipboardList size={13} strokeWidth={2} />
+                  </button>
+                  <button
                     onClick={() => openCreate(dateStr)}
                     className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                   >
@@ -270,6 +307,34 @@ export default function Agenda() {
           );
         })}
       </div>
+
+      {/* Paste list sheet */}
+      <Sheet open={pasteSheetOpen} onOpenChange={(open) => { setPasteSheetOpen(open); if (!open) setPasteText(""); }}>
+        <SheetContent side="bottom" className="rounded-t-2xl px-5 pb-8">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="text-base">
+              Colar lista de tarefas — {pasteDate && format(new Date(pasteDate + "T00:00:00"), "d 'de' MMMM", { locale: ptBR })}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Cole aqui sua lista de tarefas..."
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              className="min-h-[140px] text-sm resize-none"
+              autoFocus
+            />
+            <Button
+              onClick={handlePaste}
+              disabled={pasteLoading || !pasteText.trim()}
+              className="w-full font-semibold"
+              style={{ backgroundColor: "#D6F3A1", color: "#1a1a1a" }}
+            >
+              {pasteLoading ? "Organizando..." : "Organizar tarefas"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Add/Edit task sheet */}
       <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
