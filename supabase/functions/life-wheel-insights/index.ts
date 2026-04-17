@@ -129,7 +129,7 @@ ${goalsText}`;
               parts: [{ text: systemPrompt + "\n\n" + userPrompt }],
             },
           ],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
         }),
       }
     );

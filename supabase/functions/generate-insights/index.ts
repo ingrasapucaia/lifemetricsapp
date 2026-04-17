@@ -244,7 +244,7 @@ Onde:
               parts: [{ text: systemPrompt + "\n\nGere os insights personalizados para hoje com base nos dados acima." }],
             },
           ],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
         }),
       }
     );
