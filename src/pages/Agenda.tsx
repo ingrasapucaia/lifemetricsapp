@@ -26,7 +26,7 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
 ];
 
 export default function Agenda() {
-  const { tasks, goals, toggleTask, addTask, updateTask, deleteTask } = useStore();
+  const { tasks, goals, toggleTask, addTask, updateTask, deleteTask, appendTasks } = useStore();
   const [weekOffset, setWeekOffset] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetDate, setSheetDate] = useState("");
@@ -100,8 +100,21 @@ export default function Agenda() {
       toast.error("Erro ao organizar tarefas. Tente novamente.");
       return;
     }
+    const created: Task[] = (data.tasks || []).map((t: any) => ({
+      id: t.id,
+      userId: t.user_id,
+      title: t.title,
+      date: t.date,
+      time: t.time || undefined,
+      completed: t.completed,
+      priority: (t.priority || "media") as Task["priority"],
+      lifeArea: t.life_area || undefined,
+      goalId: t.goal_id || undefined,
+      createdAt: t.created_at,
+    }));
+    appendTasks(created);
     setPasteSheetOpen(false);
-    toast.success(`${data.tasks?.length || 0} tarefas adicionadas!`);
+    toast.success(`${created.length} tarefas adicionadas!`);
   };
 
   const openCreate = (dateStr: string) => {

@@ -170,6 +170,7 @@ interface StoreType {
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   toggleTask: (id: string) => void;
+  appendTasks: (newTasks: Task[]) => void;
   clearAll: () => void;
 }
 
@@ -662,6 +663,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })();
   }, [tasks, user]);
 
+  const appendTasks = useCallback((newTasks: Task[]) => {
+    setTasks((prev) => [...prev, ...newTasks]);
+  }, []);
+
   const clearAll = useCallback(() => {
     setHabits([]);
     setRecords([]);
@@ -677,7 +682,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         addHabit, updateHabit, deleteHabit, reorderHabit,
         addGoal, updateGoal, deleteGoal,
         addGoalAction, updateGoalAction, deleteGoalAction, toggleGoalAction,
-        addTask, updateTask, deleteTask, toggleTask,
+        addTask, updateTask, deleteTask, toggleTask, appendTasks,
         clearAll,
       }}
     >
