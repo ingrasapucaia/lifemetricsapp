@@ -28,8 +28,12 @@ const AREA_TEXT_COLORS: Record<string, string> = {
   saude: "#9FE1CB", profissional: "#B5D4F4", financeiro: "#C0DD97",
   estudos: "#CECBF6", autocuidado: "#F4C0D1", espiritualidade: "#FAC775",
   familia: "#F5C4B3", relacionamentos: "#FCDDE8", esportes: "#7BE3E6",
-  hobbie: "#D4B8F0", contribuicao_social: "#D3D1C7",
+  hobbie: "#D4B8F0", contribuicao: "#D3D1C7", contribuicao_social: "#D3D1C7",
 };
+
+function getAreaColor(lifeArea?: string | null): string {
+  return AREA_TEXT_COLORS[lifeArea || ""] || "#D3D1C7";
+}
 
 export default function MetricsPage() {
   const { habits, records, goals, tasks } = useStore();
@@ -351,7 +355,7 @@ export default function MetricsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {habitStats.map(({ habit: h, completed, total, rate, aggregatedValue }) => {
               const area = getLifeArea(h.lifeArea);
-              const barColor = "hsl(var(--primary))";
+              const barColor = getAreaColor(h.lifeArea);
               const isNumeric = h.targetType !== "check";
 
               // Format aggregated value based on metricType (preferred) or legacy targetType
@@ -462,7 +466,7 @@ export default function MetricsPage() {
                     );
                   }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={areaFilter !== "todas" ? getAreaColor(areaFilter) : chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -641,7 +645,7 @@ export default function MetricsPage() {
               <div className="space-y-4">
                 {consistency.map(({ habit, rate }, idx) => {
                   const area = getLifeArea(habit.lifeArea);
-                  const barColor = "hsl(var(--primary))";
+                  const barColor = getAreaColor(habit.lifeArea);
                   return (
                     <div key={habit.id} className="space-y-1.5">
                       <div className="flex items-center justify-between">
