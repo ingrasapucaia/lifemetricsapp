@@ -133,6 +133,21 @@ export default function LifeWheelDetail() {
       });
   }, [user]);
 
+  useEffect(() => {
+    if (!assessment || assessment.ai_analysis) return;
+    supabase.functions
+      .invoke("life-wheel-insights", { body: { assessmentId: assessment.id } })
+      .then(({ data: fnData }) => {
+        if (!fnData?.analysis) return;
+        const generatedAt = new Date().toISOString();
+        supabase
+          .from("life_wheel_assessments")
+          .update({ ai_analysis: fnData.analysis, ai_analysis_generated_at: generatedAt })
+          .eq("id", assessment.id);
+        setAssessment((prev) => prev ? { ...prev, ai_analysis: fnData.analysis, ai_analysis_generated_at: generatedAt } : prev);
+      });
+  }, [assessment?.id]);
+
   async function handleDelete() {
     if (!id) return;
     await supabase.from("life_wheel_assessments").delete().eq("id", id);
