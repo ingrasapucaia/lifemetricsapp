@@ -96,11 +96,31 @@ export default function LifeWheelNew() {
       .select("id")
       .single();
 
-    setSaving(false);
     if (error) {
+      setSaving(false);
       toast.error("Erro ao salvar avaliação");
       return;
     }
+
+    // Generate AI analysis once, immediately after saving
+    try {
+      const { data: fnData } = await supabase.functions.invoke("life-wheel-insights", {
+        body: { assessmentId: data.id },
+      });
+      if (fnData?.analysis) {
+        await supabase
+          .from("life_wheel_assessments")
+          .update({
+            ai_analysis: fnData.analysis,
+            ai_analysis_generated_at: new Date().toISOString(),
+          })
+          .eq("id", data.id);
+      }
+    } catch {
+      // Analysis failure is silent — assessment was saved successfully
+    }
+
+    setSaving(false);
     toast.success("Avaliação salva!");
     navigate(`/roda-da-vida/${data.id}`);
   }

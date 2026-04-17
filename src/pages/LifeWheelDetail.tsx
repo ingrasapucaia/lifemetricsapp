@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Trash2, Sparkles, Lock, RefreshCw } from "lucide-react";
+import { ArrowLeft, MoreVertical, Trash2, Sparkles, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,8 @@ interface Assessment {
   scores: Record<string, number>;
   average_score: number;
   created_at: string;
+  ai_analysis?: string | null;
+  ai_analysis_generated_at?: string | null;
 }
 
 export default function LifeWheelDetail() {
@@ -95,12 +97,7 @@ export default function LifeWheelDetail() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDelete, setShowDelete] = useState(false);
-
-  // Insights state
   const [isPremium, setIsPremium] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [analysisGeneratedAt, setAnalysisGeneratedAt] = useState<string | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
@@ -124,7 +121,6 @@ export default function LifeWheelDetail() {
       });
   }, [id]);
 
-  // Check premium status
   useEffect(() => {
     if (!user) return;
     supabase
@@ -136,41 +132,6 @@ export default function LifeWheelDetail() {
         setIsPremium(!!(data as any)?.is_premium);
       });
   }, [user]);
-
-  // Analysis is generated only on user request (button click)
-
-  const generateAnalysis = useCallback(async () => {
-    if (!id || !user) return;
-    setAnalysisLoading(true);
-    try {
-      const { data: fnData, error } = await supabase.functions.invoke("life-wheel-insights", {
-        body: { assessmentId: id },
-      });
-      if (error) {
-        console.error("Edge function error:", error);
-        toast.error("Erro ao gerar análise.");
-        setAnalysisLoading(false);
-        return;
-      }
-      if (fnData?.error === "rate_limited") {
-        toast.error("Limite atingido. Tente em alguns minutos.");
-        setAnalysisLoading(false);
-        return;
-      }
-      if (fnData?.error === "payment_required") {
-        toast.error("Créditos de IA esgotados.");
-        setAnalysisLoading(false);
-        return;
-      }
-      if (fnData?.analysis) {
-        setAnalysis(fnData.analysis);
-        setAnalysisGeneratedAt(new Date().toISOString());
-      }
-    } catch {
-      toast.error("Erro ao gerar análise.");
-    }
-    setAnalysisLoading(false);
-  }, [id, user]);
 
   async function handleDelete() {
     if (!id) return;
@@ -193,6 +154,7 @@ export default function LifeWheelDetail() {
     c.items.map((i) => ({ subject: i.label, value: scores[i.key] || 0, fullMark: 10 }))
   );
 
+  const analysis = assessment.ai_analysis || null;
   const truncatedAnalysis = analysis
     ? analysis.split(/\s+/).slice(0, 15).join(" ") + "..."
     : "";
@@ -289,22 +251,9 @@ export default function LifeWheelDetail() {
         );
       })}
 
-      {/* AI Insights Section */}
-      {analysisLoading ? (
-        <Card className="border-0" style={{ backgroundColor: "hsl(270, 60%, 96%)" }}>
-          <CardContent className="p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-purple-500" />
-              <span className="text-sm font-medium text-foreground">Análise da sua Roda da Vida</span>
-            </div>
-            <div className="h-3 w-full bg-purple-200/40 animate-pulse rounded" />
-            <div className="h-3 w-3/4 bg-purple-200/40 animate-pulse rounded" />
-            <div className="h-3 w-5/6 bg-purple-200/40 animate-pulse rounded" />
-          </CardContent>
-        </Card>
-      ) : analysis ? (
+      {/* AI Insights Section — shown only if analysis exists */}
+      {analysis && (
         isPremium ? (
-          /* Premium: full insight */
           <Card className="border-0" style={{ backgroundColor: "hsl(270, 60%, 96%)" }}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -316,25 +265,14 @@ export default function LifeWheelDetail() {
               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                 {analysis}
               </p>
-              {analysisGeneratedAt && (
+              {assessment.ai_analysis_generated_at && (
                 <p className="text-[11px] text-muted-foreground/60">
-                  Gerado em {format(new Date(analysisGeneratedAt), "dd/MM/yyyy")} às {format(new Date(analysisGeneratedAt), "HH:mm")}
+                  Gerado em {format(new Date(assessment.ai_analysis_generated_at), "dd/MM/yyyy")} às {format(new Date(assessment.ai_analysis_generated_at), "HH:mm")}
                 </p>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => generateAnalysis()}
-                disabled={analysisLoading}
-                className="text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2 h-7"
-              >
-                <RefreshCw size={12} className={analysisLoading ? "animate-spin" : ""} />
-                Regenerar análise
-              </Button>
             </CardContent>
           </Card>
         ) : (
-          /* Free: locked card */
           <Card
             className="border-0 overflow-hidden cursor-pointer"
             style={{ backgroundColor: "hsl(270, 60%, 96%)" }}
@@ -347,7 +285,6 @@ export default function LifeWheelDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Truncated preview with gradient blur on last words */}
               <p className="text-sm text-muted-foreground leading-relaxed select-none"
                 style={{
                   maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
@@ -356,15 +293,12 @@ export default function LifeWheelDetail() {
               >
                 {truncatedAnalysis}
               </p>
-
-              {/* Lock icon + label */}
               <div className="flex flex-col items-center gap-2 py-1">
                 <div className="w-10 h-10 rounded-full bg-background/80 flex items-center justify-center">
                   <Lock size={18} className="text-muted-foreground" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">Disponível no plano Premium</span>
               </div>
-
               <Button
                 className="w-full rounded-xl"
                 onClick={(e) => { e.stopPropagation(); setShowUpgrade(true); }}
@@ -374,7 +308,7 @@ export default function LifeWheelDetail() {
             </CardContent>
           </Card>
         )
-      ) : null}
+      )}
 
       {/* Delete dialog */}
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
