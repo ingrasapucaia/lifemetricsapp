@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, addDays, startOfWeek, getWeek, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon, ClipboardList } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, Trash2, Clock, Pencil, CalendarIcon, ClipboardList, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LIFE_AREAS, Task, TaskPriority, TASK_PRIORITY_COLORS, getLifeArea } from "@/types";
 import { cn } from "@/lib/utils";
-import TimePicker from "@/components/agenda/TimePicker";
 
 const WEEKDAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
@@ -396,10 +395,50 @@ export default function Agenda() {
               </div>
             )}
 
-            {/* Custom Time Picker */}
+            {/* Time dropdowns */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Horário (opcional)</label>
-              <TimePicker value={time} onChange={setTime} />
+              <div className="flex gap-2">
+                <Select
+                  value={time ? time.split(":")[0] : ""}
+                  onValueChange={(h) => setTime(h + ":" + (time ? time.split(":")[1] : "00"))}
+                >
+                  <SelectTrigger style={{ borderRadius: 8, borderColor: "#E5E5EA", background: "white" }}>
+                    <SelectValue placeholder="Hora" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")).map((h) => (
+                      <SelectItem key={h} value={h}>
+                        {time && time.split(":")[0] === h ? `✓ ${h}h` : `${h}h`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={time ? time.split(":")[1] : ""}
+                  onValueChange={(m) => setTime((time ? time.split(":")[0] : "00") + ":" + m)}
+                >
+                  <SelectTrigger style={{ borderRadius: 8, borderColor: "#E5E5EA", background: "white" }}>
+                    <SelectValue placeholder="Min" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["00","05","10","15","20","25","30","35","40","45","50","55"].map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {time && time.split(":")[1] === m ? `✓ ${m}min` : `${m}min`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {time && (
+                <button
+                  type="button"
+                  onClick={() => setTime("")}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-1"
+                >
+                  <X size={12} /> Limpar horário
+                </button>
+              )}
             </div>
 
             {/* Priority */}
