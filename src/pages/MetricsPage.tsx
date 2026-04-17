@@ -159,18 +159,33 @@ export default function MetricsPage() {
   }, [filteredRecords]);
 
 
-  // Chart: habits per day
+  // Unique areas present in active habits (for chart bars)
+  const activeHabitAreas = useMemo(() => {
+    const areas = new Set(activeHabits.map((h) => h.lifeArea || "__none__"));
+    return Array.from(areas);
+  }, [activeHabits]);
+
+  // Chart: habits per day — one value per area
   const habitChartData = useMemo(() => {
     const days = getDaysInPeriod(period, customStart, customEnd, records);
     return days.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
-      const done = r ? activeHabits.filter((h) => isHabitCompleted(h, r.habitChecks[h.id])).length : 0;
       const weekday = format(day, "EEE", { locale: ptBR });
       const label = period === "7d" ? weekday : format(day, "dd/MM");
-      return { date: label, fullDate: `${weekday}, ${format(day, "dd/MM")}`, count: done };
+      const entry: Record<string, any> = { date: label, fullDate: `${weekday}, ${format(day, "dd/MM")}` };
+      activeHabitAreas.forEach((area) => { entry[area] = 0; });
+      if (r) {
+        activeHabits.forEach((h) => {
+          if (isHabitCompleted(h, r.habitChecks[h.id])) {
+            const key = h.lifeArea || "__none__";
+            entry[key] = (entry[key] || 0) + 1;
+          }
+        });
+      }
+      return entry;
     });
-  }, [filteredRecords, activeHabits, period, customStart, customEnd, records]);
+  }, [filteredRecords, activeHabits, activeHabitAreas, period, customStart, customEnd, records]);
 
 
   // Sleep & Mood chart
@@ -458,15 +473,26 @@ export default function MetricsPage() {
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload;
+                    const total = activeHabitAreas.reduce((s, a) => s + (d[a] || 0), 0);
                     return (
-                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm">
+                      <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm space-y-1">
                         <p className="font-medium capitalize">{d.fullDate}</p>
-                        <p>{d.count} hábitos concluídos</p>
+                        <p>{total} hábitos concluídos</p>
+                        {payload.filter((p: any) => p.value > 0).map((p: any) => (
+                          <p key={p.dataKey} style={{ color: p.fill }} className="text-xs">
+                            {p.name}: {p.value}
+                          </p>
+                        ))}
                       </div>
                     );
                   }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} name="Concluídos" fill={areaFilter !== "todas" ? getAreaColor(areaFilter) : chartBarColor} animationDuration={800} animationBegin={300} animationEasing="ease-out" />
+                {activeHabitAreas.map((area, i) => (
+                  <Bar key={area} dataKey={area} stackId="a" name={getLifeArea(area)?.label || "Sem área"}
+                    fill={getAreaColor(area === "__none__" ? null : area)}
+                    radius={i === activeHabitAreas.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    animationDuration={800} animationBegin={300} animationEasing="ease-out" />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -744,7 +770,7 @@ function GoalCard({ goal: g }: { goal: Goal }) {
         </div>
         <div className="mt-2">
           <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-            <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: getAreaColor(g.lifeArea) }} />
           </div>
         </div>
         {g.deadline && (
