@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LifeAreaBadge } from "@/components/LifeAreaBadge";
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { TrendingUp, Target, Flame, Moon, CalendarIcon, UtensilsCrossed, CalendarCheck2, ListChecks } from "lucide-react";
@@ -23,6 +23,12 @@ import { ptBR } from "date-fns/locale";
 import { getPeriodCutoff } from "@/lib/metrics";
 
 type ExtPeriod = "7d" | "30d" | "total" | "custom";
+
+const DAY_BAR_COLORS = [
+  "#9FE1CB", "#B5D4F4", "#CECBF6", "#F4C0D1",
+  "#FAC775", "#7BE3E6", "#C0DD97", "#D4B8F0",
+  "#F5C4B3", "#FCDDE8", "#D3D1C7",
+];
 
 const AREA_TEXT_COLORS: Record<string, string> = {
   saude: "#9FE1CB", profissional: "#B5D4F4", financeiro: "#C0DD97",
@@ -159,33 +165,29 @@ export default function MetricsPage() {
   }, [filteredRecords]);
 
 
-  // Unique areas present in active habits (for chart bars)
+  // Unique areas present in active habits (used elsewhere)
   const activeHabitAreas = useMemo(() => {
     const areas = new Set(activeHabits.map((h) => h.lifeArea || "__none__"));
     return Array.from(areas);
   }, [activeHabits]);
 
-  // Chart: habits per day — one value per area
+  // Chart: habits per day — total count per day with index for color
   const habitChartData = useMemo(() => {
     const days = getDaysInPeriod(period, customStart, customEnd, records);
-    return days.map((day) => {
+    return days.map((day, index) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const r = filteredRecords.find((rec) => rec.date === dateStr);
       const weekday = format(day, "EEE", { locale: ptBR });
       const label = period === "7d" ? weekday : format(day, "dd/MM");
-      const entry: Record<string, any> = { date: label, fullDate: `${weekday}, ${format(day, "dd/MM")}` };
-      activeHabitAreas.forEach((area) => { entry[area] = 0; });
+      let total = 0;
       if (r) {
         activeHabits.forEach((h) => {
-          if (isHabitCompleted(h, r.habitChecks[h.id])) {
-            const key = h.lifeArea || "__none__";
-            entry[key] = (entry[key] || 0) + 1;
-          }
+          if (isHabitCompleted(h, r.habitChecks[h.id])) total++;
         });
       }
-      return entry;
+      return { date: label, fullDate: `${weekday}, ${format(day, "dd/MM")}`, total, index };
     });
-  }, [filteredRecords, activeHabits, activeHabitAreas, period, customStart, customEnd, records]);
+  }, [filteredRecords, activeHabits, period, customStart, customEnd, records]);
 
 
   // Sleep & Mood chart
@@ -473,26 +475,20 @@ export default function MetricsPage() {
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
                     const d = payload[0].payload;
-                    const total = activeHabitAreas.reduce((s, a) => s + (d[a] || 0), 0);
                     return (
                       <div className="bg-card border border-border rounded-xl p-3 shadow-lg text-sm space-y-1">
                         <p className="font-medium capitalize">{d.fullDate}</p>
-                        <p>{total} hábitos concluídos</p>
-                        {payload.filter((p: any) => p.value > 0).map((p: any) => (
-                          <p key={p.dataKey} style={{ color: p.fill }} className="text-xs">
-                            {p.name}: {p.value}
-                          </p>
-                        ))}
+                        <p>{d.total} hábitos concluídos</p>
                       </div>
                     );
                   }}
                 />
-                {activeHabitAreas.map((area, i) => (
-                  <Bar key={area} dataKey={area} stackId="a" name={getLifeArea(area)?.label || "Sem área"}
-                    fill={getAreaColor(area === "__none__" ? null : area)}
-                    radius={i === activeHabitAreas.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                    animationDuration={800} animationBegin={300} animationEasing="ease-out" />
-                ))}
+                <Bar dataKey="total" radius={[6, 6, 0, 0]} name="Concluídos"
+                  animationDuration={800} animationBegin={300} animationEasing="ease-out">
+                  {habitChartData.map((entry, idx) => (
+                    <Cell key={idx} fill={DAY_BAR_COLORS[idx % DAY_BAR_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
