@@ -6,9 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-kiwify-token",
 };
 
-function generateProvisionalPassword(): string {
-  return crypto.randomUUID().replace(/-/g, "") + "Aa1!";
-}
+const PROVISIONAL_PASSWORD = "Metrics123!";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -100,7 +98,7 @@ Deno.serve(async (req) => {
         const { data: newUser, error: createError } =
           await supabase.auth.admin.createUser({
             email: customerEmail,
-            password: generateProvisionalPassword(),
+            password: PROVISIONAL_PASSWORD,
             email_confirm: true,
           });
 
@@ -134,7 +132,8 @@ Deno.serve(async (req) => {
     } else if (
       orderStatus === "refunded" ||
       orderStatus === "chargedback" ||
-      orderStatus === "cancelled"
+      orderStatus === "cancelled" ||
+      orderStatus === "subscription.canceled"
     ) {
       action = "deactivated";
 
